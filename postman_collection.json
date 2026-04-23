@@ -1,0 +1,283 @@
+{
+  "info": {
+    "_postman_id": "legaltech-api-collection",
+    "name": "LegalTech API",
+    "description": "Colección completa de endpoints para los microservicios de LegalTech",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Autenticación",
+      "item": [
+        {
+          "name": "Registrarse",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"name\": \"Juan Pérez\", \"email\": \"juan@example.com\", \"password\": \"SecurePass123!\", \"role\": \"lawyer\"}"
+            },
+            "url": {
+              "raw": "{{base_url}}:3001/api/auth/register",
+              "host": ["{{base_url}}"],
+              "port": "3001",
+              "path": ["api", "auth", "register"]
+            }
+          }
+        },
+        {
+          "name": "Iniciar Sesión",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"email\": \"juan@example.com\", \"password\": \"SecurePass123!\"}"
+            },
+            "url": {
+              "raw": "{{base_url}}:3001/api/auth/login",
+              "host": ["{{base_url}}"],
+              "port": "3001",
+              "path": ["api", "auth", "login"]
+            }
+          }
+        },
+        {
+          "name": "Listar Usuarios",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwt_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}:3001/api/auth/users",
+              "host": ["{{base_url}}"],
+              "port": "3001",
+              "path": ["api", "auth", "users"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Clientes",
+      "item": [
+        {
+          "name": "Crear Cliente",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"firstName\": \"Carlos\", \"lastName\": \"García\", \"documentType\": \"CC\", \"documentNumber\": \"1234567890\", \"email\": \"carlos@example.com\", \"phone\": \"3001234567\", \"address\": {\"street\": \"Calle 10\", \"city\": \"Bogotá\"}, \"clientType\": \"individual\"}"
+            },
+            "url": {
+              "raw": "{{base_url}}:3003/api/clients",
+              "host": ["{{base_url}}"],
+              "port": "3003",
+              "path": ["api", "clients"]
+            }
+          }
+        },
+        {
+          "name": "Listar Clientes",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}:3003/api/clients",
+              "host": ["{{base_url}}"],
+              "port": "3003",
+              "path": ["api", "clients"]
+            }
+          }
+        },
+        {
+          "name": "Obtener Cliente",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}:3003/api/clients/{{client_id}}",
+              "host": ["{{base_url}}"],
+              "port": "3003",
+              "path": ["api", "clients", "{{client_id}}"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Casos",
+      "item": [
+        {
+          "name": "Crear Caso",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"caseNumber\": \"CASE-2024-001\", \"title\": \"Demanda Civil\", \"description\": \"Descripción del caso\", \"clientId\": \"{{client_id}}\", \"caseType\": \"civil\", \"priority\": \"high\", \"assignedTo\": \"{{user_id}}\", \"startDate\": \"2024-01-15\", \"budget\": 5000000}"
+            },
+            "url": {
+              "raw": "{{base_url}}:3002/api/cases",
+              "host": ["{{base_url}}"],
+              "port": "3002",
+              "path": ["api", "cases"]
+            }
+          }
+        },
+        {
+          "name": "Listar Casos",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}:3002/api/cases",
+              "host": ["{{base_url}}"],
+              "port": "3002",
+              "path": ["api", "cases"]
+            }
+          }
+        },
+        {
+          "name": "Obtener Caso",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}:3002/api/cases/{{case_id}}",
+              "host": ["{{base_url}}"],
+              "port": "3002",
+              "path": ["api", "cases", "{{case_id}}"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Documentos",
+      "item": [
+        {
+          "name": "Subir Documento",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwt_token}}"
+              }
+            ],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "file",
+                  "type": "file",
+                  "src": ""
+                },
+                {
+                  "key": "caseId",
+                  "value": "{{case_id}}",
+                  "type": "text"
+                },
+                {
+                  "key": "description",
+                  "value": "Documento importante",
+                  "type": "text"
+                },
+                {
+                  "key": "documentType",
+                  "value": "contrato",
+                  "type": "text"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{base_url}}:3004/api/documents",
+              "host": ["{{base_url}}"],
+              "port": "3004",
+              "path": ["api", "documents"]
+            }
+          }
+        },
+        {
+          "name": "Listar Documentos",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}:3004/api/documents",
+              "host": ["{{base_url}}"],
+              "port": "3004",
+              "path": ["api", "documents"]
+            }
+          }
+        },
+        {
+          "name": "Descargar Documento",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}:3004/api/documents/{{document_id}}/download",
+              "host": ["{{base_url}}"],
+              "port": "3004",
+              "path": ["api", "documents", "{{document_id}}", "download"]
+            }
+          }
+        }
+      ]
+    }
+  ],
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://localhost",
+      "type": "string"
+    },
+    {
+      "key": "jwt_token",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "client_id",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "case_id",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "user_id",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "document_id",
+      "value": "",
+      "type": "string"
+    }
+  ]
+}

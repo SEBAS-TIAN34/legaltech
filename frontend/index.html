@@ -1,0 +1,333 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>LegalTech - Sistema de Gestión Legal</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <nav class="navbar">
+    <div class="logo">⚖️ LegalTech</div>
+    <div class="nav-links">
+      <a href="#auth" onclick="showSection('auth')">🔐 Auth</a>
+      <a href="#cases" onclick="showSection('cases')">⚖️ Casos</a>
+      <a href="#clients" onclick="showSection('clients')">👥 Clientes</a>
+      <a href="#documents" onclick="showSection('documents')">📄 Documentos</a>
+      <a href="#timetracking" onclick="showSection('timetracking')">⏱️ Tiempo</a>
+      <a href="#billing" onclick="showSection('billing')">💰 Facturación</a>
+      <a href="#notifications" onclick="showSection('notifications')">🔔 Alertas</a>
+      <a href="#dashboard" onclick="showSection('dashboard')">📊 Dashboard</a>
+      <button onclick="logout()" class="btn-logout">🚪 Salir</button>
+    </div>
+  </nav>
+
+  <div class="container">
+    <!-- AUTH SECTION -->
+    <section id="auth-section" class="section">
+      <h2>🔐 Autenticación</h2>
+      
+      <div class="auth-forms">
+        <div class="form-card">
+          <h3>📝 Registro</h3>
+          <form onsubmit="register(event)">
+            <input type="text" id="reg-firstName" placeholder="Nombre" required>
+            <input type="text" id="reg-lastName" placeholder="Apellido" required>
+            <input type="email" id="reg-email" placeholder="Email" required>
+            <input type="password" id="reg-password" placeholder="Contraseña" required>
+            <select id="reg-role">
+              <option value="lawyer">Abogado</option>
+              <option value="admin">Administrador</option>
+              <option value="paralegal">Paralegal</option>
+              <option value="assistant">Asistente</option>
+            </select>
+            <button type="submit">Registrarse</button>
+          </form>
+        </div>
+
+        <div class="form-card">
+          <h3>🔑 Login</h3>
+          <form onsubmit="login(event)">
+            <input type="email" id="login-email" placeholder="Email" required>
+            <input type="password" id="login-password" placeholder="Contraseña" required>
+            <button type="submit">Iniciar Sesión</button>
+          </form>
+        </div>
+      </div>
+
+      <div id="auth-message"></div>
+    </section>
+
+    <!-- CASES SECTION -->
+    <section id="cases-section" class="section hidden">
+      <h2>⚖️ Casos Legales</h2>
+      
+      <div class="crud-panel">
+        <div class="form-card">
+          <h3>➕ Crear Caso</h3>
+          <form onsubmit="createCase(event)">
+            <input type="text" id="case-number" placeholder="Número de Caso" required>
+            <input type="text" id="case-title" placeholder="Título" required>
+            <textarea id="case-description" placeholder="Descripción" required></textarea>
+            <select id="case-type">
+              <option value="civil">Civil</option>
+              <option value="criminal">Penal</option>
+              <option value="commercial">Comercial</option>
+              <option value="family">Familia</option>
+              <option value="administrative">Administrativo</option>
+            </select>
+            <select id="case-priority">
+              <option value="low">Baja</option>
+              <option value="medium">Media</option>
+              <option value="high">Alta</option>
+            </select>
+            <input type="text" id="case-clientId" placeholder="ID del Cliente" required>
+            <input type="text" id="case-lawyer" placeholder="Abogado Asignado" required>
+            <input type="date" id="case-startDate" required>
+            <input type="number" id="case-budget" placeholder="Presupuesto">
+            <button type="submit">Crear Caso</button>
+          </form>
+        </div>
+
+        <div class="form-card">
+          <h3>🔍Buscar Casos</h3>
+          <form onsubmit="getCases(event)">
+            <input type="text" id="search-case-status" placeholder="Estado (draft/open/in_progress/closed)">
+            <button type="submit">Buscar</button>
+            <button type="button" onclick="getAllCases()">Ver Todos</button>
+          </form>
+        </div>
+      </div>
+
+      <div id="cases-list" class="results-list"></div>
+      <div id="cases-stats" class="stats-panel hidden">
+        <h3>📈 Estadísticas</h3>
+        <div id="cases-stats-content"></div>
+      </div>
+    </section>
+
+    <!-- CLIENTS SECTION -->
+    <section id="clients-section" class="section hidden">
+      <h2>👥 Clientes</h2>
+      
+      <div class="crud-panel">
+        <div class="form-card">
+          <h3>➕ Crear Cliente</h3>
+          <form onsubmit="createClient(event)">
+            <input type="text" id="client-firstName" placeholder="Nombre" required>
+            <input type="text" id="client-lastName" placeholder="Apellido" required>
+            <select id="client-docType">
+              <option value="CC">Cédula</option>
+              <option value="NIT">NIT</option>
+              <option value="PASSPORT">Pasaporte</option>
+            </select>
+            <input type="text" id="client-docNumber" placeholder="Número de Documento" required>
+            <input type="email" id="client-email" placeholder="Email">
+            <input type="text" id="client-phone" placeholder="Teléfono">
+            <select id="client-type">
+              <option value="individual">Persona Natural</option>
+              <option value="company">Empresa</option>
+            </select>
+            <button type="submit">Crear Cliente</button>
+          </form>
+        </div>
+
+        <div class="form-card">
+          <h3>🔍Buscar Clientes</h3>
+          <button type="button" onclick="getAllClients()">Ver Todos los Clientes</button>
+        </div>
+      </div>
+
+      <div id="clients-list" class="results-list"></div>
+    </section>
+
+    <!-- DOCUMENTS SECTION -->
+    <section id="documents-section" class="section hidden">
+      <h2>📄 Documentos</h2>
+      
+      <div class="crud-panel">
+        <div class="form-card">
+          <h3>📤 Subir Documento</h3>
+          <form onsubmit="uploadDocument(event)" enctype="multipart/form-data">
+            <input type="file" id="doc-file" required>
+            <input type="text" id="doc-caseId" placeholder="ID del Caso" required>
+            <select id="doc-type">
+              <option value="contrato">Contrato</option>
+              <option value="demanda">Demanda</option>
+              <option value="prueba">Prueba</option>
+              <option value="sentencia">Sentencia</option>
+              <option value="otro">Otro</option>
+            </select>
+            <input type="text" id="doc-description" placeholder="Descripción">
+            <button type="submit">Subir Documento</button>
+          </form>
+        </div>
+
+        <div class="form-card">
+          <h3>🔍Buscar Documentos</h3>
+          <form onsubmit="getDocumentsByCase(event)">
+            <input type="text" id="doc-search-caseId" placeholder="ID del Caso">
+            <button type="submit">Buscar por Caso</button>
+            <button type="button" onclick="getAllDocuments()">Ver Todos</button>
+          </form>
+        </div>
+      </div>
+
+      <div id="documents-list" class="results-list"></div>
+    </section>
+
+    <!-- TIME TRACKING SECTION -->
+    <section id="timetracking-section" class="section hidden">
+      <h2>⏱️ Control de Tiempo</h2>
+      
+      <div class="crud-panel">
+        <div class="form-card">
+          <h3>▶️ Iniciar Temporizador</h3>
+          <form onsubmit="startTimeEntry(event)">
+            <input type="text" id="time-caseId" placeholder="ID del Caso" required>
+            <input type="text" id="time-description" placeholder="Descripción del trabajo" required>
+            <input type="checkbox" id="time-billable">
+            <label for="time-billable">Facturable</label>
+            <input type="number" id="time-rate" placeholder="Tarifa por hora">
+            <button type="submit">Iniciar</button>
+          </form>
+        </div>
+
+        <div class="form-card">
+          <h3>⏹️ Detener Entrada</h3>
+          <form onsubmit="stopTimeEntry(event)">
+            <input type="text" id="time-stop-id" placeholder="ID de Entrada" required>
+            <button type="submit">Detener</button>
+          </form>
+        </div>
+      </div>
+
+      <div class="form-card">
+        <h3>📋 Ver Entradas</h3>
+        <form onsubmit="getTimeEntries(event)">
+          <input type="text" id="time-search-caseId" placeholder="ID del Caso (opcional)">
+          <button type="submit">Ver Entradas</button>
+        </form>
+      </div>
+
+      <div id="timetracking-list" class="results-list"></div>
+    </section>
+
+    <!-- BILLING SECTION -->
+    <section id="billing-section" class="section hidden">
+      <h2>💰 Facturación</h2>
+      
+      <div class="crud-panel">
+        <div class="form-card">
+          <h3>📄 Crear Factura</h3>
+          <form onsubmit="createInvoice(event)">
+            <input type="text" id="inv-clientId" placeholder="ID del Cliente" required>
+            <input type="text" id="inv-caseId" placeholder="ID del Caso (opcional)">
+            <div id="invoice-items">
+              <input type="text" placeholder="Descripción" class="inv-item-desc">
+              <input type="number" placeholder="Cantidad" class="inv-item-qty">
+              <input type="number" placeholder="Precio Unitario" class="inv-item-price">
+            </div>
+            <button type="button" onclick="addInvoiceItem()">+ Agregar Ítem</button>
+            <input type="number" id="inv-tax" placeholder="Impuesto" value="0">
+            <input type="date" id="inv-dueDate">
+            <input type="text" id="inv-notes" placeholder="Notas">
+            <button type="submit">Crear Factura</button>
+          </form>
+        </div>
+
+        <div class="form-card">
+          <h3>🔍Buscar Facturas</h3>
+          <button type="button" onclick="getAllInvoices()">Ver Todas las Facturas</button>
+          <form onsubmit="getInvoicesByClient(event)">
+            <input type="text" id="inv-search-clientId" placeholder="ID del Cliente">
+            <button type="submit">Buscar por Cliente</button>
+          </form>
+        </div>
+      </div>
+
+      <div id="billing-list" class="results-list"></div>
+    </section>
+
+    <!-- NOTIFICATIONS SECTION -->
+    <section id="notifications-section" class="section hidden">
+      <h2>🔔 Notificaciones</h2>
+      
+      <div class="crud-panel">
+        <div class="form-card">
+          <h3>📨 Crear Notificación</h3>
+          <form onsubmit="createNotification(event)">
+            <input type="text" id="notif-userId" placeholder="ID del Usuario" required>
+            <input type="text" id="notif-title" placeholder="Título" required>
+            <textarea id="notif-message" placeholder="Mensaje" required></textarea>
+            <select id="notif-type">
+              <option value="info">Información</option>
+              <option value="warning">Advertencia</option>
+              <option value="error">Error</option>
+              <option value="success">Éxito</option>
+              <option value="recordatorio">Recordatorio</option>
+            </select>
+            <button type="submit">Crear</button>
+          </form>
+        </div>
+
+        <div class="form-card">
+          <h3>📨 Enviar Notificación</h3>
+          <form onsubmit="sendNotification(event)">
+            <input type="text" id="notif-send-userId" placeholder="ID del Usuario" required>
+            <input type="email" id="notif-send-email" placeholder="Email (opcional)">
+            <input type="text" id="notif-send-title" placeholder="Título" required>
+            <textarea id="notif-send-message" placeholder="Mensaje" required></textarea>
+            <select id="notif-send-channel">
+              <option value="in_app">En App</option>
+              <option value="email">Email</option>
+            </select>
+            <button type="submit">Enviar</button>
+          </form>
+        </div>
+      </div>
+
+      <div class="form-card">
+        <h3>📋 Ver Notificaciones</h3>
+        <button type="button" onclick="getNotifications()">Ver Todas</button>
+        <button type="button" onclick="markAllAsRead()">Marcar Todas como Leídas</button>
+      </div>
+
+      <div id="notifications-list" class="results-list"></div>
+    </section>
+
+    <!-- DASHBOARD SECTION -->
+    <section id="dashboard-section" class="section hidden">
+      <h2>📊 Dashboard</h2>
+      
+      <div class="stats-grid">
+        <div class="stat-card">
+          <h3>📈 Estadísticas Generales</h3>
+          <button onclick="getDashboardStats()">Cargar</button>
+          <div id="dashboard-stats"></div>
+        </div>
+
+        <div class="stat-card">
+          <h3>⚖️ Casos</h3>
+          <button onclick="getCasesStats()">Cargar</button>
+          <div id="dashboard-cases"></div>
+        </div>
+
+        <div class="stat-card">
+          <h3>💰 Finanzas</h3>
+          <button onclick="getFinancialStats()">Cargar</button>
+          <div id="dashboard-financial"></div>
+        </div>
+
+        <div class="stat-card">
+          <h3>👥 Clientes</h3>
+          <button onclick="getClientsStats()">Cargar</button>
+          <div id="dashboard-clients"></div>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>

@@ -1,0 +1,206 @@
+version: '3.8'
+
+services:
+  mongodb:
+    image: mongo:7.0
+    container_name: legaltech-mongodb
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: admin
+      MONGO_INITDB_ROOT_PASSWORD: admin123
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongodb_data:/data/db
+    networks:
+      - legaltech-network
+    restart: unless-stopped
+
+  auth-service:
+    build:
+      context: ./auth-service
+      dockerfile: Dockerfile
+    container_name: auth-service
+    ports:
+      - "3001:3001"
+    environment:
+      PORT: 3001
+      MONGODB_URI: mongodb://admin:admin123@mongodb:27017/auth-db?authSource=admin
+      JWT_SECRET: your_jwt_secret_key_here_change_in_production
+      NODE_ENV: development
+    depends_on:
+      - mongodb
+    networks:
+      - legaltech-network
+    restart: unless-stopped
+
+  cases-service:
+    build:
+      context: ./cases-service
+      dockerfile: Dockerfile
+    container_name: cases-service
+    ports:
+      - "3002:3002"
+    environment:
+      PORT: 3002
+      MONGODB_URI: mongodb://admin:admin123@mongodb:27017/cases-db?authSource=admin
+      NODE_ENV: development
+      AUTH_SERVICE_URL: http://auth-service:3001
+    depends_on:
+      - mongodb
+      - auth-service
+    networks:
+      - legaltech-network
+    restart: unless-stopped
+
+  clients-service:
+    build:
+      context: ./clients-service
+      dockerfile: Dockerfile
+    container_name: clients-service
+    ports:
+      - "3003:3003"
+    environment:
+      PORT: 3003
+      MONGODB_URI: mongodb://admin:admin123@mongodb:27017/clients-db?authSource=admin
+      NODE_ENV: development
+      AUTH_SERVICE_URL: http://auth-service:3001
+    depends_on:
+      - mongodb
+      - auth-service
+    networks:
+      - legaltech-network
+    restart: unless-stopped
+
+  documents-service:
+    build:
+      context: ./documents-service
+      dockerfile: Dockerfile
+    container_name: documents-service
+    ports:
+      - "3004:3004"
+    environment:
+      PORT: 3004
+      MONGODB_URI: mongodb://admin:admin123@mongodb:27017/documents-db?authSource=admin
+      NODE_ENV: development
+      UPLOAD_PATH: ./uploads
+      MAX_FILE_SIZE: 52428800
+      AUTH_SERVICE_URL: http://auth-service:3001
+    depends_on:
+      - mongodb
+      - auth-service
+    volumes:
+      - documents_uploads:/app/uploads
+    networks:
+      - legaltech-network
+    restart: unless-stopped
+
+  time-tracking-service:
+    build:
+      context: ./time-tracking-service
+      dockerfile: Dockerfile
+    container_name: time-tracking-service
+    ports:
+      - "3005:3005"
+    environment:
+      PORT: 3005
+      MONGODB_URI: mongodb://admin:admin123@mongodb:27017/time-tracking-db?authSource=admin
+      NODE_ENV: development
+      JWT_SECRET: your_jwt_secret_key_here_change_in_production
+      AUTH_SERVICE_URL: http://auth-service:3001
+      CASES_SERVICE_URL: http://cases-service:3002
+    depends_on:
+      - mongodb
+      - auth-service
+      - cases-service
+    networks:
+      - legaltech-network
+    restart: unless-stopped
+
+  billing-service:
+    build:
+      context: ./billing-service
+      dockerfile: Dockerfile
+    container_name: billing-service
+    ports:
+      - "3006:3006"
+    environment:
+      PORT: 3006
+      MONGODB_URI: mongodb://admin:admin123@mongodb:27017/billing-db?authSource=admin
+      NODE_ENV: development
+      JWT_SECRET: your_jwt_secret_key_here_change_in_production
+      AUTH_SERVICE_URL: http://auth-service:3001
+      CLIENTS_SERVICE_URL: http://clients-service:3003
+      TIME_TRACKING_SERVICE_URL: http://time-tracking-service:3005
+    depends_on:
+      - mongodb
+      - auth-service
+      - clients-service
+      - time-tracking-service
+    networks:
+      - legaltech-network
+    restart: unless-stopped
+
+  notifications-service:
+    build:
+      context: ./notifications-service
+      dockerfile: Dockerfile
+    container_name: notifications-service
+    ports:
+      - "3007:3007"
+    environment:
+      PORT: 3007
+      MONGODB_URI: mongodb://admin:admin123@mongodb:27017/notifications-db?authSource=admin
+      NODE_ENV: development
+      JWT_SECRET: your_jwt_secret_key_here_change_in_production
+      AUTH_SERVICE_URL: http://auth-service:3001
+      EMAIL_HOST: smtp.example.com
+      EMAIL_PORT: 587
+      EMAIL_USER: noreply@legaltech.com
+      EMAIL_PASSWORD: change_password
+      EMAIL_FROM: noreply@legaltech.com
+    depends_on:
+      - mongodb
+      - auth-service
+    networks:
+      - legaltech-network
+    restart: unless-stopped
+
+  dashboard-service:
+    build:
+      context: ./dashboard-service
+      dockerfile: Dockerfile
+    container_name: dashboard-service
+    ports:
+      - "3008:3008"
+    environment:
+      PORT: 3008
+      MONGODB_URI: mongodb://admin:admin123@mongodb:27017/dashboard-db?authSource=admin
+      NODE_ENV: development
+      JWT_SECRET: your_jwt_secret_key_here_change_in_production
+      AUTH_SERVICE_URL: http://auth-service:3001
+      CASES_SERVICE_URL: http://cases-service:3002
+      CLIENTS_SERVICE_URL: http://clients-service:3003
+      DOCUMENTS_SERVICE_URL: http://documents-service:3004
+      TIME_TRACKING_SERVICE_URL: http://time-tracking-service:3005
+      BILLING_SERVICE_URL: http://billing-service:3006
+      NOTIFICATIONS_SERVICE_URL: http://notifications-service:3007
+    depends_on:
+      - mongodb
+      - auth-service
+      - cases-service
+      - clients-service
+      - documents-service
+      - time-tracking-service
+      - billing-service
+      - notifications-service
+    networks:
+      - legaltech-network
+    restart: unless-stopped
+
+networks:
+  legaltech-network:
+    driver: bridge
+
+volumes:
+  mongodb_data:
+  documents_uploads:

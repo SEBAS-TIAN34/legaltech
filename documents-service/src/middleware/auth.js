@@ -8,7 +8,7 @@ const auth = async (req, res, next) => {
       return res.status(401).json({ success: false, message: 'No token provided' });
     }
 
-    const decoded = jwt.verify(token, process.env.JWT_SECRET || process.env.AUTH_SERVICE_URL);
+    const decoded = jwt.verify(token, process.env.JWT_SECRET || 'your_jwt_secret_key_here_change_in_production');
     req.user = decoded;
     next();
   } catch (error) {

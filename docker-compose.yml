@@ -44,6 +44,7 @@ services:
       PORT: 3002
       MONGODB_URI: mongodb://admin:admin123@mongodb:27017/cases-db?authSource=admin
       NODE_ENV: development
+      JWT_SECRET: your_jwt_secret_key_here_change_in_production
       AUTH_SERVICE_URL: http://auth-service:3001
     depends_on:
       - mongodb
@@ -63,6 +64,7 @@ services:
       PORT: 3003
       MONGODB_URI: mongodb://admin:admin123@mongodb:27017/clients-db?authSource=admin
       NODE_ENV: development
+      JWT_SECRET: your_jwt_secret_key_here_change_in_production
       AUTH_SERVICE_URL: http://auth-service:3001
     depends_on:
       - mongodb
@@ -82,6 +84,7 @@ services:
       PORT: 3004
       MONGODB_URI: mongodb://admin:admin123@mongodb:27017/documents-db?authSource=admin
       NODE_ENV: development
+      JWT_SECRET: your_jwt_secret_key_here_change_in_production
       UPLOAD_PATH: ./uploads
       MAX_FILE_SIZE: 52428800
       AUTH_SERVICE_URL: http://auth-service:3001

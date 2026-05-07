@@ -2,7 +2,7 @@ services:
   - name: auth-service
     type: web
     runtime: docker
-    image: ${IMAGE_URL}/auth-service:latest
+    image: ghcr.io/sebas-tian34/legalthtech/auth-service:latest
     plan: free
     envVars:
       - key: PORT
@@ -23,7 +23,7 @@ services:
   - name: cases-service
     type: web
     runtime: docker
-    image: ${IMAGE_URL}/cases-service:latest
+    image: ghcr.io/sebas-tian34/legalthtech/cases-service:latest
     plan: free
     envVars:
       - key: PORT
@@ -46,7 +46,7 @@ services:
   - name: clients-service
     type: web
     runtime: docker
-    image: ${IMAGE_URL}/clients-service:latest
+    image: ghcr.io/sebas-tian34/legalthtech/clients-service:latest
     plan: free
     envVars:
       - key: PORT
@@ -69,7 +69,7 @@ services:
   - name: documents-service
     type: web
     runtime: docker
-    image: ${IMAGE_URL}/documents-service:latest
+    image: ghcr.io/sebas-tian34/legalthtech/documents-service:latest
     plan: free
     envVars:
       - key: PORT
@@ -92,7 +92,7 @@ services:
   - name: time-tracking-service
     type: web
     runtime: docker
-    image: ${IMAGE_URL}/time-tracking-service:latest
+    image: ghcr.io/sebas-tian34/legalthtech/time-tracking-service:latest
     plan: free
     envVars:
       - key: PORT
@@ -115,7 +115,7 @@ services:
   - name: billing-service
     type: web
     runtime: docker
-    image: ${IMAGE_URL}/billing-service:latest
+    image: ghcr.io/sebas-tian34/legalthtech/billing-service:latest
     plan: free
     envVars:
       - key: PORT
@@ -138,7 +138,7 @@ services:
   - name: notifications-service
     type: web
     runtime: docker
-    image: ${IMAGE_URL}/notifications-service:latest
+    image: ghcr.io/sebas-tian34/legalthtech/notifications-service:latest
     plan: free
     envVars:
       - key: PORT
@@ -161,7 +161,7 @@ services:
   - name: dashboard-service
     type: web
     runtime: docker
-    image: ${IMAGE_URL}/dashboard-service:latest
+    image: ghcr.io/sebas-tian34/legalthtech/dashboard-service:latest
     plan: free
     envVars:
       - key: PORT
@@ -184,7 +184,7 @@ services:
   - name: nginx
     type: web
     runtime: docker
-    image: ${IMAGE_URL}/nginx:latest
+    image: ghcr.io/sebas-tian34/legalthtech/nginx:latest
     plan: free
     routes:
       - path: /

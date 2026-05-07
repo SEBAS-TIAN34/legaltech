@@ -8,7 +8,7 @@ on:
 
 env:
   REGISTRY: ghcr.io
-  IMAGE_NAME: ${{ github.repository }}
+  REPO_LOWER: sebas-tian34/legalthtech
 
 jobs:
   build-and-push:
@@ -35,7 +35,7 @@ jobs:
         id: meta
         uses: docker/metadata-action@v5
         with:
-          images: ghcr.io/${{ toLowerCase(github.repository) }}
+          images: ghcr.io/${{ env.REPO_LOWER }}
           tags: |
             type=ref,event=branch
             type=sha,prefix={{branch}}-
@@ -45,7 +45,7 @@ jobs:
         with:
           context: ./auth-service
           push: true
-          tags: ghcr.io/${{ toLowerCase(github.repository) }}/auth-service:latest
+          tags: ghcr.io/${{ env.REPO_LOWER }}/auth-service:latest
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
@@ -54,7 +54,7 @@ jobs:
         with:
           context: ./cases-service
           push: true
-          tags: ghcr.io/${{ toLowerCase(github.repository) }}/cases-service:latest
+          tags: ghcr.io/${{ env.REPO_LOWER }}/cases-service:latest
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
@@ -63,7 +63,7 @@ jobs:
         with:
           context: ./clients-service
           push: true
-          tags: ghcr.io/${{ toLowerCase(github.repository) }}/clients-service:latest
+          tags: ghcr.io/${{ env.REPO_LOWER }}/clients-service:latest
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
@@ -72,7 +72,7 @@ jobs:
         with:
           context: ./documents-service
           push: true
-          tags: ghcr.io/${{ toLowerCase(github.repository) }}/documents-service:latest
+          tags: ghcr.io/${{ env.REPO_LOWER }}/documents-service:latest
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
@@ -81,7 +81,7 @@ jobs:
         with:
           context: ./time-tracking-service
           push: true
-          tags: ghcr.io/${{ toLowerCase(github.repository) }}/time-tracking-service:latest
+          tags: ghcr.io/${{ env.REPO_LOWER }}/time-tracking-service:latest
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
@@ -90,7 +90,7 @@ jobs:
         with:
           context: ./billing-service
           push: true
-          tags: ghcr.io/${{ toLowerCase(github.repository) }}/billing-service:latest
+          tags: ghcr.io/${{ env.REPO_LOWER }}/billing-service:latest
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
@@ -99,7 +99,7 @@ jobs:
         with:
           context: ./notifications-service
           push: true
-          tags: ghcr.io/${{ toLowerCase(github.repository) }}/notifications-service:latest
+          tags: ghcr.io/${{ env.REPO_LOWER }}/notifications-service:latest
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
@@ -108,7 +108,7 @@ jobs:
         with:
           context: ./dashboard-service
           push: true
-          tags: ghcr.io/${{ toLowerCase(github.repository) }}/dashboard-service:latest
+          tags: ghcr.io/${{ env.REPO_LOWER }}/dashboard-service:latest
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
@@ -117,7 +117,7 @@ jobs:
         with:
           context: ./nginx
           push: true
-          tags: ghcr.io/${{ toLowerCase(github.repository) }}/nginx:latest
+          tags: ghcr.io/${{ env.REPO_LOWER }}/nginx:latest
 
       - name: Image digest
         run: echo ${{ steps.meta.outputs.tags }}

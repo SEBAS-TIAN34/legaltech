@@ -1,13 +1,13 @@
 // URLs de los servicios
 const API_URL = {
-  auth: 'http://127.0.0.1:3001/api/auth',
-  cases: 'http://127.0.0.1:3002/api/cases',
-  clients: 'http://127.0.0.1:3003/api/clients',
-  documents: 'http://127.0.0.1:3004/api/documents',
-  timetracking: 'http://127.0.0.1:3005/api/time-entries',
-  billing: 'http://127.0.0.1:3006/api/invoices',
-  notifications: 'http://127.0.0.1:3007/api/notifications',
-  dashboard: 'http://127.0.0.1:3008/api/dashboard'
+  auth: 'http://localhost:3001/api/auth',
+  cases: 'http://localhost:3002/api/cases',
+  clients: 'http://localhost:3003/api/clients',
+  documents: 'http://localhost:3004/api/documents',
+  timetracking: 'http://localhost:3005/api/time-entries',
+  billing: 'http://localhost:3006/api/invoices',
+  notifications: 'http://localhost:3007/api/notifications',
+  dashboard: 'http://localhost:3008/api/dashboard'
 };
 
 // Token global - limpiar cualquier token inválido al inicio
@@ -30,6 +30,14 @@ if (authToken && authToken !== 'undefined') {
 function showSection(sectionId) {
   document.querySelectorAll('.section').forEach(s => s.classList.add('hidden'));
   document.getElementById(sectionId + '-section').classList.remove('hidden');
+  
+  // Actualizar menú activo
+  document.querySelectorAll('.nav-links a').forEach(link => {
+    link.classList.remove('active');
+    if (link.getAttribute('href') === '#' + sectionId) {
+      link.classList.add('active');
+    }
+  });
 }
 
 // Mostrar mensaje
@@ -53,6 +61,9 @@ function getHeaders() {
 // ==================== AUTH ====================
 async function register(e) {
   e.preventDefault();
+  if (!checkAuth()) {
+    document.querySelector('.navbar').style.display = 'none';
+  }
   const data = {
     firstName: document.getElementById('reg-firstName').value,
     lastName: document.getElementById('reg-lastName').value,
@@ -97,6 +108,7 @@ async function login(e) {
     if (result.success) {
       authToken = result.data.token;
       localStorage.setItem('token', authToken);
+      document.querySelector('.navbar').style.display = 'flex';
       showMessage('auth-message', '¡Bienvenido! Iniciando sesión...', false);
       setTimeout(() => {
         showSection('cases');
@@ -112,12 +124,17 @@ async function login(e) {
 function logout() {
   authToken = '';
   localStorage.removeItem('token');
+  document.querySelector('.navbar').style.display = 'none';
   showSection('auth');
 }
 
 // ==================== CASES ====================
 async function createCase(e) {
   e.preventDefault();
+  
+  const lawyerValue = document.getElementById('case-lawyer').value;
+  const assignedTo = lawyerValue && lawyerValue.length > 5 ? lawyerValue : null;
+  
   const data = {
     caseNumber: document.getElementById('case-number').value,
     title: document.getElementById('case-title').value,
@@ -125,10 +142,15 @@ async function createCase(e) {
     caseType: document.getElementById('case-type').value,
     priority: document.getElementById('case-priority').value,
     clientId: document.getElementById('case-clientId').value,
-    assignedTo: document.getElementById('case-lawyer').value,
-    startDate: document.getElementById('case-startDate').value,
+    assignedTo: assignedTo,
+    startDate: document.getElementById('case-startDate').value || null,
     budget: document.getElementById('case-budget').value || 0
   };
+  
+  if (!data.clientId || data.clientId === '') {
+    alert('Por favor selecciona un cliente');
+    return;
+  }
 
   console.log('Token actual:', authToken);
   console.log('Headers:', getHeaders());
@@ -344,6 +366,61 @@ function displayClients(clients) {
       Tipo: ${c.clientType} | Activo: ${c.isActive !== false ? 'Sí' : 'No'}
     </div>
   `).join('');
+}
+
+async function loadClientsForCase() {
+  try {
+    const res = await fetch(API_URL.clients + '/', { headers: getHeaders() });
+    const result = await res.json();
+    const clients = result.data || [];
+    const select = document.getElementById('case-clientId');
+    select.innerHTML = '<option value="">Seleccionar Cliente</option>';
+    clients.forEach(c => {
+      const option = document.createElement('option');
+      option.value = c.id;
+      option.textContent = `${c.firstName} ${c.lastName} (${c.documentType}: ${c.documentNumber})`;
+      select.appendChild(option);
+    });
+  } catch (err) {
+    alert('Error al cargar clientes: ' + err.message);
+  }
+}
+
+async function loadLawyersForCase() {
+  try {
+    const res = await fetch(`${API_URL.auth}/lawyers`, { headers: getHeaders() });
+    const result = await res.json();
+    const lawyers = result.data || [];
+    const select = document.getElementById('case-lawyer');
+    select.innerHTML = '<option value="">Seleccionar Abogado (Opcional)</option>';
+    
+    if (lawyers.length === 0) {
+      // Si no hay abogados, intentar cargar todos los usuarios
+      const allRes = await fetch(`${API_URL.auth}/users`, { headers: getHeaders() });
+      const allResult = await allRes.json();
+      const allUsers = allResult.data?.users || [];
+      allUsers.forEach(u => {
+        const option = document.createElement('option');
+        option.value = u.id || '';
+        option.textContent = `${u.firstName || ''} ${u.lastName || ''} (${u.role || 'Sin rol'})`;
+        select.appendChild(option);
+      });
+    } else {
+      lawyers.forEach(l => {
+        const option = document.createElement('option');
+        option.value = l.id || '';
+        option.textContent = `${l.firstName || ''} ${l.lastName || ''} (${l.role || 'Sin rol'})`;
+        select.appendChild(option);
+      });
+    }
+    
+    if (select.options.length <= 1) {
+      alert('No hay usuarios registrados');
+    }
+  } catch (err) {
+    console.error('Error:', err);
+    alert('Error al cargar usuarios: ' + err.message);
+  }
 }
 
 // ==================== DOCUMENTS ====================
@@ -736,9 +813,66 @@ async function getClientsStats() {
   }
 }
 
-// Verificar si hay sesión activa
-if (authToken) {
-  showSection('cases');
-} else {
-  showSection('auth');
+// ========================================
+// CONTROL DE SESIÓN OBLIGATORIA
+// ========================================
+
+function checkAuth() {
+  const token = localStorage.getItem('token');
+  if (!token || token === 'undefined' || token.length < 20) {
+    return false;
+  }
+  return true;
 }
+
+function requireAuth() {
+  if (!checkAuth()) {
+    showSection('auth');
+    document.querySelector('.navbar').style.display = 'none';
+    return false;
+  }
+  document.querySelector('.navbar').style.display = 'flex';
+  return true;
+}
+
+// Ocultar navbar inicialmente si no hay sesión
+if (!checkAuth()) {
+  document.querySelector('.navbar').style.display = 'none';
+  showSection('auth');
+} else {
+  document.querySelector('.navbar').style.display = 'flex';
+  showSection('cases');
+}
+
+// Modificar showSection para verificar auth
+const originalShowSection = showSection;
+showSection = function(sectionId) {
+  if (sectionId !== 'auth' && !checkAuth()) {
+    showSection('auth');
+    return;
+  }
+  originalShowSection(sectionId);
+  
+  if (sectionId === 'auth') {
+    document.querySelector('.navbar').style.display = 'none';
+  } else {
+    document.querySelector('.navbar').style.display = 'flex';
+  }
+};
+
+// Modificar login para mostrar navbar
+const originalLogin = login;
+login = async function(e) {
+  await originalLogin(e);
+  if (localStorage.getItem('token')) {
+    document.querySelector('.navbar').style.display = 'flex';
+  }
+};
+
+// Modificar logout
+const originalLogout = logout;
+logout = function() {
+  originalLogout();
+  document.querySelector('.navbar').style.display = 'none';
+  showSection('auth');
+};

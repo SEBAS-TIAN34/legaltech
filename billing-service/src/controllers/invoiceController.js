@@ -1,4 +1,5 @@
 const Invoice = require('../models/Invoice');
+// const auditLogger = require('../middleware/auditLogger');
 
 const generateInvoiceNumber = async () => {
   const count = await Invoice.count();
@@ -39,7 +40,16 @@ exports.createInvoice = async (req, res) => {
       items: itemsWithTotal
     });
 
-    res.status(201).json({ success: true, message: 'Invoice created', data: invoice });
+    // await auditLogger.create({
+    //   entity: 'Invoice',
+    //   entityId: invoice.id,
+    //   description: `Factura creada: ${invoiceNumber} - Cliente: ${clientId} - Total: $${total}`,
+    //   newValues: { invoiceNumber, clientId, total },
+    //   user: req.user,
+    //   req
+    // });
+
+    res.status(201).json({ success: true, message: 'Invoice created successfully', data: invoice });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
   }

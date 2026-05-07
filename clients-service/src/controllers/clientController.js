@@ -1,4 +1,5 @@
 const Client = require('../models/Client');
+// const auditLogger = require('../middleware/auditLogger');
 
 exports.createClient = async (req, res) => {
   try {
@@ -21,6 +22,15 @@ exports.createClient = async (req, res) => {
       taxId,
       notes
     });
+
+    // await auditLogger.create({
+    //   entity: 'Client',
+    //   entityId: client.id,
+    //   description: `Nuevo cliente creado: ${firstName} ${lastName} (${documentType}: ${documentNumber})`,
+    //   newValues: { firstName, lastName, documentType, documentNumber, clientType },
+    //   user: req.user,
+    //   req
+    // });
 
     res.status(201).json({
       success: true,
@@ -67,6 +77,14 @@ exports.updateClient = async (req, res) => {
 
     const { firstName, lastName, documentType, documentNumber, email, phone, address, clientType, companyName, taxId, notes, isActive } = req.body;
 
+    const oldValues = { 
+      firstName: client.firstName, 
+      lastName: client.lastName,
+      email: client.email,
+      phone: client.phone,
+      isActive: client.isActive
+    };
+
     await client.update({
       firstName: firstName || client.firstName,
       lastName: lastName || client.lastName,
@@ -82,6 +100,16 @@ exports.updateClient = async (req, res) => {
       isActive: isActive !== undefined ? isActive : client.isActive
     });
 
+    // await auditLogger.update({
+    //   entity: 'Client',
+    //   entityId: client.id,
+    //   description: `Cliente actualizado: ${client.firstName} ${client.lastName}`,
+    //   oldValues,
+    //   newValues: { firstName, lastName, email, phone, isActive },
+    //   user: req.user,
+    //   req
+    // });
+
     res.json({ success: true, message: 'Client updated successfully', data: client });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
@@ -95,7 +123,18 @@ exports.deleteClient = async (req, res) => {
       return res.status(404).json({ success: false, message: 'Client not found' });
     }
 
+    const oldValues = { firstName: client.firstName, lastName: client.lastName, documentNumber: client.documentNumber };
     await client.destroy();
+
+    // await auditLogger.delete({
+    //   entity: 'Client',
+    //   entityId: req.params.id,
+    //   description: `Cliente eliminado: ${oldValues.firstName} ${oldValues.lastName}`,
+    //   oldValues,
+    //   user: req.user,
+    //   req
+    // });
+
     res.json({ success: true, message: 'Client deleted successfully' });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });

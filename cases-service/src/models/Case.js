@@ -18,7 +18,7 @@ const Case = sequelize.define('Case', {
   },
   description: {
     type: DataTypes.TEXT,
-    allowNull: false
+    allowNull: true
   },
   clientId: {
     type: DataTypes.UUID,
@@ -42,7 +42,7 @@ const Case = sequelize.define('Case', {
   },
   startDate: {
     type: DataTypes.DATE,
-    allowNull: false
+    allowNull: true
   },
   endDate: {
     type: DataTypes.DATE,

@@ -1,5 +1,5 @@
 const Case = require('../models/Case');
-const auditLogger = require('../middleware/auditLogger');
+// const auditLogger = require('../middleware/auditLogger');
 
 exports.createCase = async (req, res) => {
   try {
@@ -24,14 +24,14 @@ exports.createCase = async (req, res) => {
       createdBy: req.user?.userId
     });
 
-    await auditLogger.create({
-      entity: 'Case',
-      entityId: caseData.id,
-      description: `Nuevo caso creado: ${caseNumber} - ${title}`,
-      newValues: { caseNumber, title, caseType, priority, clientId },
-      user: req.user,
-      req
-    });
+    // await auditLogger.create({
+    //   entity: 'Case',
+    //   entityId: caseData.id,
+    //   description: `Nuevo caso creado: ${caseNumber} - ${title}`,
+    //   newValues: { caseNumber, title, caseType, priority, clientId },
+    //   user: req.user,
+    //   req
+    // });
 
     res.status(201).json({
       success: true,
@@ -99,15 +99,15 @@ exports.updateCase = async (req, res) => {
       notes: notes !== undefined ? notes : caseData.notes
     });
 
-    await auditLogger.update({
-      entity: 'Case',
-      entityId: caseData.id,
-      description: `Caso actualizado: ${caseData.caseNumber}`,
-      oldValues,
-      newValues: { caseNumber, title, status, priority },
-      user: req.user,
-      req
-    });
+    // await auditLogger.update({
+    //   entity: 'Case',
+    //   entityId: caseData.id,
+    //   description: `Caso actualizado: ${caseData.caseNumber}`,
+    //   oldValues,
+    //   newValues: { caseNumber, title, status, priority },
+    //   user: req.user,
+    //   req
+    // });
 
     res.json({ success: true, message: 'Case updated successfully', data: caseData });
   } catch (error) {

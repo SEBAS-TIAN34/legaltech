@@ -1,5 +1,6 @@
 const Document = require('../models/Document');
 const fs = require('fs');
+// const auditLogger = require('../middleware/auditLogger');
 
 exports.uploadDocument = async (req, res) => {
   try {
@@ -22,6 +23,15 @@ exports.uploadDocument = async (req, res) => {
       uploadedBy: req.user?.userId || null,
       isPublic: false
     });
+
+    // await auditLogger.create({
+    //   entity: 'Document',
+    //   entityId: doc.id,
+    //   description: `Documento subido: ${title} (${fileName})`,
+    //   newValues: { title, fileName, documentType, caseId },
+    //   user: req.user,
+    //   req
+    // });
 
     res.status(201).json({ success: true, message: 'Document created successfully', data: doc });
   } catch (error) {

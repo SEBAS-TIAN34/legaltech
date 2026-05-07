@@ -26,11 +26,11 @@ const Client = sequelize.define('Client', {
   },
   email: {
     type: DataTypes.STRING(255),
-    allowNull: false
+    allowNull: true
   },
   phone: {
     type: DataTypes.STRING(20),
-    allowNull: false
+    allowNull: true
   },
   address: {
     type: DataTypes.STRING(255),

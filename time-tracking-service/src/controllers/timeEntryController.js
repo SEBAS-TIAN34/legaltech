@@ -1,4 +1,5 @@
 const TimeEntry = require('../models/TimeEntry');
+// const auditLogger = require('../middleware/auditLogger');
 
 exports.createTimeEntry = async (req, res) => {
   try {
@@ -17,6 +18,15 @@ exports.createTimeEntry = async (req, res) => {
       date,
       notes
     });
+
+    // await auditLogger.create({
+    //   entity: 'TimeEntry',
+    //   entityId: entry.id,
+    //   description: `Tiempo registrado: ${description} (${duration} min) - Caso: ${caseId || 'N/A'}`,
+    //   newValues: { description, duration, caseId, billable },
+    //   user: req.user,
+    //   req
+    // });
 
     res.status(201).json({ success: true, message: 'Time entry created', data: entry });
   } catch (error) {

@@ -1,0 +1,528 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>LegalTech - Panel de Administrador</title>
+  <link rel="stylesheet" href="admin-styles.css">
+</head>
+<body>
+  <!-- Login Section -->
+  <div id="login-section">
+    <div class="login-container">
+      <div class="login-header">
+        <h1>Panel de Administrador</h1>
+        <p>LegalTech - Sistema de Gestión Legal</p>
+      </div>
+      <div class="login-form">
+        <h3>Iniciar Sesión</h3>
+        <form onsubmit="adminLogin(event)">
+          <input type="email" id="admin-email" placeholder="Email" required>
+          <input type="password" id="admin-password" placeholder="Contraseña" required>
+          <button type="submit">Entrar</button>
+        </form>
+      </div>
+      <div id="admin-message"></div>
+    </div>
+  </div>
+
+  <!-- Admin Panel -->
+  <div id="admin-panel" class="admin-container">
+    <nav class="admin-sidebar">
+      <h2>LegalTech Admin</h2>
+      <ul class="admin-menu">
+        <li><a href="#" onclick="showAdminSection('dashboard')" class="active">Dashboard</a></li>
+        <li><a href="#" onclick="showAdminSection('users')">Usuarios</a></li>
+        <li><a href="#" onclick="showAdminSection('clients')">Clientes</a></li>
+        <li><a href="#" onclick="showAdminSection('cases')">Casos</a></li>
+        <li><a href="#" onclick="showAdminSection('documents')">Documentos</a></li>
+        <li><a href="#" onclick="showAdminSection('time')">Tiempo</a></li>
+        <li><a href="#" onclick="showAdminSection('invoices')">Facturas</a></li>
+        <li><a href="#" onclick="showAdminSection('notifications')">Notificaciones</a></li>
+        <li><a href="#" onclick="adminLogout()">Salir</a></li>
+      </ul>
+    </nav>
+
+    <main class="admin-main">
+      <header class="admin-header">
+        <h1 id="admin-title">Dashboard - Vista General</h1>
+      </header>
+
+      <!-- Dashboard Section -->
+      <div id="section-dashboard" class="section-content active">
+        <div class="stats-row">
+          <div class="stat-box">
+            <h4 id="stat-users">0</h4>
+            <p>Usuarios</p>
+          </div>
+          <div class="stat-box">
+            <h4 id="stat-clients">0</h4>
+            <p>Clientes</p>
+          </div>
+          <div class="stat-box">
+            <h4 id="stat-cases">0</h4>
+            <p>Casos</p>
+          </div>
+          <div class="stat-box">
+            <h4 id="stat-invoices">0</h4>
+            <p>Facturas</p>
+          </div>
+        </div>
+        <div class="admin-card">
+          <h3>Casos Recientes</h3>
+          <table class="data-table" id="recent-cases-table">
+            <thead>
+              <tr>
+                <th>Caso</th>
+                <th>Cliente</th>
+                <th>Estado</th>
+                <th>Prioridad</th>
+                <th>Fecha</th>
+              </tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Users Section -->
+      <div id="section-users" class="section-content">
+        <div class="admin-card">
+          <h3>Todos los Usuarios</h3>
+          <table class="data-table" id="users-table">
+            <thead>
+              <tr>
+                <th>Nombre</th>
+                <th>Email</th>
+                <th>Rol</th>
+                <th>Estado</th>
+                <th>Último Login</th>
+              </tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Clients Section -->
+      <div id="section-clients" class="section-content">
+        <div class="admin-card">
+          <h3>Todos los Clientes</h3>
+          <table class="data-table" id="clients-table">
+            <thead>
+              <tr>
+                <th>Nombre</th>
+                <th>Documento</th>
+                <th>Email</th>
+                <th>Teléfono</th>
+                <th>Tipo</th>
+                <th>Estado</th>
+              </tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Cases Section -->
+      <div id="section-cases" class="section-content">
+        <div class="stats-row">
+          <div class="stat-box">
+            <h4 id="cases-draft">0</h4>
+            <p>Borrador</p>
+          </div>
+          <div class="stat-box">
+            <h4 id="cases-open">0</h4>
+            <p>Abiertos</p>
+          </div>
+          <div class="stat-box">
+            <h4 id="cases-progress">0</h4>
+            <p>En Progreso</p>
+          </div>
+          <div class="stat-box">
+            <h4 id="cases-closed">0</h4>
+            <p>Cerrados</p>
+          </div>
+        </div>
+        <div class="admin-card">
+          <h3>Todos los Casos</h3>
+          <table class="data-table" id="all-cases-table">
+            <thead>
+              <tr>
+                <th>Número</th>
+                <th>Título</th>
+                <th>Cliente</th>
+                <th>Tipo</th>
+                <th>Estado</th>
+                <th>Prioridad</th>
+              </tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Documents Section -->
+      <div id="section-documents" class="section-content">
+        <div class="admin-card">
+          <h3>Todos los Documentos</h3>
+          <table class="data-table" id="documents-table">
+            <thead>
+              <tr>
+                <th>Nombre</th>
+                <th>Tipo</th>
+                <th>Caso ID</th>
+                <th>Tamaño</th>
+                <th>Fecha</th>
+              </tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Time Section -->
+      <div id="section-time" class="section-content">
+        <div class="admin-card">
+          <h3>Registro de Tiempo</h3>
+          <table class="data-table" id="time-table">
+            <thead>
+              <tr>
+                <th>Caso</th>
+                <th>Descripción</th>
+                <th>Duración (min)</th>
+                <th>Facturable</th>
+                <th>Estado</th>
+              </tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Invoices Section -->
+      <div id="section-invoices" class="section-content">
+        <div class="stats-row">
+          <div class="stat-box">
+            <h4 id="invoices-paid">0</h4>
+            <p>Pagadas</p>
+          </div>
+          <div class="stat-box">
+            <h4 id="invoices-pending">0</h4>
+            <p>Pendientes</p>
+          </div>
+          <div class="stat-box">
+            <h4 id="invoices-total">$0</h4>
+            <p>Total Facturado</p>
+          </div>
+        </div>
+        <div class="admin-card">
+          <h3>Todas las Facturas</h3>
+          <table class="data-table" id="invoices-table">
+            <thead>
+              <tr>
+                <th>Número</th>
+                <th>Cliente</th>
+                <th>Total</th>
+                <th>Estado</th>
+                <th>Fecha</th>
+              </tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Notifications Section -->
+      <div id="section-notifications" class="section-content">
+        <div class="admin-card">
+          <h3>Todas las Notificaciones</h3>
+          <table class="data-table" id="notifications-table">
+            <thead>
+              <tr>
+                <th>Usuario</th>
+                <th>Título</th>
+                <th>Tipo</th>
+                <th>Leída</th>
+                <th>Fecha</th>
+              </tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <script>
+    const API_URL = {
+      auth: 'http://localhost:3001/api/auth',
+      cases: 'http://localhost:3002/api/cases',
+      clients: 'http://localhost:3003/api/clients',
+      documents: 'http://localhost:3004/api/documents',
+      timetracking: 'http://localhost:3005/api/time-entries',
+      billing: 'http://localhost:3006/api/invoices',
+      notifications: 'http://localhost:3007/api/notifications',
+      dashboard: 'http://localhost:3008/api/dashboard'
+    };
+
+    let adminToken = localStorage.getItem('adminToken') || '';
+
+    function getHeaders() {
+      return {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${adminToken}`
+      };
+    }
+
+    function showAdminMessage(msg, isError = false) {
+      const el = document.getElementById('admin-message');
+      el.className = isError ? 'message-error' : 'message-success';
+      el.textContent = msg;
+    }
+
+    async function adminLogin(e) {
+      e.preventDefault();
+      const email = document.getElementById('admin-email').value;
+      const password = document.getElementById('admin-password').value;
+
+      try {
+        const res = await fetch(`${API_URL.auth}/login`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email, password })
+        });
+        const result = await res.json();
+        
+        if (result.success) {
+          adminToken = result.data.token;
+          localStorage.setItem('adminToken', adminToken);
+          showAdminMessage('Bienvenido al Panel de Admin', false);
+          setTimeout(() => {
+            document.getElementById('login-section').style.display = 'none';
+            document.getElementById('admin-panel').style.display = 'block';
+            loadDashboard();
+          }, 500);
+        } else {
+          showAdminMessage(result.message, true);
+        }
+      } catch (err) {
+        showAdminMessage('Error: ' + err.message, true);
+      }
+    }
+
+    function adminLogout() {
+      adminToken = '';
+      localStorage.removeItem('adminToken');
+      document.getElementById('login-section').style.display = 'flex';
+      document.getElementById('admin-panel').style.display = 'none';
+    }
+
+    function showAdminSection(section) {
+      document.querySelectorAll('.section-content').forEach(s => s.classList.remove('active'));
+      document.querySelectorAll('.admin-menu a').forEach(a => a.classList.remove('active'));
+      
+      document.getElementById('section-' + section).classList.add('active');
+      event.target.classList.add('active');
+      
+      const titles = {
+        dashboard: 'Dashboard - Vista General',
+        users: 'Gestión de Usuarios',
+        clients: 'Gestión de Clientes',
+        cases: 'Gestión de Casos',
+        documents: 'Centro de Documentos',
+        time: 'Control de Tiempo',
+        invoices: 'Sistema de Facturación',
+        notifications: 'Centro de Notificaciones'
+      };
+      document.getElementById('admin-title').textContent = titles[section];
+      
+      if (section === 'dashboard') loadDashboard();
+      else if (section === 'users') loadUsers();
+      else if (section === 'clients') loadClients();
+      else if (section === 'cases') loadAllCases();
+      else if (section === 'documents') loadDocuments();
+      else if (section === 'time') loadTimeEntries();
+      else if (section === 'invoices') loadInvoices();
+      else if (section === 'notifications') loadNotifications();
+    }
+
+    async function loadDashboard() {
+      try {
+        const usersRes = await fetch(`${API_URL.auth}/users`, { headers: getHeaders() });
+        const usersData = await usersRes.json();
+        document.getElementById('stat-users').textContent = usersData.data?.users?.length || 0;
+
+        const clientsRes = await fetch(`${API_URL.clients}/`, { headers: getHeaders() });
+        const clientsData = await clientsRes.json();
+        document.getElementById('stat-clients').textContent = clientsData.data?.length || 0;
+
+        const casesRes = await fetch(`${API_URL.cases}/`, { headers: getHeaders() });
+        const casesData = await casesRes.json();
+        document.getElementById('stat-cases').textContent = casesData.data?.length || 0;
+
+        const invoicesRes = await fetch(`${API_URL.billing}/`, { headers: getHeaders() });
+        const invoicesData = await invoicesRes.json();
+        document.getElementById('stat-invoices').textContent = invoicesData.data?.length || 0;
+
+        const cases = casesData.data || [];
+        const recentTable = document.querySelector('#recent-cases-table tbody');
+        recentTable.innerHTML = cases.slice(0, 10).map(c => `
+          <tr>
+            <td>${c.caseNumber}</td>
+            <td>${c.clientId || 'N/A'}</td>
+            <td><span class="status-badge status-${c.status}">${c.status}</span></td>
+            <td>${c.priority}</td>
+            <td>${c.createdAt ? new Date(c.createdAt).toLocaleDateString() : 'N/A'}</td>
+          </tr>
+        `).join('');
+      } catch (err) { console.error('Error:', err); }
+    }
+
+    async function loadUsers() {
+      try {
+        const res = await fetch(`${API_URL.auth}/users`, { headers: getHeaders() });
+        const result = await res.json();
+        const users = result.data?.users || [];
+        document.querySelector('#users-table tbody').innerHTML = users.map(u => `
+          <tr>
+            <td>${u.firstName} ${u.lastName}</td>
+            <td>${u.email}</td>
+            <td><span class="status-badge status-active">${u.role}</span></td>
+            <td><span class="status-badge ${u.isActive ? 'status-active' : 'status-inactive'}">${u.isActive ? 'Activo' : 'Inactivo'}</span></td>
+            <td>${u.lastLogin ? new Date(u.lastLogin).toLocaleDateString() : 'Nunca'}</td>
+          </tr>
+        `).join('');
+      } catch (err) { console.error('Error:', err); }
+    }
+
+    async function loadClients() {
+      try {
+        const res = await fetch(`${API_URL.clients}/`, { headers: getHeaders() });
+        const result = await res.json();
+        const clients = result.data || [];
+        document.querySelector('#clients-table tbody').innerHTML = clients.map(c => `
+          <tr>
+            <td>${c.firstName} ${c.lastName}</td>
+            <td>${c.documentType}: ${c.documentNumber}</td>
+            <td>${c.email || 'N/A'}</td>
+            <td>${c.phone || 'N/A'}</td>
+            <td>${c.clientType}</td>
+            <td><span class="status-badge ${c.isActive !== false ? 'status-active' : 'status-inactive'}">${c.isActive !== false ? 'Activo' : 'Inactivo'}</span></td>
+          </tr>
+        `).join('');
+      } catch (err) { console.error('Error:', err); }
+    }
+
+    async function loadAllCases() {
+      try {
+        const res = await fetch(`${API_URL.cases}/`, { headers: getHeaders() });
+        const result = await res.json();
+        const cases = result.data || [];
+        
+        const stats = { draft: 0, open: 0, in_progress: 0, closed: 0 };
+        cases.forEach(c => { if (stats[c.status] !== undefined) stats[c.status]++; });
+        
+        document.getElementById('cases-draft').textContent = stats.draft;
+        document.getElementById('cases-open').textContent = stats.open;
+        document.getElementById('cases-progress').textContent = stats.in_progress;
+        document.getElementById('cases-closed').textContent = stats.closed;
+        
+        document.querySelector('#all-cases-table tbody').innerHTML = cases.map(c => `
+          <tr>
+            <td>${c.caseNumber}</td>
+            <td>${c.title}</td>
+            <td>${c.clientId || 'N/A'}</td>
+            <td>${c.caseType}</td>
+            <td><span class="status-badge status-${c.status}">${c.status}</span></td>
+            <td>${c.priority}</td>
+          </tr>
+        `).join('');
+      } catch (err) { console.error('Error:', err); }
+    }
+
+    async function loadDocuments() {
+      try {
+        const res = await fetch(`${API_URL.documents}/`, { headers: getHeaders() });
+        const result = await res.json();
+        const docs = result.data || [];
+        document.querySelector('#documents-table tbody').innerHTML = docs.map(d => `
+          <tr>
+            <td>${d.originalFileName || d.title}</td>
+            <td>${d.documentType}</td>
+            <td>${d.caseId || 'N/A'}</td>
+            <td>${d.fileSize ? (d.fileSize / 1024).toFixed(2) + ' KB' : 'N/A'}</td>
+            <td>${d.createdAt ? new Date(d.createdAt).toLocaleDateString() : 'N/A'}</td>
+          </tr>
+        `).join('');
+      } catch (err) { console.error('Error:', err); }
+    }
+
+    async function loadTimeEntries() {
+      try {
+        const res = await fetch(`${API_URL.timetracking}/`, { headers: getHeaders() });
+        const result = await res.json();
+        const entries = result.data || [];
+        document.querySelector('#time-table tbody').innerHTML = entries.map(e => `
+          <tr>
+            <td>${e.caseId || 'N/A'}</td>
+            <td>${e.description}</td>
+            <td>${e.duration || 0}</td>
+            <td><span class="status-badge ${e.billable ? 'status-active' : 'status-inactive'}">${e.billable ? 'Sí' : 'No'}</span></td>
+            <td><span class="status-badge status-${e.status}">${e.status}</span></td>
+          </tr>
+        `).join('');
+      } catch (err) { console.error('Error:', err); }
+    }
+
+    async function loadInvoices() {
+      try {
+        const res = await fetch(`${API_URL.billing}/`, { headers: getHeaders() });
+        const result = await res.json();
+        const invoices = result.data || [];
+        
+        const paid = invoices.filter(i => i.status === 'paid').length;
+        const pending = invoices.filter(i => i.status !== 'paid' && i.status !== 'cancelled').length;
+        const total = invoices.reduce((sum, i) => sum + (i.total || 0), 0);
+        
+        document.getElementById('invoices-paid').textContent = paid;
+        document.getElementById('invoices-pending').textContent = pending;
+        document.getElementById('invoices-total').textContent = '$' + total.toLocaleString();
+        
+        document.querySelector('#invoices-table tbody').innerHTML = invoices.map(i => `
+          <tr>
+            <td>${i.invoiceNumber}</td>
+            <td>${i.clientId || 'N/A'}</td>
+            <td>$${i.total || 0}</td>
+            <td><span class="status-badge status-${i.status}">${i.status}</span></td>
+            <td>${i.createdAt ? new Date(i.createdAt).toLocaleDateString() : 'N/A'}</td>
+          </tr>
+        `).join('');
+      } catch (err) { console.error('Error:', err); }
+    }
+
+    async function loadNotifications() {
+      try {
+        const res = await fetch(`${API_URL.notifications}/`, { headers: getHeaders() });
+        const result = await res.json();
+        const notifs = result.data || [];
+        document.querySelector('#notifications-table tbody').innerHTML = notifs.map(n => `
+          <tr>
+            <td>${n.userId || 'N/A'}</td>
+            <td>${n.title}</td>
+            <td>${n.type}</td>
+            <td><span class="status-badge ${n.isRead ? 'status-active' : 'status-pending'}">${n.isRead ? 'Leída' : 'No leída'}</span></td>
+            <td>${n.createdAt ? new Date(n.createdAt).toLocaleDateString() : 'N/A'}</td>
+          </tr>
+        `).join('');
+      } catch (err) { console.error('Error:', err); }
+    }
+
+    if (adminToken) {
+      document.getElementById('login-section').style.display = 'none';
+      document.getElementById('admin-panel').style.display = 'block';
+      loadDashboard();
+    }
+  </script>
+</body>
+</html>

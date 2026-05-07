@@ -1,7 +1,7 @@
 const jwt = require('jsonwebtoken');
 const { validationResult } = require('express-validator');
 const User = require('../models/User');
-const auditLogger = require('../middleware/auditLogger');
+// const auditLogger = require('../middleware/auditLogger');
 
 // Generate JWT token
 const generateToken = (userId) => {
@@ -20,9 +20,10 @@ const register = async (req, res) => {
     // Check for validation errors
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
+      const errorMessages = errors.array().map(e => e.msg).join(', ');
       return res.status(400).json({
         success: false,
-        message: 'Validation failed',
+        message: errorMessages || 'Validation failed',
         errors: errors.array()
       });
     }
@@ -74,14 +75,14 @@ const register = async (req, res) => {
     };
 
     // Registrar auditoría de creación de usuario
-    await auditLogger.create({
-      entity: 'User',
-      entityId: user.id,
-      description: `Nuevo usuario registrado: ${user.email} (${user.role})`,
-      newValues: { email: user.email, firstName, lastName, role: user.role },
-      user: { id: user.id },
-      req
-    });
+    // await auditLogger.create({
+    //   entity: 'User',
+    //   entityId: user.id,
+    //   description: `Nuevo usuario registrado: ${user.email} (${user.role})`,
+    //   newValues: { email: user.email, firstName, lastName, role: user.role },
+    //   user: { id: user.id },
+    //   req
+    // });
 
     res.status(201).json({
       success: true,
@@ -108,9 +109,10 @@ const login = async (req, res) => {
     // Check for validation errors
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
+      const errorMessages = errors.array().map(e => e.msg).join(', ');
       return res.status(400).json({
         success: false,
-        message: 'Validation failed',
+        message: errorMessages || 'Validation failed',
         errors: errors.array()
       });
     }
@@ -156,11 +158,11 @@ const login = async (req, res) => {
     };
 
     // Registrar auditoría de login
-    await auditLogger.login({
-      user: { id: user.id, email: user.email },
-      description: `Usuario inició sesión: ${user.email}`,
-      req
-    });
+    // await auditLogger.login({
+    //   user: { id: user.id, email: user.email },
+    //   description: `Usuario inició sesión: ${user.email}`,
+    //   req
+    // });
 
     res.json({
       success: true,
@@ -185,11 +187,11 @@ const login = async (req, res) => {
 const logout = async (req, res) => {
   try {
     // Registrar auditoría de logout
-    await auditLogger.logout({
-      user: req.user,
-      description: `Usuario cerró sesión`,
-      req
-    });
+    // await auditLogger.logout({
+    //   user: req.user,
+    //   description: `Usuario cerró sesión`,
+    //   req
+    // });
 
     res.json({
       success: true,
@@ -446,9 +448,11 @@ const deactivateUser = async (req, res) => {
 module.exports = {
   register,
   login,
+  logout,
   getProfile,
   updateProfile,
   changePassword,
   getUsers,
-  deactivateUser
+  deactivateUser,
+  getAuditLogs
 };

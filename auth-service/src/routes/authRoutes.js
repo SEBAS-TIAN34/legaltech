@@ -20,20 +20,26 @@ const { protect, authorize } = require('../middleware/auth');
 // Validation rules
 const registerValidation = [
   body('email')
+    .trim()
+    .notEmpty()
+    .withMessage('Email is required')
     .isEmail()
     .normalizeEmail()
     .withMessage('Please provide a valid email'),
   body('password')
+    .trim()
+    .notEmpty()
+    .withMessage('Password is required')
     .isLength({ min: 6 })
     .withMessage('Password must be at least 6 characters long'),
   body('firstName')
     .trim()
-    .isLength({ min: 1, max: 50 })
-    .withMessage('First name is required and cannot exceed 50 characters'),
+    .notEmpty()
+    .withMessage('First name is required'),
   body('lastName')
     .trim()
-    .isLength({ min: 1, max: 50 })
-    .withMessage('Last name is required and cannot exceed 50 characters'),
+    .notEmpty()
+    .withMessage('Last name is required'),
   body('role')
     .optional()
     .isIn(['admin', 'lawyer', 'paralegal', 'assistant'])
@@ -42,10 +48,11 @@ const registerValidation = [
 
 const loginValidation = [
   body('email')
-    .isEmail()
-    .normalizeEmail()
-    .withMessage('Please provide a valid email'),
+    .trim()
+    .notEmpty()
+    .withMessage('Email is required'),
   body('password')
+    .trim()
     .notEmpty()
     .withMessage('Password is required')
 ];
@@ -106,6 +113,23 @@ router.get('/audit-logs', protect, authorize('admin'), getAuditLogs);
 // Admin only routes
 router.get('/users', protect, authorize('admin'), getUsers);
 router.put('/users/:id/deactivate', protect, authorize('admin'), deactivateUser);
+
+// Public endpoint to get lawyers (for case assignment)
+router.get('/lawyers', protect, (req, res) => {
+  User.findAll({
+    where: {
+      role: ['lawyer', 'admin'],
+      isActive: true
+    },
+    attributes: ['id', 'firstName', 'lastName', 'email', 'role']
+  })
+  .then(users => {
+    res.json({ success: true, data: users });
+  })
+  .catch(err => {
+    res.status(500).json({ success: false, message: err.message });
+  });
+});
 
 // Public validation endpoint for other microservices
 router.get('/validate', (req, res) => {

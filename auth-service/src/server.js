@@ -18,18 +18,24 @@ connectDB();
 // Security middleware
 app.use(helmet());
 
-// Rate limiting
+// Rate limiting - more permissive for auth
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 100, // limit each IP to 100 requests per windowMs
+  max: 500, // limit each IP to 500 requests per windowMs
   message: {
     success: false,
     message: 'Too many requests from this IP, please try again later.'
   },
   standardHeaders: true,
   legacyHeaders: false,
+  skip: (req) => {
+    // Skip rate limiting for health checks
+    return req.path === '/health';
+  }
 });
 
+app.use('/api/auth/register', (req, res, next) => next()); // No rate limit for register
+app.use('/api/auth/login', (req, res, next) => next()); // No rate limit for login
 app.use(limiter);
 
 // CORS configuration

@@ -1,26 +1,14 @@
 services:
-  - name: postgres
-    image: postgres:15-alpine
-    plan: free
-    envVars:
-      - key: POSTGRES_USER
-        value: legaltech
-      - key: POSTGRES_PASSWORD
-        value: ${POSTGRES_PASSWORD}
-      - key: POSTGRES_DB
-        value: legaltech
-    disk:
-      name: postgres-data
-      sizeGB: 1
-
   - name: auth-service
+    type: web
+    runtime: docker
     image: ${IMAGE_URL}/auth-service:latest
     plan: free
     envVars:
       - key: PORT
         value: "3001"
       - key: DB_HOST
-        value: postgres.internal
+        value: ${PGHOST}
       - key: DB_PORT
         value: "5432"
       - key: DB_NAME
@@ -28,20 +16,20 @@ services:
       - key: DB_USER
         value: legaltech
       - key: DB_PASSWORD
-        value: ${POSTGRES_PASSWORD}
+        value: ${PGPASSWORD}
       - key: JWT_SECRET
         value: ${JWT_SECRET}
-    dependsOn:
-      - postgres
 
   - name: cases-service
+    type: web
+    runtime: docker
     image: ${IMAGE_URL}/cases-service:latest
     plan: free
     envVars:
       - key: PORT
         value: "3002"
       - key: DB_HOST
-        value: postgres.internal
+        value: ${PGHOST}
       - key: DB_PORT
         value: "5432"
       - key: DB_NAME
@@ -49,22 +37,22 @@ services:
       - key: DB_USER
         value: legaltech
       - key: DB_PASSWORD
-        value: ${POSTGRES_PASSWORD}
+        value: ${PGPASSWORD}
       - key: JWT_SECRET
         value: ${JWT_SECRET}
       - key: AUTH_SERVICE_URL
         value: http://auth-service:3001
-    dependsOn:
-      - postgres
 
   - name: clients-service
+    type: web
+    runtime: docker
     image: ${IMAGE_URL}/clients-service:latest
     plan: free
     envVars:
       - key: PORT
         value: "3003"
       - key: DB_HOST
-        value: postgres.internal
+        value: ${PGHOST}
       - key: DB_PORT
         value: "5432"
       - key: DB_NAME
@@ -72,22 +60,22 @@ services:
       - key: DB_USER
         value: legaltech
       - key: DB_PASSWORD
-        value: ${POSTGRES_PASSWORD}
+        value: ${PGPASSWORD}
       - key: JWT_SECRET
         value: ${JWT_SECRET}
       - key: AUTH_SERVICE_URL
         value: http://auth-service:3001
-    dependsOn:
-      - postgres
 
   - name: documents-service
+    type: web
+    runtime: docker
     image: ${IMAGE_URL}/documents-service:latest
     plan: free
     envVars:
       - key: PORT
         value: "3004"
       - key: DB_HOST
-        value: postgres.internal
+        value: ${PGHOST}
       - key: DB_PORT
         value: "5432"
       - key: DB_NAME
@@ -95,22 +83,22 @@ services:
       - key: DB_USER
         value: legaltech
       - key: DB_PASSWORD
-        value: ${POSTGRES_PASSWORD}
+        value: ${PGPASSWORD}
       - key: JWT_SECRET
         value: ${JWT_SECRET}
       - key: AUTH_SERVICE_URL
         value: http://auth-service:3001
-    dependsOn:
-      - postgres
 
   - name: time-tracking-service
+    type: web
+    runtime: docker
     image: ${IMAGE_URL}/time-tracking-service:latest
     plan: free
     envVars:
       - key: PORT
         value: "3005"
       - key: DB_HOST
-        value: postgres.internal
+        value: ${PGHOST}
       - key: DB_PORT
         value: "5432"
       - key: DB_NAME
@@ -118,22 +106,22 @@ services:
       - key: DB_USER
         value: legaltech
       - key: DB_PASSWORD
-        value: ${POSTGRES_PASSWORD}
+        value: ${PGPASSWORD}
       - key: JWT_SECRET
         value: ${JWT_SECRET}
       - key: AUTH_SERVICE_URL
         value: http://auth-service:3001
-    dependsOn:
-      - postgres
 
   - name: billing-service
+    type: web
+    runtime: docker
     image: ${IMAGE_URL}/billing-service:latest
     plan: free
     envVars:
       - key: PORT
         value: "3006"
       - key: DB_HOST
-        value: postgres.internal
+        value: ${PGHOST}
       - key: DB_PORT
         value: "5432"
       - key: DB_NAME
@@ -141,22 +129,22 @@ services:
       - key: DB_USER
         value: legaltech
       - key: DB_PASSWORD
-        value: ${POSTGRES_PASSWORD}
+        value: ${PGPASSWORD}
       - key: JWT_SECRET
         value: ${JWT_SECRET}
       - key: AUTH_SERVICE_URL
         value: http://auth-service:3001
-    dependsOn:
-      - postgres
 
   - name: notifications-service
+    type: web
+    runtime: docker
     image: ${IMAGE_URL}/notifications-service:latest
     plan: free
     envVars:
       - key: PORT
         value: "3007"
       - key: DB_HOST
-        value: postgres.internal
+        value: ${PGHOST}
       - key: DB_PORT
         value: "5432"
       - key: DB_NAME
@@ -164,22 +152,22 @@ services:
       - key: DB_USER
         value: legaltech
       - key: DB_PASSWORD
-        value: ${POSTGRES_PASSWORD}
+        value: ${PGPASSWORD}
       - key: JWT_SECRET
         value: ${JWT_SECRET}
       - key: AUTH_SERVICE_URL
         value: http://auth-service:3001
-    dependsOn:
-      - postgres
 
   - name: dashboard-service
+    type: web
+    runtime: docker
     image: ${IMAGE_URL}/dashboard-service:latest
     plan: free
     envVars:
       - key: PORT
         value: "3008"
       - key: DB_HOST
-        value: postgres.internal
+        value: ${PGHOST}
       - key: DB_PORT
         value: "5432"
       - key: DB_NAME
@@ -187,21 +175,25 @@ services:
       - key: DB_USER
         value: legaltech
       - key: DB_PASSWORD
-        value: ${POSTGRES_PASSWORD}
+        value: ${PGPASSWORD}
       - key: JWT_SECRET
         value: ${JWT_SECRET}
       - key: AUTH_SERVICE_URL
         value: http://auth-service:3001
-    dependsOn:
-      - postgres
 
   - name: nginx
+    type: web
+    runtime: docker
     image: ${IMAGE_URL}/nginx:latest
     plan: free
+    routes:
+      - path: /
     envVars:
       - key: PORT
         value: "80"
-    routes:
-      - path: /
-    dependsOn:
-      - postgres
+
+databases:
+  - name: legaltech-db
+    type: pserv
+    plan: free
+    postgresMajorVersion: "15"

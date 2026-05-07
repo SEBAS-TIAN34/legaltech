@@ -13,14 +13,6 @@ const validateToken = async (token) => {
 
 exports.getStats = async (req, res) => {
   try {
-    const token = req.headers.authorization?.split(' ')[1];
-    
-    if (!token) {
-      return res.status(401).json({ success: false, message: 'No token provided' });
-    }
-
-    await validateToken(token);
-
     const [usersRes, casesRes, clientsRes, invoicesRes, documentsRes, timeEntriesRes] = await Promise.allSettled([
       axios.get(`${process.env.AUTH_SERVICE_URL}/api/auth/users`),
       axios.get(`${process.env.CASES_SERVICE_URL}/api/cases`),

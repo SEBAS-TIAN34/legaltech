@@ -25,11 +25,11 @@
   <div class="container">
     <!-- AUTH SECTION -->
     <section id="auth-section" class="section">
-      <h2>🔐 Autenticación</h2>
+      <h2>Autenticación</h2>
       
       <div class="auth-forms">
         <div class="form-card">
-          <h3>📝 Registro</h3>
+          <h3>Registro</h3>
           <form onsubmit="register(event)">
             <input type="text" id="reg-firstName" placeholder="Nombre" required>
             <input type="text" id="reg-lastName" placeholder="Apellido" required>
@@ -46,7 +46,7 @@
         </div>
 
         <div class="form-card">
-          <h3>🔑 Login</h3>
+          <h3>Login</h3>
           <form onsubmit="login(event)">
             <input type="email" id="login-email" placeholder="Email" required>
             <input type="password" id="login-password" placeholder="Contraseña" required>
@@ -68,7 +68,7 @@
           <form onsubmit="createCase(event)">
             <input type="text" id="case-number" placeholder="Número de Caso" required>
             <input type="text" id="case-title" placeholder="Título" required>
-            <textarea id="case-description" placeholder="Descripción" required></textarea>
+            <textarea id="case-description" placeholder="Descripción"></textarea>
             <select id="case-type">
               <option value="civil">Civil</option>
               <option value="criminal">Penal</option>
@@ -82,8 +82,8 @@
               <option value="high">Alta</option>
             </select>
             <input type="text" id="case-clientId" placeholder="ID del Cliente" required>
-            <input type="text" id="case-lawyer" placeholder="Abogado Asignado" required>
-            <input type="date" id="case-startDate" required>
+            <input type="text" id="case-lawyer" placeholder="Abogado Asignado (opcional)">
+            <input type="date" id="case-startDate">
             <input type="number" id="case-budget" placeholder="Presupuesto">
             <button type="submit">Crear Caso</button>
           </form>
@@ -105,6 +105,48 @@
         <div id="cases-stats-content"></div>
       </div>
     </section>
+
+    <!-- Modal Editar Caso -->
+    <div id="edit-case-modal" class="modal">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h3>Editar Caso</h3>
+          <button onclick="closeEditModal()" class="close-btn">&times;</button>
+        </div>
+        <form onsubmit="saveCase(event)">
+          <input type="hidden" id="case-edit-id">
+          <input type="text" id="case-edit-number" placeholder="Número de Caso" required>
+          <input type="text" id="case-edit-title" placeholder="Título" required>
+          <textarea id="case-edit-description" placeholder="Descripción"></textarea>
+          <select id="case-edit-type">
+            <option value="civil">Civil</option>
+            <option value="criminal">Penal</option>
+            <option value="commercial">Comercial</option>
+            <option value="family">Familia</option>
+            <option value="administrative">Administrativo</option>
+          </select>
+          <select id="case-edit-priority">
+            <option value="low">Baja</option>
+            <option value="medium">Media</option>
+            <option value="high">Alta</option>
+          </select>
+          <select id="case-edit-status">
+            <option value="draft">Borrador</option>
+            <option value="open">Abierto</option>
+            <option value="in_progress">En Progreso</option>
+            <option value="closed">Cerrado</option>
+          </select>
+          <input type="text" id="case-edit-clientId" placeholder="ID del Cliente" required>
+          <input type="text" id="case-edit-lawyer" placeholder="Abogado Asignado">
+          <input type="date" id="case-edit-startDate">
+          <input type="number" id="case-edit-budget" placeholder="Presupuesto">
+          <div class="modal-actions">
+            <button type="button" onclick="closeEditModal()" class="btn-cancel">Cancelar</button>
+            <button type="submit" class="btn-save">Guardar Cambios</button>
+          </div>
+        </form>
+      </div>
+    </div>
 
     <!-- CLIENTS SECTION -->
     <section id="clients-section" class="section hidden">
@@ -328,6 +370,6 @@
     </section>
   </div>
 
-  <script src="app.js"></script>
+  <script src="app-v2.js"></script>
 </body>
 </html>

@@ -1,89 +1,59 @@
 const Invoice = require('../models/Invoice');
-const axios = require('axios');
-
-const validateToken = async (token) => {
-  try {
-    const response = await axios.get(`${process.env.AUTH_SERVICE_URL}/api/auth/validate`, {
-      headers: { Authorization: `Bearer ${token}` }
-    });
-    return response.data.user;
-  } catch (error) {
-    throw new Error('Invalid token');
-  }
-};
 
 const generateInvoiceNumber = async () => {
-  const count = await Invoice.countDocuments();
+  const count = await Invoice.count();
   const year = new Date().getFullYear();
   return `INV-${year}-${String(count + 1).padStart(4, '0')}`;
 };
 
 exports.createInvoice = async (req, res) => {
   try {
-    const { clientId, caseId, items, tax, dueDate, notes } = req.body;
-    const token = req.headers.authorization?.split(' ')[1];
-    
-    if (!token) {
-      return res.status(401).json({ success: false, message: 'No token provided' });
+    const { clientId, caseId, items, taxRate, dueDate, notes } = req.body;
+
+    if (!clientId || !items || !dueDate) {
+      return res.status(400).json({ success: false, message: 'Please provide clientId, items, and dueDate' });
     }
 
-    await validateToken(token);
-
     const invoiceNumber = await generateInvoiceNumber();
-
     const itemsWithTotal = items.map(item => ({
       ...item,
-      total: item.quantity * item.unitPrice
+      total: (item.quantity || 1) * (item.unitPrice || 0)
     }));
 
     const subtotal = itemsWithTotal.reduce((sum, item) => sum + item.total, 0);
+    const tax = (subtotal * (taxRate || 0)) / 100;
+    const total = subtotal + tax;
 
-    const invoice = new Invoice({
+    const invoice = await Invoice.create({
       invoiceNumber,
       clientId,
       caseId,
-      items: itemsWithTotal,
+      status: 'draft',
+      issueDate: new Date(),
+      dueDate,
       subtotal,
-      tax: tax || 0,
-      dueDate: dueDate || new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
-      notes
+      tax,
+      total,
+      paidAmount: 0,
+      notes,
+      items: itemsWithTotal
     });
 
-    await invoice.save();
-
-    res.status(201).json({
-      success: true,
-      message: 'Invoice created',
-      data: invoice
-    });
+    res.status(201).json({ success: true, message: 'Invoice created', data: invoice });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
   }
 };
 
-exports.getInvoices = async (req, res) => {
+exports.getAllInvoices = async (req, res) => {
   try {
-    const { clientId, status, startDate, endDate } = req.query;
-    
-    const filter = {};
-    if (clientId) filter.clientId = clientId;
-    if (status) filter.status = status;
-    if (startDate || endDate) {
-      filter.createdAt = {};
-      if (startDate) filter.createdAt.$gte = new Date(startDate);
-      if (endDate) filter.createdAt.$lte = new Date(endDate);
-    }
+    const { clientId, status } = req.query;
+    const where = {};
+    if (clientId) where.clientId = clientId;
+    if (status) where.status = status;
 
-    const invoices = await Invoice.find(filter)
-      .populate('clientId', 'firstName lastName email')
-      .populate('caseId', 'caseNumber title')
-      .sort({ createdAt: -1 });
-
-    res.status(200).json({
-      success: true,
-      count: invoices.length,
-      data: invoices
-    });
+    const invoices = await Invoice.findAll({ where, order: [['createdAt', 'DESC']] });
+    res.json({ success: true, data: invoices, count: invoices.length });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
   }
@@ -91,18 +61,11 @@ exports.getInvoices = async (req, res) => {
 
 exports.getInvoiceById = async (req, res) => {
   try {
-    const invoice = await Invoice.findById(req.params.id)
-      .populate('clientId', 'firstName lastName email phone address')
-      .populate('caseId', 'caseNumber title');
-
+    const invoice = await Invoice.findByPk(req.params.id);
     if (!invoice) {
       return res.status(404).json({ success: false, message: 'Invoice not found' });
     }
-
-    res.status(200).json({
-      success: true,
-      data: invoice
-    });
+    res.json({ success: true, data: invoice });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
   }
@@ -110,55 +73,19 @@ exports.getInvoiceById = async (req, res) => {
 
 exports.updateInvoice = async (req, res) => {
   try {
-    const { items, tax, dueDate, notes, status } = req.body;
-    
-    const invoice = await Invoice.findById(req.params.id);
-
+    const invoice = await Invoice.findByPk(req.params.id);
     if (!invoice) {
       return res.status(404).json({ success: false, message: 'Invoice not found' });
     }
 
-    if (items) {
-      invoice.items = items.map(item => ({
-        ...item,
-        total: item.quantity * item.unitPrice
-      }));
-    }
-    if (typeof tax === 'number') invoice.tax = tax;
-    if (dueDate) invoice.dueDate = new Date(dueDate);
-    if (notes) invoice.notes = notes;
-    if (status) invoice.status = status;
-
-    await invoice.save();
-
-    res.status(200).json({
-      success: true,
-      message: 'Invoice updated',
-      data: invoice
+    const { status, paidAmount, notes } = req.body;
+    await invoice.update({
+      status: status || invoice.status,
+      paidAmount: paidAmount !== undefined ? paidAmount : invoice.paidAmount,
+      notes: notes !== undefined ? notes : invoice.notes
     });
-  } catch (error) {
-    res.status(500).json({ success: false, message: error.message });
-  }
-};
 
-exports.markAsPaid = async (req, res) => {
-  try {
-    const invoice = await Invoice.findById(req.params.id);
-
-    if (!invoice) {
-      return res.status(404).json({ success: false, message: 'Invoice not found' });
-    }
-
-    invoice.status = 'paid';
-    invoice.paidDate = new Date();
-
-    await invoice.save();
-
-    res.status(200).json({
-      success: true,
-      message: 'Invoice marked as paid',
-      data: invoice
-    });
+    res.json({ success: true, message: 'Invoice updated', data: invoice });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
   }
@@ -166,22 +93,44 @@ exports.markAsPaid = async (req, res) => {
 
 exports.deleteInvoice = async (req, res) => {
   try {
-    const invoice = await Invoice.findById(req.params.id);
-
+    const invoice = await Invoice.findByPk(req.params.id);
     if (!invoice) {
       return res.status(404).json({ success: false, message: 'Invoice not found' });
     }
 
-    if (invoice.status === 'paid') {
-      return res.status(400).json({ success: false, message: 'Cannot delete paid invoice' });
-    }
+    await invoice.destroy();
+    res.json({ success: true, message: 'Invoice deleted' });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
 
-    await Invoice.findByIdAndDelete(req.params.id);
+exports.getInvoiceStats = async (req, res) => {
+  try {
+    const invoices = await Invoice.findAll();
+    const stats = {
+      total: invoices.length,
+      draft: invoices.filter(i => i.status === 'draft').length,
+      pending: invoices.filter(i => i.status === 'pending').length,
+      paid: invoices.filter(i => i.status === 'paid').length,
+      overdue: invoices.filter(i => i.status === 'overdue').length,
+      totalAmount: invoices.reduce((sum, i) => sum + parseFloat(i.total || 0), 0),
+      paidAmount: invoices.reduce((sum, i) => sum + parseFloat(i.paidAmount || 0), 0)
+    };
+    res.json({ success: true, data: stats });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
 
-    res.status(200).json({
-      success: true,
-      message: 'Invoice deleted'
-    });
+exports.getInvoices = async (req, res) => {
+  try {
+    const { clientId, status } = req.query;
+    const where = {};
+    if (clientId) where.clientId = clientId;
+    if (status) where.status = status;
+    const invoices = await Invoice.findAll({ where, order: [['createdAt', 'DESC']] });
+    res.json({ success: true, data: invoices, count: invoices.length });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
   }
@@ -189,24 +138,24 @@ exports.deleteInvoice = async (req, res) => {
 
 exports.getInvoicesByClient = async (req, res) => {
   try {
-    const invoices = await Invoice.find({ clientId: req.params.clientId })
-      .populate('caseId', 'caseNumber title')
-      .sort({ createdAt: -1 });
-
-    const totalPaid = invoices
-      .filter(inv => inv.status === 'paid')
-      .reduce((sum, inv) => sum + inv.total, 0);
-    const totalPending = invoices
-      .filter(inv => inv.status !== 'paid' && inv.status !== 'cancelled')
-      .reduce((sum, inv) => sum + inv.total, 0);
-
-    res.status(200).json({
-      success: true,
-      count: invoices.length,
-      totalPaid,
-      totalPending,
-      data: invoices
+    const invoices = await Invoice.findAll({ 
+      where: { clientId: req.params.clientId },
+      order: [['createdAt', 'DESC']]
     });
+    res.json({ success: true, data: invoices });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+exports.markAsPaid = async (req, res) => {
+  try {
+    const invoice = await Invoice.findByPk(req.params.id);
+    if (!invoice) {
+      return res.status(404).json({ success: false, message: 'Invoice not found' });
+    }
+    await invoice.update({ status: 'paid', paidAmount: invoice.total });
+    res.json({ success: true, message: 'Invoice marked as paid', data: invoice });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
   }

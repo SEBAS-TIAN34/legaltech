@@ -1,107 +1,81 @@
-const mongoose = require('mongoose');
+const { DataTypes } = require('sequelize');
+const { sequelize } = require('../config/database');
 const bcrypt = require('bcryptjs');
 
-const userSchema = new mongoose.Schema({
+const User = sequelize.define('User', {
+  id: {
+    type: DataTypes.UUID,
+    defaultValue: DataTypes.UUIDV4,
+    primaryKey: true
+  },
   email: {
-    type: String,
-    required: [true, 'Email is required'],
+    type: DataTypes.STRING(255),
+    allowNull: false,
     unique: true,
-    lowercase: true,
-    trim: true,
-    match: [/^\w+([.-]?\w+)*@\w+([.-]?\w+)*(\.\w{2,3})+$/, 'Please enter a valid email']
+    validate: {
+      isEmail: true
+    }
   },
   password: {
-    type: String,
-    required: [true, 'Password is required'],
-    minlength: [6, 'Password must be at least 6 characters long']
+    type: DataTypes.STRING(255),
+    allowNull: false
   },
   firstName: {
-    type: String,
-    required: [true, 'First name is required'],
-    trim: true,
-    maxlength: [50, 'First name cannot exceed 50 characters']
+    type: DataTypes.STRING(50),
+    allowNull: false,
+    field: 'first_name'
   },
   lastName: {
-    type: String,
-    required: [true, 'Last name is required'],
-    trim: true,
-    maxlength: [50, 'Last name cannot exceed 50 characters']
+    type: DataTypes.STRING(50),
+    allowNull: false,
+    field: 'last_name'
   },
   role: {
-    type: String,
-    enum: ['admin', 'lawyer', 'paralegal', 'assistant'],
-    default: 'lawyer'
+    type: DataTypes.ENUM('admin', 'lawyer', 'paralegal', 'assistant'),
+    defaultValue: 'lawyer'
   },
   isActive: {
-    type: Boolean,
-    default: true
+    type: DataTypes.BOOLEAN,
+    defaultValue: true,
+    field: 'is_active'
   },
   lastLogin: {
-    type: Date
+    type: DataTypes.DATE,
+    field: 'last_login'
   },
   profile: {
-    phone: {
-      type: String,
-      trim: true
-    },
-    specialization: {
-      type: String,
-      trim: true
-    },
-    barNumber: {
-      type: String,
-      trim: true
-    },
-    office: {
-      type: String,
-      trim: true
-    }
+    type: DataTypes.JSONB,
+    defaultValue: {}
   }
 }, {
-  timestamps: true,
-  toJSON: { virtuals: true },
-  toObject: { virtuals: true }
-});
-
-// Virtual for full name
-userSchema.virtual('fullName').get(function() {
-  return `${this.firstName} ${this.lastName}`;
-});
-
-// Index for better query performance
-userSchema.index({ email: 1 });
-userSchema.index({ role: 1 });
-userSchema.index({ isActive: 1 });
-
-// Pre-save middleware to hash password
-userSchema.pre('save', async function(next) {
-  // Only hash the password if it has been modified (or is new)
-  if (!this.isModified('password')) return next();
-
-  try {
-    // Hash password with cost of 12
-    const salt = await bcrypt.genSalt(12);
-    this.password = await bcrypt.hash(this.password, salt);
-    next();
-  } catch (error) {
-    next(error);
+  tableName: 'users',
+  hooks: {
+    beforeCreate: async (user) => {
+      if (user.password) {
+        const salt = await bcrypt.genSalt(12);
+        user.password = await bcrypt.hash(user.password, salt);
+      }
+    },
+    beforeUpdate: async (user) => {
+      if (user.changed('password')) {
+        const salt = await bcrypt.genSalt(12);
+        user.password = await bcrypt.hash(user.password, salt);
+      }
+    }
   }
 });
 
-// Instance method to check password
-userSchema.methods.comparePassword = async function(candidatePassword) {
+User.prototype.comparePassword = async function(candidatePassword) {
   return await bcrypt.compare(candidatePassword, this.password);
 };
 
-// Instance method to update last login
-userSchema.methods.updateLastLogin = function() {
+User.prototype.updateLastLogin = async function() {
   this.lastLogin = new Date();
-  return this.save({ validateBeforeSave: false });
+  return await this.save({ validate: false });
 };
 
-// Static method to find active users
-userSchema.statics.findActive = function() {
-  return this.find({ isActive: true });
+User.getFullName = function() {
+  return `${this.firstName} ${this.lastName}`;
 };
 
-module.exports = mongoose.model('User', userSchema);
+module.exports = User;

@@ -1,69 +1,68 @@
-const mongoose = require('mongoose');
+const { DataTypes } = require('sequelize');
+const { sequelize } = require('../config/database');
 
-const caseSchema = new mongoose.Schema(
-  {
-    caseNumber: {
-      type: String,
-      required: [true, 'Please provide a case number'],
-      unique: true
-    },
-    title: {
-      type: String,
-      required: [true, 'Please provide a case title'],
-      trim: true
-    },
-    description: {
-      type: String,
-      required: [true, 'Please provide a case description']
-    },
-    clientId: {
-      type: String,
-      required: [true, 'Please provide a client ID']
-    },
-    status: {
-      type: String,
-      enum: ['draft', 'open', 'in_progress', 'closed', 'suspended'],
-      default: 'draft'
-    },
-    caseType: {
-      type: String,
-      enum: ['civil', 'criminal', 'commercial', 'family', 'administrative', 'other'],
-      required: true
-    },
-    priority: {
-      type: String,
-      enum: ['low', 'medium', 'high', 'critical'],
-      default: 'medium'
-    },
-    assignedTo: {
-      type: String,
-      required: [true, 'Please assign this case to a lawyer']
-    },
-    startDate: {
-      type: Date,
-      required: true
-    },
-    endDate: {
-      type: Date
-    },
-    budget: {
-      type: Number,
-      min: 0
-    },
-    notes: String,
-    documents: [String],
-    tags: [String],
-    createdBy: String,
-    createdAt: {
-      type: Date,
-      default: Date.now
-    },
-    updatedAt: {
-      type: Date,
-      default: Date.now
-    }
+const Case = sequelize.define('Case', {
+  id: {
+    type: DataTypes.UUID,
+    defaultValue: DataTypes.UUIDV4,
+    primaryKey: true
   },
-  { timestamps: true }
-);
+  caseNumber: {
+    type: DataTypes.STRING(50),
+    allowNull: false,
+    unique: true
+  },
+  title: {
+    type: DataTypes.STRING(255),
+    allowNull: false
+  },
+  description: {
+    type: DataTypes.TEXT,
+    allowNull: false
+  },
+  clientId: {
+    type: DataTypes.UUID,
+    allowNull: false
+  },
+  caseType: {
+    type: DataTypes.STRING(50),
+    allowNull: false
+  },
+  priority: {
+    type: DataTypes.ENUM('low', 'medium', 'high'),
+    defaultValue: 'medium'
+  },
+  status: {
+    type: DataTypes.ENUM('draft', 'open', 'in_progress', 'closed', 'suspended'),
+    defaultValue: 'draft'
+  },
+  assignedTo: {
+    type: DataTypes.UUID,
+    allowNull: true
+  },
+  startDate: {
+    type: DataTypes.DATE,
+    allowNull: false
+  },
+  endDate: {
+    type: DataTypes.DATE,
+    allowNull: true
+  },
+  budget: {
+    type: DataTypes.DECIMAL(10, 2),
+    allowNull: true
+  },
+  notes: {
+    type: DataTypes.TEXT,
+    allowNull: true
+  },
+  createdBy: {
+    type: DataTypes.UUID,
+    allowNull: true
+  }
+}, {
+  tableName: 'cases',
+  timestamps: true
+});
 
-module.exports = mongoose.model('Case', caseSchema);
+module.exports = Case;

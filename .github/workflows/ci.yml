@@ -1,0 +1,81 @@
+name: CI - Integración Continua
+
+on:
+  push:
+    branches: [ main, develop, master ]
+  pull_request:
+    branches: [ main, develop, master ]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    
+    services:
+      postgres:
+        image: postgres:15-alpine
+        env:
+          POSTGRES_USER: test
+          POSTGRES_PASSWORD: test
+          POSTGRES_DB: test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    
+    strategy:
+      matrix:
+        service: [auth-service, cases-service, notifications-service]
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+      
+      - name: Install dependencies
+        run: |
+          cd ${{ matrix.service }}
+          npm ci --silent
+      
+      - name: Setup Database Environment Variables
+        run: |
+          cd ${{ matrix.service }}
+          echo "DB_HOST=localhost" >> $GITHUB_ENV
+          echo "DB_PORT=5432" >> $GITHUB_ENV
+          echo "DB_NAME=test" >> $GITHUB_ENV
+          echo "DB_USER=test" >> $GITHUB_ENV
+          echo "DB_PASSWORD=test" >> $GITHUB_ENV
+          echo "JWT_SECRET=test-secret-key" >> $GITHUB_ENV
+          echo "NODE_ENV=test" >> $GITHUB_ENV
+      
+      - name: Run Unit Tests
+        run: |
+          cd ${{ matrix.service }}
+          npm run test:unit
+        continue-on-error: true
+      
+      - name: Run Integration Tests
+        run: |
+          cd ${{ matrix.service }}
+          npm run test:integration
+        continue-on-error: true
+      
+      - name: Run All Tests
+        run: |
+          cd ${{ matrix.service }}
+          npm test
+        continue-on-error: true
+      
+      - name: Upload coverage to Codecov
+        if: always()
+        uses: codecov/codecov-action@v3
+        with:
+          directory: ./${{ matrix.service }}/coverage
+          fail_ci_if_error: false

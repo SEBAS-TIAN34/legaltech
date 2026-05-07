@@ -1,19 +1,25 @@
 version: '3.8'
 
 services:
-  mongodb:
-    image: mongo:7.0
-    container_name: legaltech-mongodb
+  postgres:
+    image: postgres:15-alpine
+    container_name: legaltech-postgres
     environment:
-      MONGO_INITDB_ROOT_USERNAME: admin
-      MONGO_INITDB_ROOT_PASSWORD: admin123
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: admin123
+      POSTGRES_DB: legaltech
     ports:
-      - "27017:27017"
+      - "5432:5432"
     volumes:
-      - mongodb_data:/data/db
+      - postgres_data:/var/lib/postgresql/data
     networks:
       - legaltech-network
     restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U admin -d legaltech"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
   auth-service:
     build:
@@ -24,11 +30,16 @@ services:
       - "3001:3001"
     environment:
       PORT: 3001
-      MONGODB_URI: mongodb://admin:admin123@mongodb:27017/auth-db?authSource=admin
-      JWT_SECRET: your_jwt_secret_key_here_change_in_production
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_NAME: legaltech
+      DB_USER: admin
+      DB_PASSWORD: admin123
+      JWT_SECRET: your-secret-key
       NODE_ENV: development
     depends_on:
-      - mongodb
+      postgres:
+        condition: service_healthy
     networks:
       - legaltech-network
     restart: unless-stopped
@@ -42,13 +53,19 @@ services:
       - "3002:3002"
     environment:
       PORT: 3002
-      MONGODB_URI: mongodb://admin:admin123@mongodb:27017/cases-db?authSource=admin
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_NAME: legaltech
+      DB_USER: admin
+      DB_PASSWORD: admin123
       NODE_ENV: development
-      JWT_SECRET: your_jwt_secret_key_here_change_in_production
+      JWT_SECRET: your-secret-key
       AUTH_SERVICE_URL: http://auth-service:3001
     depends_on:
-      - mongodb
-      - auth-service
+      postgres:
+        condition: service_healthy
+      auth-service:
+        condition: service_started
     networks:
       - legaltech-network
     restart: unless-stopped
@@ -62,13 +79,19 @@ services:
       - "3003:3003"
     environment:
       PORT: 3003
-      MONGODB_URI: mongodb://admin:admin123@mongodb:27017/clients-db?authSource=admin
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_NAME: legaltech
+      DB_USER: admin
+      DB_PASSWORD: admin123
       NODE_ENV: development
-      JWT_SECRET: your_jwt_secret_key_here_change_in_production
+      JWT_SECRET: your-secret-key
       AUTH_SERVICE_URL: http://auth-service:3001
     depends_on:
-      - mongodb
-      - auth-service
+      postgres:
+        condition: service_healthy
+      auth-service:
+        condition: service_started
     networks:
       - legaltech-network
     restart: unless-stopped
@@ -82,15 +105,21 @@ services:
       - "3004:3004"
     environment:
       PORT: 3004
-      MONGODB_URI: mongodb://admin:admin123@mongodb:27017/documents-db?authSource=admin
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_NAME: legaltech
+      DB_USER: admin
+      DB_PASSWORD: admin123
       NODE_ENV: development
-      JWT_SECRET: your_jwt_secret_key_here_change_in_production
+      JWT_SECRET: your-secret-key
       UPLOAD_PATH: ./uploads
       MAX_FILE_SIZE: 52428800
       AUTH_SERVICE_URL: http://auth-service:3001
     depends_on:
-      - mongodb
-      - auth-service
+      postgres:
+        condition: service_healthy
+      auth-service:
+        condition: service_started
     volumes:
       - documents_uploads:/app/uploads
     networks:
@@ -106,15 +135,22 @@ services:
       - "3005:3005"
     environment:
       PORT: 3005
-      MONGODB_URI: mongodb://admin:admin123@mongodb:27017/time-tracking-db?authSource=admin
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_NAME: legaltech
+      DB_USER: admin
+      DB_PASSWORD: admin123
       NODE_ENV: development
-      JWT_SECRET: your_jwt_secret_key_here_change_in_production
+      JWT_SECRET: your-secret-key
       AUTH_SERVICE_URL: http://auth-service:3001
       CASES_SERVICE_URL: http://cases-service:3002
     depends_on:
-      - mongodb
-      - auth-service
-      - cases-service
+      postgres:
+        condition: service_healthy
+      auth-service:
+        condition: service_started
+      cases-service:
+        condition: service_started
     networks:
       - legaltech-network
     restart: unless-stopped
@@ -128,17 +164,25 @@ services:
       - "3006:3006"
     environment:
       PORT: 3006
-      MONGODB_URI: mongodb://admin:admin123@mongodb:27017/billing-db?authSource=admin
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_NAME: legaltech
+      DB_USER: admin
+      DB_PASSWORD: admin123
       NODE_ENV: development
-      JWT_SECRET: your_jwt_secret_key_here_change_in_production
+      JWT_SECRET: your-secret-key
       AUTH_SERVICE_URL: http://auth-service:3001
       CLIENTS_SERVICE_URL: http://clients-service:3003
       TIME_TRACKING_SERVICE_URL: http://time-tracking-service:3005
     depends_on:
-      - mongodb
-      - auth-service
-      - clients-service
-      - time-tracking-service
+      postgres:
+        condition: service_healthy
+      auth-service:
+        condition: service_started
+      clients-service:
+        condition: service_started
+      time-tracking-service:
+        condition: service_started
     networks:
       - legaltech-network
     restart: unless-stopped
@@ -152,9 +196,13 @@ services:
       - "3007:3007"
     environment:
       PORT: 3007
-      MONGODB_URI: mongodb://admin:admin123@mongodb:27017/notifications-db?authSource=admin
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_NAME: legaltech
+      DB_USER: admin
+      DB_PASSWORD: admin123
       NODE_ENV: development
-      JWT_SECRET: your_jwt_secret_key_here_change_in_production
+      JWT_SECRET: your-secret-key
       AUTH_SERVICE_URL: http://auth-service:3001
       EMAIL_HOST: smtp.example.com
       EMAIL_PORT: 587
@@ -162,8 +210,10 @@ services:
       EMAIL_PASSWORD: change_password
       EMAIL_FROM: noreply@legaltech.com
     depends_on:
-      - mongodb
-      - auth-service
+      postgres:
+        condition: service_healthy
+      auth-service:
+        condition: service_started
     networks:
       - legaltech-network
     restart: unless-stopped
@@ -177,9 +227,13 @@ services:
       - "3008:3008"
     environment:
       PORT: 3008
-      MONGODB_URI: mongodb://admin:admin123@mongodb:27017/dashboard-db?authSource=admin
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_NAME: legaltech
+      DB_USER: admin
+      DB_PASSWORD: admin123
       NODE_ENV: development
-      JWT_SECRET: your_jwt_secret_key_here_change_in_production
+      JWT_SECRET: your-secret-key
       AUTH_SERVICE_URL: http://auth-service:3001
       CASES_SERVICE_URL: http://cases-service:3002
       CLIENTS_SERVICE_URL: http://clients-service:3003
@@ -188,14 +242,22 @@ services:
       BILLING_SERVICE_URL: http://billing-service:3006
       NOTIFICATIONS_SERVICE_URL: http://notifications-service:3007
     depends_on:
-      - mongodb
-      - auth-service
-      - cases-service
-      - clients-service
-      - documents-service
-      - time-tracking-service
-      - billing-service
-      - notifications-service
+      postgres:
+        condition: service_healthy
+      auth-service:
+        condition: service_started
+      cases-service:
+        condition: service_started
+      clients-service:
+        condition: service_started
+      documents-service:
+        condition: service_started
+      time-tracking-service:
+        condition: service_started
+      billing-service:
+        condition: service_started
+      notifications-service:
+        condition: service_started
     networks:
       - legaltech-network
     restart: unless-stopped
@@ -205,5 +267,5 @@ networks:
     driver: bridge
 
 volumes:
-  mongodb_data:
+  postgres_data:
   documents_uploads:

@@ -35,26 +35,31 @@ async function testHealth() {
 async function testAuth() {
   console.log('\n🔐 [2] Test Auth Service');
   
+  let testEmail = 'test' + Date.now() + '@legaltech.com';
+  let testPassword = 'test123';
+  
   try {
     const res = await axios.post(`${API.auth}/register`, {
       firstName: 'Test',
       lastName: 'User',
-      email: 'test' + Date.now() + '@legaltech.com',
-      password: 'test123',
+      email: testEmail,
+      password: testPassword,
       role: 'lawyer'
     });
     console.log('  ✅ Register:', res.data.success);
+    token = res.data.data?.token;
   } catch (e) {
     console.log('  ⚠️ Register (puede existir):', e.response?.data?.message || e.message);
+    testEmail = 'new' + Date.now() + '@test.com';
+    testPassword = 'test123';
   }
 
   try {
     const loginRes = await axios.post(`${API.auth}/login`, {
-      email: 'test@legaltech.com',
-      password: 'test123'
+      email: testEmail,
+      password: testPassword
     });
     
-    // El token puede estar en diferentes ubicaciones
     token = loginRes.data.token || loginRes.data.data?.token;
     
     if (token) {
@@ -79,6 +84,7 @@ async function testClients() {
       documentType: 'CC',
       documentNumber: '12345678',
       email: 'cliente@test.com',
+      phone: '3001234567',
       clientType: 'individual'
     }, { headers: headers() });
     console.log('  ✅ Create Client:', res.data.success);

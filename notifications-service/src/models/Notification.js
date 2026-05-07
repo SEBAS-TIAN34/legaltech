@@ -1,49 +1,43 @@
-const mongoose = require('mongoose');
+const { DataTypes } = require('sequelize');
+const { sequelize } = require('../config/database');
 
-const notificationSchema = new mongoose.Schema({
+const Notification = sequelize.define('Notification', {
+  id: {
+    type: DataTypes.UUID,
+    defaultValue: DataTypes.UUIDV4,
+    primaryKey: true
+  },
   userId: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'User',
-    required: true
+    type: DataTypes.UUID,
+    allowNull: false
   },
   title: {
-    type: String,
-    required: true,
-    maxlength: [200, 'Title cannot be more than 200 characters']
+    type: DataTypes.STRING(200),
+    allowNull: false
   },
   message: {
-    type: String,
-    required: true,
-    maxlength: [1000, 'Message cannot be more than 1000 characters']
+    type: DataTypes.STRING(1000),
+    allowNull: false
   },
   type: {
-    type: String,
-    enum: ['info', 'warning', 'error', 'success', 'reminder'],
-    default: 'info'
+    type: DataTypes.ENUM('info', 'warning', 'error', 'success', 'reminder'),
+    defaultValue: 'info'
   },
   channel: {
-    type: String,
-    enum: ['in_app', 'email', 'sms', 'push'],
-    default: 'in_app'
-  },
-  reference: {
-    type: String,
-    refType: String
+    type: DataTypes.ENUM('email', 'sms', 'push', 'in_app'),
+    defaultValue: 'in_app'
   },
   isRead: {
-    type: Boolean,
-    default: false
+    type: DataTypes.BOOLEAN,
+    defaultValue: false
   },
   readAt: {
-    type: Date
-  },
-  sentAt: {
-    type: Date
-  },
-  createdAt: {
-    type: Date,
-    default: Date.now
+    type: DataTypes.DATE,
+    allowNull: true
   }
-}, { timestamps: true });
+}, {
+  tableName: 'notifications',
+  timestamps: true
+});
 
-module.exports = mongoose.model('Notification', notificationSchema);
+module.exports = Notification;

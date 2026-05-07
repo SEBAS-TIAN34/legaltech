@@ -1,63 +1,59 @@
-const mongoose = require('mongoose');
+const { DataTypes } = require('sequelize');
+const { sequelize } = require('../config/database');
 
-const documentSchema = new mongoose.Schema(
-  {
-    fileName: {
-      type: String,
-      required: [true, 'Please provide a file name']
-    },
-    fileSize: {
-      type: Number,
-      required: true
-    },
-    fileType: {
-      type: String,
-      required: true
-    },
-    filePath: {
-      type: String,
-      required: [true, 'Please provide a file path']
-    },
-    originalFileName: String,
-    caseId: {
-      type: String,
-      required: [true, 'Please provide a case ID']
-    },
-    description: String,
-    uploadedBy: {
-      type: String,
-      required: true
-    },
-    documentType: {
-      type: String,
-      enum: [
-        'demanda',
-        'contrato',
-        'prueba',
-        'sentencia',
-        'recurso',
-        'certificado',
-        'poder',
-        'auto',
-        'otro'
-      ],
-      default: 'otro'
-    },
-    isPublic: {
-      type: Boolean,
-      default: false
-    },
-    tags: [String],
-    createdAt: {
-      type: Date,
-      default: Date.now
-    },
-    updatedAt: {
-      type: Date,
-      default: Date.now
-    }
+const Document = sequelize.define('Document', {
+  id: {
+    type: DataTypes.UUID,
+    defaultValue: DataTypes.UUIDV4,
+    primaryKey: true
   },
-  { timestamps: true }
-);
+  title: {
+    type: DataTypes.STRING(255),
+    allowNull: false
+  },
+  description: {
+    type: DataTypes.TEXT,
+    allowNull: true
+  },
+  fileName: {
+    type: DataTypes.STRING(255),
+    allowNull: false
+  },
+  filePath: {
+    type: DataTypes.STRING(500),
+    allowNull: true
+  },
+  fileSize: {
+    type: DataTypes.INTEGER,
+    allowNull: true
+  },
+  mimeType: {
+    type: DataTypes.STRING(100),
+    allowNull: true
+  },
+  caseId: {
+    type: DataTypes.UUID,
+    allowNull: true
+  },
+  clientId: {
+    type: DataTypes.UUID,
+    allowNull: true
+  },
+  documentType: {
+    type: DataTypes.STRING(50),
+    allowNull: true
+  },
+  uploadedBy: {
+    type: DataTypes.UUID,
+    allowNull: true
+  },
+  isPublic: {
+    type: DataTypes.BOOLEAN,
+    defaultValue: false
+  }
+}, {
+  tableName: 'documents',
+  timestamps: true
+});
 
-module.exports = mongoose.model('Document', documentSchema);
+module.exports = Document;

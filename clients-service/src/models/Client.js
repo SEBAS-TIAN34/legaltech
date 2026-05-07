@@ -1,70 +1,64 @@
-const mongoose = require('mongoose');
+const { DataTypes } = require('sequelize');
+const { sequelize } = require('../config/database');
 
-const clientSchema = new mongoose.Schema(
-  {
-    firstName: {
-      type: String,
-      required: [true, 'Please provide a first name'],
-      trim: true
-    },
-    lastName: {
-      type: String,
-      required: [true, 'Please provide a last name'],
-      trim: true
-    },
-    documentType: {
-      type: String,
-      enum: ['CC', 'NIT', 'Pasaporte', 'CE'],
-      required: true
-    },
-    documentNumber: {
-      type: String,
-      required: [true, 'Please provide a document number'],
-      unique: true
-    },
-    email: {
-      type: String,
-      required: [true, 'Please provide an email'],
-      lowercase: true,
-      match: [/^\w+([\.-]?\w+)*@\w+([\.-]?\w+)*(\.\w{2,3})+$/, 'Please provide a valid email']
-    },
-    phone: {
-      type: String,
-      required: [true, 'Please provide a phone number']
-    },
-    address: {
-      street: String,
-      city: String,
-      state: String,
-      zipCode: String,
-      country: {
-        type: String,
-        default: 'Colombia'
-      }
-    },
-    clientType: {
-      type: String,
-      enum: ['individual', 'company'],
-      default: 'individual'
-    },
-    companyName: String,
-    taxId: String,
-    occupation: String,
-    isActive: {
-      type: Boolean,
-      default: true
-    },
-    notes: String,
-    createdAt: {
-      type: Date,
-      default: Date.now
-    },
-    updatedAt: {
-      type: Date,
-      default: Date.now
-    }
+const Client = sequelize.define('Client', {
+  id: {
+    type: DataTypes.UUID,
+    defaultValue: DataTypes.UUIDV4,
+    primaryKey: true
   },
-  { timestamps: true }
-);
+  firstName: {
+    type: DataTypes.STRING(50),
+    allowNull: false
+  },
+  lastName: {
+    type: DataTypes.STRING(50),
+    allowNull: false
+  },
+  documentType: {
+    type: DataTypes.STRING(20),
+    allowNull: false
+  },
+  documentNumber: {
+    type: DataTypes.STRING(50),
+    allowNull: false,
+    unique: true
+  },
+  email: {
+    type: DataTypes.STRING(255),
+    allowNull: false
+  },
+  phone: {
+    type: DataTypes.STRING(20),
+    allowNull: false
+  },
+  address: {
+    type: DataTypes.STRING(255),
+    allowNull: true
+  },
+  clientType: {
+    type: DataTypes.ENUM('individual', 'company'),
+    defaultValue: 'individual'
+  },
+  companyName: {
+    type: DataTypes.STRING(100),
+    allowNull: true
+  },
+  taxId: {
+    type: DataTypes.STRING(50),
+    allowNull: true
+  },
+  notes: {
+    type: DataTypes.TEXT,
+    allowNull: true
+  },
+  isActive: {
+    type: DataTypes.BOOLEAN,
+    defaultValue: true
+  }
+}, {
+  tableName: 'clients',
+  timestamps: true
+});
 
-module.exports = mongoose.model('Client', clientSchema);
+module.exports = Client;

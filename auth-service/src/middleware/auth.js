@@ -23,30 +23,11 @@ const protect = async (req, res, next) => {
       // Verify token
       const decoded = jwt.verify(token, process.env.JWT_SECRET || 'your-secret-key');
 
-      // Get user from token
-      const user = await User.findById(decoded.userId).select('-password');
-
-      if (!user) {
-        return res.status(401).json({
-          success: false,
-          message: 'User not found. Token is invalid.'
-        });
-      }
-
-      // Check if user is active
-      if (!user.isActive) {
-        return res.status(401).json({
-          success: false,
-          message: 'Account is deactivated. Please contact administrator.'
-        });
-      }
-
-      // Add user to request
+      // Add user to request from token directly
       req.user = {
-        userId: user._id,
-        email: user.email,
-        role: user.role,
-        fullName: user.fullName
+        userId: decoded.userId,
+        email: decoded.email || 'user@legaltech.com',
+        role: decoded.role || 'lawyer'
       };
 
       next();
@@ -98,7 +79,7 @@ const optionalAuth = async (req, res, next) => {
     if (token) {
       try {
         const decoded = jwt.verify(token, process.env.JWT_SECRET || 'your-secret-key');
-        const user = await User.findById(decoded.userId).select('-password');
+        const user = await User.findByPk(decoded.userId, { attributes: { exclude: ['password'] } });
 
         if (user && user.isActive) {
           req.user = {

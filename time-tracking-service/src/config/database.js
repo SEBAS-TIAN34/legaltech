@@ -1,16 +1,28 @@
-const mongoose = require('mongoose');
+const { Sequelize } = require('sequelize');
+
+const sequelize = new Sequelize(
+  process.env.DB_NAME || 'legaltech',
+  process.env.DB_USER || 'admin',
+  process.env.DB_PASSWORD || 'admin123',
+  {
+    host: process.env.DB_HOST || 'postgres',
+    port: process.env.DB_PORT || 5432,
+    dialect: 'postgres',
+    logging: process.env.NODE_ENV === 'development' ? console.log : false,
+    pool: { max: 10, min: 0, acquire: 30000, idle: 10000 },
+    define: { timestamps: true, underscored: true }
+  }
+);
 
 const connectDB = async () => {
   try {
-    await mongoose.connect(process.env.MONGODB_URI, {
-      useNewUrlParser: true,
-      useUnifiedTopology: true,
-    });
-    console.log('✅ MongoDB connected successfully');
+    await sequelize.authenticate();
+    console.log('✅ PostgreSQL connected');
+    await sequelize.sync({ alter: process.env.NODE_ENV === 'development' });
   } catch (error) {
-    console.error('❌ MongoDB connection failed:', error.message);
+    console.error('❌ DB Error:', error.message);
     process.exit(1);
   }
 };
 
-module.exports = connectDB;
+module.exports = { sequelize, connectDB };

@@ -1,61 +1,44 @@
-const mongoose = require('mongoose');
+const { DataTypes } = require('sequelize');
+const { sequelize } = require('../config/database');
 
-const timeEntrySchema = new mongoose.Schema({
-  caseId: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'Case',
-    required: true
-  },
-  userId: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'User',
-    required: true
+const TimeEntry = sequelize.define('TimeEntry', {
+  id: {
+    type: DataTypes.UUID,
+    defaultValue: DataTypes.UUIDV4,
+    primaryKey: true
   },
   description: {
-    type: String,
-    required: true,
-    maxlength: [500, 'Description cannot be more than 500 characters']
-  },
-  startTime: {
-    type: Date,
-    required: true,
-    default: Date.now
-  },
-  endTime: {
-    type: Date
+    type: DataTypes.STRING(255),
+    allowNull: false
   },
   duration: {
-    type: Number,
-    default: 0
+    type: DataTypes.INTEGER,
+    allowNull: false,
+    comment: 'Duration in minutes'
+  },
+  caseId: {
+    type: DataTypes.UUID,
+    allowNull: true
+  },
+  userId: {
+    type: DataTypes.UUID,
+    allowNull: true
   },
   billable: {
-    type: Boolean,
-    default: true
+    type: DataTypes.BOOLEAN,
+    defaultValue: true
   },
-  hourlyRate: {
-    type: Number,
-    default: 0
+  date: {
+    type: DataTypes.DATE,
+    allowNull: false
   },
-  status: {
-    type: String,
-    enum: ['running', 'paused', 'completed'],
-    default: 'running'
-  },
-  createdAt: {
-    type: Date,
-    default: Date.now
-  },
-  updatedAt: {
-    type: Date,
-    default: Date.now
+  notes: {
+    type: DataTypes.TEXT,
+    allowNull: true
   }
-}, { timestamps: true });
-
-timeEntrySchema.pre('save', function(next) {
-  if (this.endTime && this.startTime) {
-    this.duration = Math.floor((this.endTime - this.startTime) / 1000 / 60);
-  }
-  next();
+}, {
+  tableName: 'time_entries',
+  timestamps: true
 });
 
-module.exports = mongoose.model('TimeEntry', timeEntrySchema);
+module.exports = TimeEntry;

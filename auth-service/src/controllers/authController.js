@@ -29,7 +29,7 @@ const register = async (req, res) => {
     const { email, password, firstName, lastName, role, phone, specialization, barNumber, office } = req.body;
 
     // Check if user already exists
-    const existingUser = await User.findOne({ email });
+    const existingUser = await User.findOne({ where: { email } });
     if (existingUser) {
       return res.status(400).json({
         success: false,
@@ -53,14 +53,14 @@ const register = async (req, res) => {
     });
 
     // Generate token
-    const token = generateToken(user._id);
+    const token = generateToken(user.id);
 
     // Update last login
     await user.updateLastLogin();
 
     // Remove password from response
     const userResponse = {
-      _id: user._id,
+      _id: user.id,
       email: user.email,
       firstName: user.firstName,
       lastName: user.lastName,
@@ -107,7 +107,7 @@ const login = async (req, res) => {
     const { email, password } = req.body;
 
     // Check if user exists and is active
-    const user = await User.findOne({ email, isActive: true });
+    const user = await User.findOne({ where: { email, isActive: true } });
     if (!user) {
       return res.status(401).json({
         success: false,
@@ -125,18 +125,18 @@ const login = async (req, res) => {
     }
 
     // Generate token
-    const token = generateToken(user._id);
+    const token = generateToken(user.id);
 
     // Update last login
-    await user.updateLastLogin();
+    await user.update({ lastLogin: new Date() });
 
     // Remove password from response
     const userResponse = {
-      _id: user._id,
+      id: user.id,
       email: user.email,
       firstName: user.firstName,
       lastName: user.lastName,
-      fullName: user.fullName,
+      fullName: `${user.firstName} ${user.lastName}`,
       role: user.role,
       profile: user.profile,
       isActive: user.isActive,
@@ -166,7 +166,7 @@ const login = async (req, res) => {
 // @access  Private
 const getProfile = async (req, res) => {
   try {
-    const user = await User.findById(req.user.userId).select('-password');
+    const user = await User.findByPk(req.user.userId, { attributes: { exclude: ['password'] } });
     if (!user) {
       return res.status(404).json({
         success: false,
@@ -215,12 +215,7 @@ const updateProfile = async (req, res) => {
       }
     };
 
-    const user = await User.findByIdAndUpdate(
-      req.user.userId,
-      updateData,
-      { new: true, runValidators: true }
-    ).select('-password');
-
+    const user = await User.findByPk(req.user.userId);
     if (!user) {
       return res.status(404).json({
         success: false,
@@ -260,7 +255,7 @@ const changePassword = async (req, res) => {
     const { currentPassword, newPassword } = req.body;
 
     // Get user with password
-    const user = await User.findById(req.user.userId);
+    const user = await User.findByPk(req.user.userId);
     if (!user) {
       return res.status(404).json({
         success: false,
@@ -269,7 +264,8 @@ const changePassword = async (req, res) => {
     }
 
     // Check current password
-    const isCurrentPasswordValid = await user.comparePassword(currentPassword);
+    const bcrypt = require('bcryptjs');
+    const isCurrentPasswordValid = await bcrypt.compare(currentPassword, user.password);
     if (!isCurrentPasswordValid) {
       return res.status(400).json({
         success: false,
@@ -301,19 +297,19 @@ const getUsers = async (req, res) => {
   try {
     const page = parseInt(req.query.page) || 1;
     const limit = parseInt(req.query.limit) || 10;
-    const skip = (page - 1) * limit;
+    const offset = (page - 1) * limit;
 
-    const filter = {};
-    if (req.query.role) filter.role = req.query.role;
-    if (req.query.isActive !== undefined) filter.isActive = req.query.isActive === 'true';
+    const where = {};
+    if (req.query.role) where.role = req.query.role;
+    if (req.query.isActive !== undefined) where.isActive = req.query.isActive === 'true';
 
-    const users = await User.find(filter)
-      .select('-password')
-      .sort({ createdAt: -1 })
-      .skip(skip)
-      .limit(limit);
-
-    const total = await User.countDocuments(filter);
+    const { count, rows: users } = await User.findAndCountAll({
+      where,
+      attributes: { exclude: ['password'] },
+      order: [['createdAt', 'DESC']],
+      limit,
+      offset
+    });
 
     res.json({
       success: true,
@@ -322,8 +318,8 @@ const getUsers = async (req, res) => {
         pagination: {
           page,
           limit,
-          total,
-          pages: Math.ceil(total / limit)
+          total: count,
+          pages: Math.ceil(count / limit)
         }
       }
     });
@@ -341,11 +337,7 @@ const getUsers = async (req, res) => {
 // @access  Private/Admin
 const deactivateUser = async (req, res) => {
   try {
-    const user = await User.findByIdAndUpdate(
-      req.params.id,
-      { isActive: false },
-      { new: true }
-    ).select('-password');
+    const user = await User.findByPk(req.params.id, { attributes: { exclude: ['password'] } });
 
     if (!user) {
       return res.status(404).json({
@@ -353,6 +345,8 @@ const deactivateUser = async (req, res) => {
         message: 'User not found'
       });
     }
+
+    await user.update({ isActive: false });
 
     res.json({
       success: true,

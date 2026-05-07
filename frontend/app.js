@@ -1,13 +1,13 @@
 // URLs de los servicios
 const API_URL = {
-  auth: 'http://localhost:3001/api/auth',
-  cases: 'http://localhost:3002/api/cases',
-  clients: 'http://localhost:3003/api/clients',
-  documents: 'http://localhost:3004/api/documents',
-  timetracking: 'http://localhost:3005/api/time-entries',
-  billing: 'http://localhost:3006/api/invoices',
-  notifications: 'http://localhost:3007/api/notifications',
-  dashboard: 'http://localhost:3008/api/dashboard'
+  auth: 'http://127.0.0.1:3001/api/auth',
+  cases: 'http://127.0.0.1:3002/api/cases',
+  clients: 'http://127.0.0.1:3003/api/clients',
+  documents: 'http://127.0.0.1:3004/api/documents',
+  timetracking: 'http://127.0.0.1:3005/api/time-entries',
+  billing: 'http://127.0.0.1:3006/api/invoices',
+  notifications: 'http://127.0.0.1:3007/api/notifications',
+  dashboard: 'http://127.0.0.1:3008/api/dashboard'
 };
 
 // Token global
@@ -79,7 +79,7 @@ async function login(e) {
     const result = await res.json();
     
     if (result.success) {
-      authToken = result.token;
+      authToken = result.data.token;
       localStorage.setItem('token', authToken);
       showMessage('auth-message', 'Login exitoso!');
       showSection('cases');

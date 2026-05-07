@@ -1,0 +1,208 @@
+version: '3.8'
+
+services:
+  nginx:
+    image: nginx:alpine
+    container_name: legaltech-nginx
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+    depends_on:
+      - auth-service
+      - cases-service
+      - clients-service
+      - documents-service
+      - time-tracking-service
+      - billing-service
+      - notifications-service
+      - dashboard-service
+    networks:
+      - legaltech-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+
+  postgres:
+    image: postgres:15-alpine
+    container_name: legaltech-postgres
+    environment:
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: admin123
+      POSTGRES_DB: legaltech
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - legaltech-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U admin -d legaltech"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  auth-service:
+    build: ./auth-service
+    container_name: auth-service
+    environment:
+      PORT: 3001
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_NAME: legaltech
+      DB_USER: admin
+      DB_PASSWORD: admin123
+      JWT_SECRET: your-secret-key
+      NODE_ENV: production
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - legaltech-network
+    restart: unless-stopped
+
+  cases-service:
+    build: ./cases-service
+    container_name: cases-service
+    environment:
+      PORT: 3002
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_NAME: legaltech
+      DB_USER: admin
+      DB_PASSWORD: admin123
+      JWT_SECRET: your-secret-key
+      AUTH_SERVICE_URL: http://auth-service:3001
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - legaltech-network
+    restart: unless-stopped
+
+  clients-service:
+    build: ./clients-service
+    container_name: clients-service
+    environment:
+      PORT: 3003
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_NAME: legaltech
+      DB_USER: admin
+      DB_PASSWORD: admin123
+      JWT_SECRET: your-secret-key
+      AUTH_SERVICE_URL: http://auth-service:3001
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - legaltech-network
+    restart: unless-stopped
+
+  documents-service:
+    build: ./documents-service
+    container_name: documents-service
+    environment:
+      PORT: 3004
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_NAME: legaltech
+      DB_USER: admin
+      DB_PASSWORD: admin123
+      JWT_SECRET: your-secret-key
+      AUTH_SERVICE_URL: http://auth-service:3001
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - legaltech-network
+    restart: unless-stopped
+
+  time-tracking-service:
+    build: ./time-tracking-service
+    container_name: time-tracking-service
+    environment:
+      PORT: 3005
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_NAME: legaltech
+      DB_USER: admin
+      DB_PASSWORD: admin123
+      JWT_SECRET: your-secret-key
+      AUTH_SERVICE_URL: http://auth-service:3001
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - legaltech-network
+    restart: unless-stopped
+
+  billing-service:
+    build: ./billing-service
+    container_name: billing-service
+    environment:
+      PORT: 3006
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_NAME: legaltech
+      DB_USER: admin
+      DB_PASSWORD: admin123
+      JWT_SECRET: your-secret-key
+      AUTH_SERVICE_URL: http://auth-service:3001
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - legaltech-network
+    restart: unless-stopped
+
+  notifications-service:
+    build: ./notifications-service
+    container_name: notifications-service
+    environment:
+      PORT: 3007
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_NAME: legaltech
+      DB_USER: admin
+      DB_PASSWORD: admin123
+      JWT_SECRET: your-secret-key
+      AUTH_SERVICE_URL: http://auth-service:3001
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - legaltech-network
+    restart: unless-stopped
+
+  dashboard-service:
+    build: ./dashboard-service
+    container_name: dashboard-service
+    environment:
+      PORT: 3008
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_NAME: legaltech
+      DB_USER: admin
+      DB_PASSWORD: admin123
+      JWT_SECRET: your-secret-key
+      AUTH_SERVICE_URL: http://auth-service:3001
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - legaltech-network
+    restart: unless-stopped
+
+networks:
+  legaltech-network:
+    driver: bridge
+
+volumes:
+  postgres_data:

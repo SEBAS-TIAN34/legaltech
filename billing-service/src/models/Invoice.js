@@ -1,83 +1,64 @@
-const mongoose = require('mongoose');
+const { DataTypes } = require('sequelize');
+const { sequelize } = require('../config/database');
 
-const invoiceItemSchema = new mongoose.Schema({
-  description: {
-    type: String,
-    required: true
+const Invoice = sequelize.define('Invoice', {
+  id: {
+    type: DataTypes.UUID,
+    defaultValue: DataTypes.UUIDV4,
+    primaryKey: true
   },
-  quantity: {
-    type: Number,
-    required: true,
-    min: 1
-  },
-  unitPrice: {
-    type: Number,
-    required: true
-  },
-  total: {
-    type: Number,
-    required: true
-  }
-});
-
-const invoiceSchema = new mongoose.Schema({
   invoiceNumber: {
-    type: String,
-    required: true,
+    type: DataTypes.STRING(50),
+    allowNull: false,
     unique: true
   },
   clientId: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'Client',
-    required: true
+    type: DataTypes.UUID,
+    allowNull: false
   },
   caseId: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'Case'
-  },
-  items: [invoiceItemSchema],
-  subtotal: {
-    type: Number,
-    required: true,
-    default: 0
-  },
-  tax: {
-    type: Number,
-    default: 0
-  },
-  total: {
-    type: Number,
-    required: true,
-    default: 0
+    type: DataTypes.UUID,
+    allowNull: true
   },
   status: {
-    type: String,
-    enum: ['draft', 'sent', 'paid', 'overdue', 'cancelled'],
-    default: 'draft'
+    type: DataTypes.ENUM('draft', 'pending', 'paid', 'overdue', 'cancelled'),
+    defaultValue: 'draft'
+  },
+  issueDate: {
+    type: DataTypes.DATE,
+    allowNull: false
   },
   dueDate: {
-    type: Date
+    type: DataTypes.DATE,
+    allowNull: false
   },
-  paidDate: {
-    type: Date
+  subtotal: {
+    type: DataTypes.DECIMAL(10, 2),
+    defaultValue: 0
+  },
+  tax: {
+    type: DataTypes.DECIMAL(10, 2),
+    defaultValue: 0
+  },
+  total: {
+    type: DataTypes.DECIMAL(10, 2),
+    defaultValue: 0
+  },
+  paidAmount: {
+    type: DataTypes.DECIMAL(10, 2),
+    defaultValue: 0
   },
   notes: {
-    type: String
+    type: DataTypes.TEXT,
+    allowNull: true
   },
-  createdAt: {
-    type: Date,
-    default: Date.now
-  },
-  updatedAt: {
-    type: Date,
-    default: Date.now
+  items: {
+    type: DataTypes.JSONB,
+    defaultValue: []
   }
-}, { timestamps: true });
-
-invoiceSchema.pre('save', function(next) {
-  this.subtotal = this.items.reduce((sum, item) => sum + item.total, 0);
-  this.total = this.subtotal + this.tax;
-  next();
+}, {
+  tableName: 'invoices',
+  timestamps: true
 });
 
-module.exports = mongoose.model('Invoice', invoiceSchema);
+module.exports = Invoice;

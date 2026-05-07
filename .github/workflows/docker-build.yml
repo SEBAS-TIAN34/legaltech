@@ -1,0 +1,41 @@
+name: Build & Push Docker Images
+
+on:
+  push:
+    branches: [ main, master ]
+    tags:
+      - 'v*'
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        service: 
+          - auth-service
+          - cases-service
+          - clients-service
+          - documents-service
+          - time-tracking-service
+          - billing-service
+          - notifications-service
+          - dashboard-service
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+      
+      - name: Build Docker image
+        run: |
+          docker build -t ${{ matrix.service }}:latest ./${{ matrix.service }}
+      
+      - name: Test Docker container
+        run: |
+          docker run -d --name test-${{ matrix.service }} -p 3001:3001 ${{ matrix.service }}:latest
+          sleep 10
+          docker logs test-${{ matrix.service }}
+          docker stop test-${{ matrix.service }}

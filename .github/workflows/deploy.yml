@@ -1,0 +1,41 @@
+name: Despliegue Automatizado
+
+on:
+  workflow_run:
+    workflows: ["Build & Push Docker Images"]
+    types: [completed]
+    branches: [main, master]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+    environment: production
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Configure Docker
+        run: |
+          echo "Configuración de despliegue lista"
+          echo "Para completar el despliegue, configura los secretos del servidor"
+      
+      - name: Print deployment info
+        run: |
+          echo "============================================"
+          echo "  PIPELINE DE DESPLIEGUE CONFIGURADO"
+          echo "============================================"
+          echo "Servicios a desplegar:"
+          echo "  - auth-service (puerto 3001)"
+          echo "  - cases-service (puerto 3002)"
+          echo "  - clients-service (puerto 3003)"
+          echo "  - documents-service (puerto 3004)"
+          echo "  - time-tracking-service (puerto 3005)"
+          echo "  - billing-service (puerto 3006)"
+          echo "  - notifications-service (puerto 3007)"
+          echo "  - dashboard-service (puerto 3008)"
+          echo ""
+          echo "Para habilitar el despliegue completo,"
+          echo "configura los secrets: SERVER_HOST, SERVER_USER, SERVER_SSH_KEY"
+          echo "============================================"

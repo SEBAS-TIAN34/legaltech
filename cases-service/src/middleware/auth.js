@@ -1,6 +1,6 @@
 const jwt = require('jsonwebtoken');
 
-const auth = async (req, res, next) => {
+const protect = (req, res, next) => {
   try {
     const token = req.headers.authorization?.split(' ')[1];
 
@@ -8,12 +8,18 @@ const auth = async (req, res, next) => {
       return res.status(401).json({ success: false, message: 'No token provided' });
     }
 
-    const decoded = jwt.verify(token, process.env.JWT_SECRET || 'your_jwt_secret_key_here_change_in_production');
-    req.user = decoded;
+    const decoded = jwt.verify(token, process.env.JWT_SECRET || 'your-secret-key');
+    
+    req.user = {
+      userId: decoded.userId,
+      email: decoded.email || 'user@legaltech.com',
+      role: decoded.role || 'lawyer'
+    };
+    
     next();
   } catch (error) {
-    res.status(401).json({ success: false, message: 'Invalid token' });
+    return res.status(401).json({ success: false, message: 'Invalid token' });
   }
 };
 
-module.exports = auth;
+module.exports = protect;

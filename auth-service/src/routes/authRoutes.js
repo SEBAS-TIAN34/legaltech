@@ -103,4 +103,25 @@ router.put('/change-password', protect, changePasswordValidation, changePassword
 router.get('/users', protect, authorize('admin'), getUsers);
 router.put('/users/:id/deactivate', protect, authorize('admin'), deactivateUser);
 
+// Public validation endpoint for other microservices
+router.get('/validate', (req, res) => {
+  const token = req.headers.authorization?.split(' ')[1];
+  
+  if (!token) {
+    return res.status(401).json({ success: false, message: 'No token provided' });
+  }
+  
+  try {
+    const jwt = require('jsonwebtoken');
+    const decoded = jwt.verify(token, process.env.JWT_SECRET || 'your-secret-key');
+    
+    return res.status(200).json({
+      success: true,
+      data: { user: decoded }
+    });
+  } catch (error) {
+    return res.status(401).json({ success: false, message: 'Invalid token' });
+  }
+});
+
 module.exports = router;

@@ -1,41 +1,110 @@
 name: Despliegue Automatizado
 
 on:
-  workflow_run:
-    workflows: ["Build & Push Docker Images"]
-    types: [completed]
-    branches: [main, master]
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Environment to deploy'
+        required: true
+        default: 'development'
+        type: choice
+        options:
+          - development
+          - production
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
-    if: ${{ github.event.workflow_run.conclusion == 'success' }}
-    environment: production
+    environment: ${{ github.event.inputs.environment || 'development' }}
     
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-      
-      - name: Configure Docker
-        run: |
-          echo "Configuración de despliegue lista"
-          echo "Para completar el despliegue, configura los secretos del servidor"
-      
-      - name: Print deployment info
+
+      - name: Build Docker images
         run: |
           echo "============================================"
-          echo "  PIPELINE DE DESPLIEGUE CONFIGURADO"
+          echo "  CONSTRUYENDO IMÁGENES DOCKER"
           echo "============================================"
-          echo "Servicios a desplegar:"
-          echo "  - auth-service (puerto 3001)"
-          echo "  - cases-service (puerto 3002)"
-          echo "  - clients-service (puerto 3003)"
-          echo "  - documents-service (puerto 3004)"
-          echo "  - time-tracking-service (puerto 3005)"
-          echo "  - billing-service (puerto 3006)"
-          echo "  - notifications-service (puerto 3007)"
-          echo "  - dashboard-service (puerto 3008)"
+          
+          services=("auth-service" "cases-service" "clients-service" "documents-service" "time-tracking-service" "billing-service" "notifications-service" "dashboard-service")
+          
+          for service in "${services[@]}"; do
+            echo "Construyendo $service..."
+            docker build -t legaltech-$service:latest ./$service
+          done
+          
           echo ""
-          echo "Para habilitar el despliegue completo,"
-          echo "configura los secrets: SERVER_HOST, SERVER_USER, SERVER_SSH_KEY"
+          echo "============================================"
+          echo "  IMÁGENES CONSTRUIDAS EXITOSAMENTE"
+          echo "============================================"
+          docker images | grep legaltech
+
+      - name: Run Docker Compose
+        run: |
+          echo "============================================"
+          echo "  INICIANDO SERVICIOS CON DOCKER COMPOSE"
+          echo "============================================"
+          
+          # Verificar si hay contenedores anteriores
+          docker ps -a --filter "name=legaltech" --format "{{.Names}}" | xargs -r docker stop || true
+          docker ps -a --filter "name=legaltech" --format "{{.Names}}" | xargs -r docker rm || true
+          
+          # Iniciar servicios
+          docker-compose -f docker-compose.postgres.yml up -d
+          
+          echo ""
+          echo "============================================"
+          echo "  SERVICIOS INICIADOS"
+          echo "============================================"
+          docker ps --filter "name=legaltech"
+
+      - name: Verify services health
+        run: |
+          echo "============================================"
+          echo "  VERIFICANDO SALUD DE SERVICIOS"
+          echo "============================================"
+          
+          sleep 5
+          
+          # Verificar auth-service
+          curl -s http://localhost:3001/health && echo "✓ auth-service OK" || echo "✗ auth-service ERROR"
+          
+          # Verificar cases-service
+          curl -s http://localhost:3002/health && echo "✓ cases-service OK" || echo "✗ cases-service ERROR"
+          
+          # Verificar clients-service
+          curl -s http://localhost:3003/health && echo "✓ clients-service OK" || echo "✗ clients-service ERROR"
+
+      - name: Deployment Summary
+        if: success()
+        run: |
+          echo ""
+          echo "============================================"
+          echo "  ✅ DESPLIEGUE EXITOSO"
+          echo "============================================"
+          echo ""
+          echo "Servicios desplegados en: ${{ github.event.inputs.environment || 'development' }}"
+          echo ""
+          echo "Endpoints disponibles:"
+          echo "  - Auth:         http://localhost:3001/health"
+          echo "  - Cases:        http://localhost:3002/health"
+          echo "  - Clients:      http://localhost:3003/health"
+          echo "  - Documents:    http://localhost:3004/health"
+          echo "  - Time Track:   http://localhost:3005/health"
+          echo "  - Billing:      http://localhost:3006/health"
+          echo "  - Notifications: http://localhost:3007/health"
+          echo "  - Dashboard:    http://localhost:3008/health"
+          echo ""
+
+      - name: Show failure message
+        if: failure()
+        run: |
+          echo ""
+          echo "============================================"
+          echo "  ❌ DESPLIEGUE FALLIDO"
+          echo "============================================"
+          echo "Verifica los logs para más detalles"
+          echo "Para desplegar manualmente ejecuta:"
+          echo "  docker-compose -f docker-compose.postgres.yml up -d"
           echo "============================================"

@@ -6,11 +6,13 @@ const router = express.Router();
 const {
   register,
   login,
+  logout,
   getProfile,
   updateProfile,
   changePassword,
   getUsers,
-  deactivateUser
+  deactivateUser,
+  getAuditLogs
 } = require('../controllers/authController');
 
 const { protect, authorize } = require('../middleware/auth');
@@ -98,6 +100,8 @@ router.post('/login', loginValidation, login);
 router.get('/profile', protect, getProfile);
 router.put('/profile', protect, updateProfileValidation, updateProfile);
 router.put('/change-password', protect, changePasswordValidation, changePassword);
+router.post('/logout', protect, logout);
+router.get('/audit-logs', protect, authorize('admin'), getAuditLogs);
 
 // Admin only routes
 router.get('/users', protect, authorize('admin'), getUsers);

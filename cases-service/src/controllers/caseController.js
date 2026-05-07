@@ -1,4 +1,5 @@
 const Case = require('../models/Case');
+const auditLogger = require('../middleware/auditLogger');
 
 exports.createCase = async (req, res) => {
   try {
@@ -21,6 +22,15 @@ exports.createCase = async (req, res) => {
       notes,
       status: 'draft',
       createdBy: req.user?.userId
+    });
+
+    await auditLogger.create({
+      entity: 'Case',
+      entityId: caseData.id,
+      description: `Nuevo caso creado: ${caseNumber} - ${title}`,
+      newValues: { caseNumber, title, caseType, priority, clientId },
+      user: req.user,
+      req
     });
 
     res.status(201).json({
@@ -65,6 +75,13 @@ exports.updateCase = async (req, res) => {
       return res.status(404).json({ success: false, message: 'Case not found' });
     }
 
+    const oldValues = { 
+      caseNumber: caseData.caseNumber, 
+      title: caseData.title, 
+      status: caseData.status,
+      priority: caseData.priority 
+    };
+
     const { caseNumber, title, description, clientId, caseType, priority, status, assignedTo, startDate, endDate, budget, notes } = req.body;
 
     await caseData.update({
@@ -80,6 +97,16 @@ exports.updateCase = async (req, res) => {
       endDate: endDate !== undefined ? endDate : caseData.endDate,
       budget: budget !== undefined ? budget : caseData.budget,
       notes: notes !== undefined ? notes : caseData.notes
+    });
+
+    await auditLogger.update({
+      entity: 'Case',
+      entityId: caseData.id,
+      description: `Caso actualizado: ${caseData.caseNumber}`,
+      oldValues,
+      newValues: { caseNumber, title, status, priority },
+      user: req.user,
+      req
     });
 
     res.json({ success: true, message: 'Case updated successfully', data: caseData });

@@ -1,6 +1,7 @@
 const jwt = require('jsonwebtoken');
 const { validationResult } = require('express-validator');
 const User = require('../models/User');
+const auditLogger = require('../middleware/auditLogger');
 
 // Generate JWT token
 const generateToken = (userId) => {
@@ -71,6 +72,16 @@ const register = async (req, res) => {
       lastLogin: user.lastLogin,
       createdAt: user.createdAt
     };
+
+    // Registrar auditoría de creación de usuario
+    await auditLogger.create({
+      entity: 'User',
+      entityId: user.id,
+      description: `Nuevo usuario registrado: ${user.email} (${user.role})`,
+      newValues: { email: user.email, firstName, lastName, role: user.role },
+      user: { id: user.id },
+      req
+    });
 
     res.status(201).json({
       success: true,
@@ -144,6 +155,13 @@ const login = async (req, res) => {
       createdAt: user.createdAt
     };
 
+    // Registrar auditoría de login
+    await auditLogger.login({
+      user: { id: user.id, email: user.email },
+      description: `Usuario inició sesión: ${user.email}`,
+      req
+    });
+
     res.json({
       success: true,
       message: 'Login successful',
@@ -157,6 +175,69 @@ const login = async (req, res) => {
     res.status(500).json({
       success: false,
       message: 'Server error during login'
+    });
+  }
+};
+
+// @desc    Logout user
+// @route   POST /api/auth/logout
+// @access  Private
+const logout = async (req, res) => {
+  try {
+    // Registrar auditoría de logout
+    await auditLogger.logout({
+      user: req.user,
+      description: `Usuario cerró sesión`,
+      req
+    });
+
+    res.json({
+      success: true,
+      message: 'Logout successful'
+    });
+  } catch (error) {
+    console.error('Logout error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Server error during logout'
+    });
+  }
+};
+
+// @desc    Get audit logs
+// @route   GET /api/auth/audit-logs
+// @access  Private
+const getAuditLogs = async (req, res) => {
+  try {
+    const AuditLog = require('../models/AuditLog');
+    
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 50;
+    const offset = (page - 1) * limit;
+
+    const { count, rows: logs } = await AuditLog.findAndCountAll({
+      order: [['createdAt', 'DESC']],
+      limit,
+      offset
+    });
+
+    res.json({
+      success: true,
+      data: {
+        logs,
+        pagination: {
+          page,
+          limit,
+          total: count,
+          pages: Math.ceil(count / limit)
+        }
+      }
+    });
+  } catch (error) {
+    console.error('Get audit logs error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Server error'
     });
   }
 };

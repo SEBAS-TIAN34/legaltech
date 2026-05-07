@@ -1,6 +1,5 @@
 services:
   - name: postgres
-    type: pserv
     image: postgres:15-alpine
     plan: free
     envVars:
@@ -13,11 +12,8 @@ services:
     disk:
       name: postgres-data
       sizeGB: 1
-    ports:
-      - target: 5432
 
   - name: auth-service
-    type: service
     image: ${IMAGE_URL}/auth-service:latest
     plan: free
     envVars:
@@ -39,7 +35,6 @@ services:
       - postgres
 
   - name: cases-service
-    type: service
     image: ${IMAGE_URL}/cases-service:latest
     plan: free
     envVars:
@@ -63,7 +58,6 @@ services:
       - postgres
 
   - name: clients-service
-    type: service
     image: ${IMAGE_URL}/clients-service:latest
     plan: free
     envVars:
@@ -87,7 +81,6 @@ services:
       - postgres
 
   - name: documents-service
-    type: service
     image: ${IMAGE_URL}/documents-service:latest
     plan: free
     envVars:
@@ -111,7 +104,6 @@ services:
       - postgres
 
   - name: time-tracking-service
-    type: service
     image: ${IMAGE_URL}/time-tracking-service:latest
     plan: free
     envVars:
@@ -135,7 +127,6 @@ services:
       - postgres
 
   - name: billing-service
-    type: service
     image: ${IMAGE_URL}/billing-service:latest
     plan: free
     envVars:
@@ -159,7 +150,6 @@ services:
       - postgres
 
   - name: notifications-service
-    type: service
     image: ${IMAGE_URL}/notifications-service:latest
     plan: free
     envVars:
@@ -183,7 +173,6 @@ services:
       - postgres
 
   - name: dashboard-service
-    type: service
     image: ${IMAGE_URL}/dashboard-service:latest
     plan: free
     envVars:
@@ -207,7 +196,6 @@ services:
       - postgres
 
   - name: nginx
-    type: service
     image: ${IMAGE_URL}/nginx:latest
     plan: free
     envVars:

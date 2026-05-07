@@ -1,21 +1,23 @@
 services:
-  # PostgreSQL Database
   - name: postgres
+    type: pserv
     image: postgres:15-alpine
     plan: free
-    environment:
-      POSTGRES_USER: legaltech
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
-      POSTGRES_DB: legaltech
+    envVars:
+      - key: POSTGRES_USER
+        value: legaltech
+      - key: POSTGRES_PASSWORD
+        value: ${POSTGRES_PASSWORD}
+      - key: POSTGRES_DB
+        value: legaltech
     disk:
       name: postgres-data
       sizeGB: 1
     ports:
       - target: 5432
-        protocol: tcp
 
-  # Auth Service
   - name: auth-service
+    type: service
     image: ${IMAGE_URL}/auth-service:latest
     plan: free
     envVars:
@@ -36,8 +38,8 @@ services:
     dependsOn:
       - postgres
 
-  # Cases Service
   - name: cases-service
+    type: service
     image: ${IMAGE_URL}/cases-service:latest
     plan: free
     envVars:
@@ -59,10 +61,9 @@ services:
         value: http://auth-service:3001
     dependsOn:
       - postgres
-      - auth-service
 
-  # Clients Service
   - name: clients-service
+    type: service
     image: ${IMAGE_URL}/clients-service:latest
     plan: free
     envVars:
@@ -84,10 +85,9 @@ services:
         value: http://auth-service:3001
     dependsOn:
       - postgres
-      - auth-service
 
-  # Documents Service
   - name: documents-service
+    type: service
     image: ${IMAGE_URL}/documents-service:latest
     plan: free
     envVars:
@@ -109,10 +109,9 @@ services:
         value: http://auth-service:3001
     dependsOn:
       - postgres
-      - auth-service
 
-  # Time Tracking Service
   - name: time-tracking-service
+    type: service
     image: ${IMAGE_URL}/time-tracking-service:latest
     plan: free
     envVars:
@@ -134,10 +133,9 @@ services:
         value: http://auth-service:3001
     dependsOn:
       - postgres
-      - auth-service
 
-  # Billing Service
   - name: billing-service
+    type: service
     image: ${IMAGE_URL}/billing-service:latest
     plan: free
     envVars:
@@ -159,10 +157,9 @@ services:
         value: http://auth-service:3001
     dependsOn:
       - postgres
-      - auth-service
 
-  # Notifications Service
   - name: notifications-service
+    type: service
     image: ${IMAGE_URL}/notifications-service:latest
     plan: free
     envVars:
@@ -184,10 +181,9 @@ services:
         value: http://auth-service:3001
     dependsOn:
       - postgres
-      - auth-service
 
-  # Dashboard Service
   - name: dashboard-service
+    type: service
     image: ${IMAGE_URL}/dashboard-service:latest
     plan: free
     envVars:
@@ -209,10 +205,9 @@ services:
         value: http://auth-service:3001
     dependsOn:
       - postgres
-      - auth-service
 
-  # Nginx Frontend
   - name: nginx
+    type: service
     image: ${IMAGE_URL}/nginx:latest
     plan: free
     envVars:
@@ -221,11 +216,4 @@ services:
     routes:
       - path: /
     dependsOn:
-      - auth-service
-      - cases-service
-      - clients-service
-      - documents-service
-      - time-tracking-service
-      - billing-service
-      - notifications-service
-      - dashboard-service
+      - postgres

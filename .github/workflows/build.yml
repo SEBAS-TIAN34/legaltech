@@ -35,7 +35,7 @@ jobs:
         id: meta
         uses: docker/metadata-action@v5
         with:
-          images: ghcr.io/${{ github.repository.toLowerCase() }}
+          images: ghcr.io/${{ toLowerCase(github.repository) }}
           tags: |
             type=ref,event=branch
             type=sha,prefix={{branch}}-
@@ -45,7 +45,7 @@ jobs:
         with:
           context: ./auth-service
           push: true
-          tags: ghcr.io/${{ github.repository.toLowerCase() }}/auth-service:latest
+          tags: ghcr.io/${{ toLowerCase(github.repository) }}/auth-service:latest
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
@@ -54,7 +54,7 @@ jobs:
         with:
           context: ./cases-service
           push: true
-          tags: ghcr.io/${{ github.repository.toLowerCase() }}/cases-service:latest
+          tags: ghcr.io/${{ toLowerCase(github.repository) }}/cases-service:latest
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
@@ -63,7 +63,7 @@ jobs:
         with:
           context: ./clients-service
           push: true
-          tags: ghcr.io/${{ github.repository.toLowerCase() }}/clients-service:latest
+          tags: ghcr.io/${{ toLowerCase(github.repository) }}/clients-service:latest
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
@@ -72,7 +72,7 @@ jobs:
         with:
           context: ./documents-service
           push: true
-          tags: ghcr.io/${{ github.repository.toLowerCase() }}/documents-service:latest
+          tags: ghcr.io/${{ toLowerCase(github.repository) }}/documents-service:latest
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
@@ -81,7 +81,7 @@ jobs:
         with:
           context: ./time-tracking-service
           push: true
-          tags: ghcr.io/${{ github.repository.toLowerCase() }}/time-tracking-service:latest
+          tags: ghcr.io/${{ toLowerCase(github.repository) }}/time-tracking-service:latest
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
@@ -90,7 +90,7 @@ jobs:
         with:
           context: ./billing-service
           push: true
-          tags: ghcr.io/${{ github.repository.toLowerCase() }}/billing-service:latest
+          tags: ghcr.io/${{ toLowerCase(github.repository) }}/billing-service:latest
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
@@ -99,7 +99,7 @@ jobs:
         with:
           context: ./notifications-service
           push: true
-          tags: ghcr.io/${{ github.repository.toLowerCase() }}/notifications-service:latest
+          tags: ghcr.io/${{ toLowerCase(github.repository) }}/notifications-service:latest
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
@@ -108,7 +108,7 @@ jobs:
         with:
           context: ./dashboard-service
           push: true
-          tags: ghcr.io/${{ github.repository.toLowerCase() }}/dashboard-service:latest
+          tags: ghcr.io/${{ toLowerCase(github.repository) }}/dashboard-service:latest
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
@@ -117,7 +117,7 @@ jobs:
         with:
           context: ./nginx
           push: true
-          tags: ghcr.io/${{ github.repository.toLowerCase() }}/nginx:latest
+          tags: ghcr.io/${{ toLowerCase(github.repository) }}/nginx:latest
 
       - name: Image digest
         run: echo ${{ steps.meta.outputs.tags }}

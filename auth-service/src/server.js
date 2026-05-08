@@ -12,6 +12,9 @@ const authRoutes = require('./routes/authRoutes');
 
 const app = express();
 
+// Trust proxy for nginx
+app.set('trust proxy', 1);
+
 // Connect to database
 connectDB();
 
@@ -28,6 +31,7 @@ const limiter = rateLimit({
   },
   standardHeaders: true,
   legacyHeaders: false,
+  trustProxy: 1,
   skip: (req) => {
     // Skip rate limiting for health checks
     return req.path === '/health';

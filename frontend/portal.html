@@ -409,16 +409,7 @@
   </div>
 
   <script>
-    const API_URL = {
-      auth: '/api/auth',
-      cases: '/api/cases',
-      clients: '/api/clients',
-      documents: '/api/documents',
-      timetracking: '/api/time-entries',
-      billing: '/api/invoices',
-      notifications: '/api/notifications',
-      dashboard: '/api/dashboard'
-    };
+const API_URL = '/api';
 
     let portalToken = localStorage.getItem('portalToken') || '';
     let userType = localStorage.getItem('userType') || '';
@@ -428,18 +419,17 @@
       client: [
         { id: 'services', label: 'Servicios', icon: '🏠' },
         { id: 'dashboard', label: 'Dashboard', icon: '📊' },
-        { id: 'cases', label: 'Mis Casos', icon: '⚖️' },
+        { id: 'cases', label: 'Casos', icon: '⚖️' },
         { id: 'clients', label: 'Clientes', icon: '👥' },
         { id: 'documents', label: 'Documentos', icon: '📄' },
         { id: 'invoices', label: 'Facturas', icon: '💰' },
-        { id: 'time', label: 'Tiempo', icon: '⏱️' },
         { id: 'notifications', label: 'Notificaciones', icon: '🔔' },
         { id: 'profile', label: 'Mi Perfil', icon: '👤' }
       ],
       lawyer: [
         { id: 'services', label: 'Servicios', icon: '🏠' },
         { id: 'dashboard', label: 'Dashboard', icon: '📊' },
-        { id: 'cases', label: 'Mis Casos', icon: '⚖️' },
+        { id: 'cases', label: 'Casos', icon: '⚖️' },
         { id: 'clients', label: 'Clientes', icon: '👥' },
         { id: 'documents', label: 'Documentos', icon: '📄' },
         { id: 'time', label: 'Tiempo', icon: '⏱️' },
@@ -448,11 +438,157 @@
       ]
     };
 
-function getHeaders() {
+    function getHeaders() {
       return {
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${portalToken}`
       };
+    }
+
+    function showPortalMessage(msg, isError = false) {
+      const el = document.getElementById('portal-message');
+      if (el) {
+        el.className = isError ? 'message-error' : 'message-success';
+        el.textContent = msg;
+        el.style.display = 'block';
+        setTimeout(() => { el.textContent = ''; el.style.display = 'none'; }, 5000);
+      }
+    }
+
+    function showLoginTab(type) {
+      document.querySelectorAll('.login-tabs .tab-btn').forEach(b => b.classList.remove('active'));
+      document.querySelectorAll('.login-form').forEach(f => f.classList.remove('active'));
+      const tabs = document.querySelectorAll('.login-tabs .tab-btn');
+      if (type === 'client') tabs[0]?.classList.add('active'); else tabs[1]?.classList.add('active');
+      document.getElementById(`${type}-login`)?.classList.add('active');
+    }
+
+    async function portalLogin(e, type) {
+      e.preventDefault();
+      const email = document.getElementById(`${type}-email`)?.value;
+      const password = document.getElementById(`${type}-password`)?.value;
+
+      if (!email || !password) {
+        showPortalMessage('Por favor completa todos los campos', true);
+        return;
+      }
+
+      showPortalMessage('Iniciando sesión...', false);
+      
+      try {
+        const res = await fetch('/api/auth/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email, password })
+        });
+        const result = await res.json();
+        
+        if (result.success && result.data?.token) {
+          portalToken = result.data.token;
+          userType = type;
+          localStorage.setItem('portalToken', portalToken);
+          localStorage.setItem('userType', userType);
+          userData = result.data.user;
+          
+          showPortalMessage('¡Bienvenido!', false);
+          setTimeout(() => {
+            document.getElementById('login-section').style.display = 'none';
+            document.getElementById('portal-panel').style.display = 'flex';
+            initPortal();
+            showPortalSection('services');
+          }, 500);
+        } else {
+          showPortalMessage(result.message || 'Credenciales incorrectas', true);
+        }
+      } catch (err) {
+        showPortalMessage('Error de conexión', true);
+      }
+    }
+
+    async function portalRegister(e, type) {
+      e.preventDefault();
+      
+      const firstName = document.getElementById(`reg-${type}-firstName`)?.value;
+      const lastName = document.getElementById(`reg-${type}-lastName`)?.value;
+      const email = document.getElementById(`reg-${type}-email`)?.value;
+      const phone = document.getElementById(`reg-${type}-phone`)?.value;
+      const password = document.getElementById(`reg-${type}-password`)?.value;
+      const confirmPassword = document.getElementById(`reg-${type}-confirmPassword`)?.value;
+
+      if (!firstName || !lastName || !email || !password) {
+        showPortalMessage('Por favor completa todos los campos obligatorios', true);
+        return;
+      }
+
+      if (password !== confirmPassword) {
+        showPortalMessage('Las contraseñas no coinciden', true);
+        return;
+      }
+
+      if (password.length < 6) {
+        showPortalMessage('La contraseña debe tener al menos 6 caracteres', true);
+        return;
+      }
+
+      showPortalMessage('Creando cuenta...', false);
+
+      try {
+        const registerData = {
+          firstName,
+          lastName,
+          email,
+          phone,
+          password,
+          role: type === 'lawyer' ? 'lawyer' : 'client'
+        };
+
+        const res = await fetch('/api/auth/register', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(registerData)
+        });
+        const result = await res.json();
+        
+        if (result.success) {
+          showPortalMessage('Cuenta creada. Iniciando sesión...', false);
+          
+          // Auto-login after register
+          setTimeout(async () => {
+            try {
+              const loginRes = await fetch('/api/auth/login', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ email, password })
+              });
+              const loginResult = await loginRes.json();
+              
+              if (loginResult.success && loginResult.data?.token) {
+                portalToken = loginResult.data.token;
+                userType = type;
+                localStorage.setItem('portalToken', portalToken);
+                localStorage.setItem('userType', userType);
+                userData = loginResult.data.user;
+                
+                document.getElementById('login-section').style.display = 'none';
+                document.getElementById('portal-panel').style.display = 'flex';
+                initPortal();
+                showPortalSection('services');
+              } else {
+                showPortalMessage('Cuenta creada. Por favor inicia sesión.', false);
+                showAuthMode('login');
+                document.getElementById(`${type}-email`).value = email;
+              }
+            } catch (e) {
+              showPortalMessage('Cuenta creada. Por favor inicia sesión.', false);
+              showAuthMode('login');
+            }
+          }, 1000);
+        } else {
+          showPortalMessage(result.message || 'Error al crear cuenta', true);
+        }
+      } catch (err) {
+        showPortalMessage('Error de conexión', true);
+      }
     }
 
     // Unified fetch function with better error handling

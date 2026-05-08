@@ -1,13 +1,13 @@
-// URLs de los servicios
+// URLs de los servicios - relativas para local y producción
 const API_URL = {
-  auth: 'http://localhost:3001/api/auth',
-  cases: 'http://localhost:3002/api/cases',
-  clients: 'http://localhost:3003/api/clients',
-  documents: 'http://localhost:3004/api/documents',
-  timetracking: 'http://localhost:3005/api/time-entries',
-  billing: 'http://localhost:3006/api/invoices',
-  notifications: 'http://localhost:3007/api/notifications',
-  dashboard: 'http://localhost:3008/api/dashboard'
+  auth: '/api/auth',
+  cases: '/api/cases',
+  clients: '/api/clients',
+  documents: '/api/documents',
+  timetracking: '/api/time-entries',
+  billing: '/api/invoices',
+  notifications: '/api/notifications',
+  dashboard: '/api/dashboard'
 };
 
 // Token global - limpiar cualquier token inválido al inicio

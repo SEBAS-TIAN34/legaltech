@@ -130,7 +130,7 @@
 
     <main class="portal-main">
       <header class="portal-header">
-        <h1 id="portal-title">Dashboard</h1>
+        <h1 id="portal-title">LegalTech - Panel de Servicios</h1>
         <div class="header-actions">
           <button class="notification-btn" onclick="showNotifications()">
             <span class="notification-icon">🔔</span>
@@ -139,8 +139,61 @@
         </div>
       </header>
 
+      <!-- Servicios Disponibles -->
+      <div id="section-services" class="section-content active">
+        <div class="services-grid">
+          <div class="service-card" onclick="showPortalSection('cases')">
+            <div class="service-icon">⚖️</div>
+            <h3>Casos</h3>
+            <p>Gestión de casos legales</p>
+          </div>
+          
+          <div class="service-card" onclick="showPortalSection('clients')">
+            <div class="service-icon">👥</div>
+            <h3>Clientes</h3>
+            <p>Administración de clientes</p>
+          </div>
+          
+          <div class="service-card" onclick="showPortalSection('documents')">
+            <div class="service-icon">📄</div>
+            <h3>Documentos</h3>
+            <p>Subir y gestionar documentos</p>
+          </div>
+          
+          <div class="service-card" onclick="showPortalSection('time')">
+            <div class="service-icon">⏱️</div>
+            <h3>Tiempo</h3>
+            <p>Control de tiempo y facturación</p>
+          </div>
+          
+          <div class="service-card" onclick="showPortalSection('invoices')">
+            <div class="service-icon">💰</div>
+            <h3>Facturación</h3>
+            <p>Gestión de facturas e ingresos</p>
+          </div>
+          
+          <div class="service-card" onclick="showPortalSection('notifications')">
+            <div class="service-icon">🔔</div>
+            <h3>Notificaciones</h3>
+            <p>Centro de notificaciones</p>
+          </div>
+          
+          <div class="service-card" onclick="showPortalSection('dashboard')">
+            <div class="service-icon">📊</div>
+            <h3>Dashboard</h3>
+            <p>Estadísticas y métricas</p>
+          </div>
+          
+          <div class="service-card" onclick="showPortalSection('profile')">
+            <div class="service-icon">👤</div>
+            <h3>Mi Perfil</h3>
+            <p>Configuración de cuenta</p>
+          </div>
+        </div>
+      </div>
+
       <!-- Dashboard Section -->
-      <div id="section-dashboard" class="section-content active">
+      <div id="section-dashboard" class="section-content">
         <div class="stats-row" id="portal-stats">
           <!-- Stats se cargan dinámicamente -->
         </div>
@@ -373,19 +426,24 @@
 
     const menuItems = {
       client: [
+        { id: 'services', label: 'Servicios', icon: '🏠' },
         { id: 'dashboard', label: 'Dashboard', icon: '📊' },
         { id: 'cases', label: 'Mis Casos', icon: '⚖️' },
+        { id: 'clients', label: 'Clientes', icon: '👥' },
         { id: 'documents', label: 'Documentos', icon: '📄' },
         { id: 'invoices', label: 'Facturas', icon: '💰' },
-        { id: 'appointments', label: 'Citas', icon: '📅' },
+        { id: 'time', label: 'Tiempo', icon: '⏱️' },
+        { id: 'notifications', label: 'Notificaciones', icon: '🔔' },
         { id: 'profile', label: 'Mi Perfil', icon: '👤' }
       ],
       lawyer: [
+        { id: 'services', label: 'Servicios', icon: '🏠' },
         { id: 'dashboard', label: 'Dashboard', icon: '📊' },
         { id: 'cases', label: 'Mis Casos', icon: '⚖️' },
+        { id: 'clients', label: 'Clientes', icon: '👥' },
         { id: 'documents', label: 'Documentos', icon: '📄' },
         { id: 'time', label: 'Tiempo', icon: '⏱️' },
-        { id: 'appointments', label: 'Audiencias', icon: '📅' },
+        { id: 'notifications', label: 'Notificaciones', icon: '🔔' },
         { id: 'profile', label: 'Mi Perfil', icon: '👤' }
       ]
     };
@@ -493,12 +551,8 @@
             document.getElementById('portal-panel').style.display = 'flex';
             initPortal();
             
-            // Redirect to cases section after login
-            setTimeout(() => {
-              showPortalSection('cases');
-              // Show create case modal automatically
-              setTimeout(() => showCreateCaseModal(), 500);
-            }, 500);
+            // Redirect to services section after login
+            showPortalSection('services');
           } else {
             showPortalMessage('Cuenta creada. Por favor inicia sesión.', false);
             showAuthMode('login');
@@ -618,6 +672,8 @@
             document.getElementById('login-section').style.display = 'none';
             document.getElementById('portal-panel').style.display = 'flex';
             initPortal();
+            showPortalSection('services');
+          }, 500);
           }, 500);
         } else {
           showPortalMessage(result.message, true);

@@ -1,631 +1,965 @@
-// URLs de los servicios
+// ========================================
+// LEGALTECH - JAVASCRIPT PREMIUM UI
+// ========================================
+
+// ================= API URLS (Relative paths for nginx) =================
+
 const API_URL = {
-  auth: 'http://127.0.0.1:3001/api/auth',
-  cases: 'http://127.0.0.1:3002/api/cases',
-  clients: 'http://127.0.0.1:3003/api/clients',
-  documents: 'http://127.0.0.1:3004/api/documents',
-  timetracking: 'http://127.0.0.1:3005/api/time-entries',
-  billing: 'http://127.0.0.1:3006/api/invoices',
-  notifications: 'http://127.0.0.1:3007/api/notifications',
-  dashboard: 'http://127.0.0.1:3008/api/dashboard'
+
+  auth:'/api/auth',
+
+  cases:'/api/cases',
+
+  clients:'/api/clients',
+
+  documents:'/api/documents',
+
+  timetracking:'/api/time-entries',
+
+  billing:'/api/invoices',
+
+  notifications:'/api/notifications',
+
+  dashboard:'/api/dashboard'
+
 };
 
-// Token global
+// ================= TOKEN =================
+
 let authToken = localStorage.getItem('token') || '';
 
-// Mostrar secciones
-function showSection(sectionId) {
-  document.querySelectorAll('.section').forEach(s => s.classList.add('hidden'));
-  document.getElementById(sectionId + '-section').classList.remove('hidden');
-}
+// ========================================
+// SHOW SECTION
+// ========================================
 
-// Mostrar mensaje
-function showMessage(elementId, message, isError = false) {
-  const el = document.getElementById(elementId);
-  el.className = isError ? 'message-error' : 'message-success';
-  el.textContent = message;
-}
+function showSection(sectionId){
 
-// Headers con auth
-function getHeaders() {
-  return {
-    'Content-Type': 'application/json',
-    'Authorization': authToken ? `Bearer ${authToken}` : ''
-  };
-}
+  document.querySelectorAll('.section')
+  .forEach(section=>{
 
-// ==================== AUTH ====================
-async function register(e) {
-  e.preventDefault();
-  const data = {
-    firstName: document.getElementById('reg-firstName').value,
-    lastName: document.getElementById('reg-lastName').value,
-    email: document.getElementById('reg-email').value,
-    password: document.getElementById('reg-password').value,
-    role: document.getElementById('reg-role').value
-  };
+    section.style.display='none';
 
-  try {
-    const res = await fetch(`${API_URL.auth}/register`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(data)
-    });
-    const result = await res.json();
-    
-    if (result.success) {
-      showMessage('auth-message', 'Registro exitoso! Ahora puedes hacer login.');
-    } else {
-      showMessage('auth-message', result.message, true);
-    }
-  } catch (err) {
-    showMessage('auth-message', 'Error de conexión: ' + err.message, true);
+  });
+
+  const activeSection =
+  document.getElementById(`${sectionId}-section`);
+
+  if(activeSection){
+
+    activeSection.style.display='block';
+
   }
+
+  // ACTIVE MENU
+
+  document.querySelectorAll('.menu li')
+  .forEach(item=>item.classList.remove('active'));
+
 }
 
-async function login(e) {
-  e.preventDefault();
-  const data = {
-    email: document.getElementById('login-email').value,
-    password: document.getElementById('login-password').value
+// ========================================
+// TOAST MESSAGE
+// ========================================
+
+function showToast(message,type='success'){
+
+  const toast = document.createElement('div');
+
+  toast.className = `toast ${type}`;
+
+  toast.innerHTML = `
+  
+    <span>${message}</span>
+
+  `;
+
+  document.body.appendChild(toast);
+
+  setTimeout(()=>{
+
+    toast.classList.add('show');
+
+  },100);
+
+  setTimeout(()=>{
+
+    toast.classList.remove('show');
+
+    setTimeout(()=>{
+
+      toast.remove();
+
+    },300);
+
+  },3000);
+
+}
+
+// ========================================
+// AUTH HEADERS
+// ========================================
+
+function getHeaders(){
+
+  return{
+
+    'Content-Type':'application/json',
+
+    'Authorization':
+    authToken ? `Bearer ${authToken}` : ''
+
   };
 
-  try {
-    const res = await fetch(`${API_URL.auth}/login`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(data)
-    });
+}
+
+// ========================================
+// LOADING EFFECT
+// ========================================
+
+function showLoading(containerId){
+
+  const container =
+  document.getElementById(containerId);
+
+  container.innerHTML = `
+
+    <div class="loading-card">
+
+      <div class="loader"></div>
+
+      <p>Cargando...</p>
+
+    </div>
+
+  `;
+
+}
+
+// ========================================
+// AUTH
+// ========================================
+
+async function register(e){
+
+  e.preventDefault();
+
+  const data = {
+
+    firstName:
+    document.getElementById('reg-firstName').value,
+
+    lastName:
+    document.getElementById('reg-lastName').value,
+
+    email:
+    document.getElementById('reg-email').value,
+
+    password:
+    document.getElementById('reg-password').value,
+
+    role:
+    document.getElementById('reg-role').value
+
+  };
+
+  try{
+
+    const res = await fetch(
+      `${API_URL.auth}/register`,
+      {
+
+        method:'POST',
+
+        headers:{
+          'Content-Type':'application/json'
+        },
+
+        body:JSON.stringify(data)
+
+      }
+    );
+
     const result = await res.json();
-    
-    if (result.success) {
+
+    if(result.success){
+
+      showToast('Cuenta creada correctamente');
+
+    }else{
+
+      showToast(result.message,'error');
+
+    }
+
+  }catch(err){
+
+    showToast(err.message,'error');
+
+  }
+
+}
+
+// ========================================
+// LOGIN
+// ========================================
+
+async function login(e){
+
+  e.preventDefault();
+
+  const data = {
+
+    email:
+    document.getElementById('login-email').value,
+
+    password:
+    document.getElementById('login-password').value
+
+  };
+
+  try{
+
+    const res = await fetch(
+      `${API_URL.auth}/login`,
+      {
+
+        method:'POST',
+
+        headers:{
+          'Content-Type':'application/json'
+        },
+
+        body:JSON.stringify(data)
+
+      }
+    );
+
+    const result = await res.json();
+
+    if(result.success){
+
       authToken = result.data.token;
-      localStorage.setItem('token', authToken);
-      showMessage('auth-message', 'Login exitoso!');
-      showSection('cases');
-    } else {
-      showMessage('auth-message', result.message, true);
+
+      localStorage.setItem(
+        'token',
+        authToken
+      );
+
+      showToast('Bienvenido');
+
+      showSection('dashboard');
+
+      loadDashboard();
+
+    }else{
+
+      showToast(result.message,'error');
+
     }
-  } catch (err) {
-    showMessage('auth-message', 'Error de conexión: ' + err.message, true);
+
+  }catch(err){
+
+    showToast(err.message,'error');
+
   }
+
 }
 
-function logout() {
-  authToken = '';
+// ========================================
+// LOGOUT
+// ========================================
+
+function logout(){
+
   localStorage.removeItem('token');
+
+  authToken='';
+
+  showToast('Sesión cerrada');
+
   showSection('auth');
+
 }
 
-// ==================== CASES ====================
-async function createCase(e) {
+// ========================================
+// CASES
+// ========================================
+
+async function createCase(e){
+
   e.preventDefault();
+
   const data = {
-    caseNumber: document.getElementById('case-number').value,
-    title: document.getElementById('case-title').value,
-    description: document.getElementById('case-description').value,
-    caseType: document.getElementById('case-type').value,
-    priority: document.getElementById('case-priority').value,
-    clientId: document.getElementById('case-clientId').value,
-    assignedTo: document.getElementById('case-lawyer').value,
-    startDate: document.getElementById('case-startDate').value,
-    budget: document.getElementById('case-budget').value || 0
+
+    caseNumber:
+    document.getElementById('case-number').value,
+
+    title:
+    document.getElementById('case-title').value,
+
+    description:
+    document.getElementById('case-description').value,
+
+    caseType:
+    document.getElementById('case-type').value,
+
+    priority:
+    document.getElementById('case-priority').value,
+
+    startDate:
+    document.getElementById('case-startDate').value,
+
+    budget:
+    document.getElementById('case-budget').value || 0
+
   };
 
-  try {
-    const res = await fetch(`${API_URL.cases}/`, {
-      method: 'POST',
-      headers: getHeaders(),
-      body: JSON.stringify(data)
-    });
+  try{
+
+    const res = await fetch(
+      `${API_URL.cases}/`,
+      {
+
+        method:'POST',
+
+        headers:getHeaders(),
+
+        body:JSON.stringify(data)
+
+      }
+    );
+
     const result = await res.json();
-    alert(result.message || (result.success ? 'Caso creado!' : 'Error: ' + result.message));
-    getAllCases();
-  } catch (err) {
-    alert('Error: ' + err.message);
+
+    if(result.success){
+
+      showToast('Caso creado');
+
+      getAllCases();
+
+    }else{
+
+      showToast(result.message,'error');
+
+    }
+
+  }catch(err){
+
+    showToast(err.message,'error');
+
   }
+
 }
 
-async function getCases(e) {
-  e?.preventDefault();
-  const status = document.getElementById('search-case-status').value;
-  let url = API_URL.cases + '/';
-  if (status) url += `?status=${status}`;
-  
-  try {
-    const res = await fetch(url, { headers: getHeaders() });
+// ========================================
+// GET CASES
+// ========================================
+
+async function getAllCases(){
+
+  showLoading('cases-list');
+
+  try{
+
+    const res = await fetch(
+      `${API_URL.cases}/`,
+      {
+
+        headers:getHeaders()
+
+      }
+    );
+
     const result = await res.json();
+
     displayCases(result.data || []);
-  } catch (err) {
-    alert('Error: ' + err.message);
+
+  }catch(err){
+
+    showToast(err.message,'error');
+
   }
+
 }
 
-async function getAllCases() {
-  try {
-    const res = await fetch(API_URL.cases + '/', { headers: getHeaders() });
-    const result = await res.json();
-    displayCases(result.data || []);
-  } catch (err) {
-    alert('Error: ' + err.message);
-  }
-}
+// ========================================
+// DISPLAY CASES
+// ========================================
 
-function displayCases(cases) {
-  const container = document.getElementById('cases-list');
-  if (!cases.length) {
-    container.innerHTML = '<p>No hay casos.</p>';
+function displayCases(cases){
+
+  const container =
+  document.getElementById('cases-list');
+
+  if(!cases.length){
+
+    container.innerHTML = `
+
+      <div class="empty-state">
+
+        No hay casos registrados
+
+      </div>
+
+    `;
+
     return;
+
   }
-  
-  container.innerHTML = cases.map(c => `
+
+  container.innerHTML = cases.map(c=>`
+
     <div class="result-item">
-      <strong>${c.caseNumber}</strong> - ${c.title}<br>
-      Estado: ${c.status} | Tipo: ${c.caseType} | Prioridad: ${c.priority}<br>
-      Cliente ID: ${c.clientId} | Abogado: ${c.assignedTo}
+
+      <div class="result-top">
+
+        <h3>${c.title}</h3>
+
+        <span class="case-status status-${c.status}">
+          ${c.status}
+        </span>
+
+      </div>
+
+      <p>
+        ${c.description || 'Sin descripción'}
+      </p>
+
+      <div class="case-meta">
+
+        <span>
+          ⚖️ ${c.caseType}
+        </span>
+
+        <span>
+          💰 $${c.budget || 0}
+        </span>
+
+        <span>
+          🔥 ${c.priority}
+        </span>
+
+      </div>
+
     </div>
+
   `).join('');
+
 }
 
-async function getCaseStats() {
-  try {
-    const res = await fetch(`${API_URL.cases}/stats`, { headers: getHeaders() });
-    const result = await res.json();
-    const statsEl = document.getElementById('cases-stats');
-    statsEl.classList.remove('hidden');
-    document.getElementById('cases-stats-content').textContent = JSON.stringify(result.data, null, 2);
-  } catch (err) {
-    alert('Error: ' + err.message);
-  }
-}
+// ========================================
+// CLIENTS
+// ========================================
 
-// ==================== CLIENTS ====================
-async function createClient(e) {
+async function createClient(e){
+
   e.preventDefault();
+
   const data = {
-    firstName: document.getElementById('client-firstName').value,
-    lastName: document.getElementById('client-lastName').value,
-    documentType: document.getElementById('client-docType').value,
-    documentNumber: document.getElementById('client-docNumber').value,
-    email: document.getElementById('client-email').value,
-    phone: document.getElementById('client-phone').value,
-    clientType: document.getElementById('client-type').value
+
+    firstName:
+    document.getElementById('client-firstName').value,
+
+    lastName:
+    document.getElementById('client-lastName').value,
+
+    email:
+    document.getElementById('client-email').value,
+
+    phone:
+    document.getElementById('client-phone').value
+
   };
 
-  try {
-    const res = await fetch(`${API_URL.clients}/`, {
-      method: 'POST',
-      headers: getHeaders(),
-      body: JSON.stringify(data)
-    });
+  try{
+
+    const res = await fetch(
+      `${API_URL.clients}/`,
+      {
+
+        method:'POST',
+
+        headers:getHeaders(),
+
+        body:JSON.stringify(data)
+
+      }
+    );
+
     const result = await res.json();
-    alert(result.message || (result.success ? 'Cliente creado!' : 'Error: ' + result.message));
-    getAllClients();
-  } catch (err) {
-    alert('Error: ' + err.message);
+
+    if(result.success){
+
+      showToast('Cliente creado');
+
+      getAllClients();
+
+    }else{
+
+      showToast(result.message,'error');
+
+    }
+
+  }catch(err){
+
+    showToast(err.message,'error');
+
   }
+
 }
 
-async function getAllClients() {
-  try {
-    const res = await fetch(API_URL.clients + '/', { headers: getHeaders() });
+// ========================================
+// GET CLIENTS
+// ========================================
+
+async function getAllClients(){
+
+  showLoading('clients-list');
+
+  try{
+
+    const res = await fetch(
+      `${API_URL.clients}/`,
+      {
+
+        headers:getHeaders()
+
+      }
+    );
+
     const result = await res.json();
+
     displayClients(result.data || []);
-  } catch (err) {
-    alert('Error: ' + err.message);
+
+  }catch(err){
+
+    showToast(err.message,'error');
+
   }
+
 }
 
-function displayClients(clients) {
-  const container = document.getElementById('clients-list');
-  if (!clients.length) {
-    container.innerHTML = '<p>No hay clientes.</p>';
+// ========================================
+// DISPLAY CLIENTS
+// ========================================
+
+function displayClients(clients){
+
+  const container =
+  document.getElementById('clients-list');
+
+  if(!clients.length){
+
+    container.innerHTML =
+    `<div class="empty-state">
+      No hay clientes
+    </div>`;
+
     return;
+
   }
-  
-  container.innerHTML = clients.map(c => `
+
+  container.innerHTML = clients.map(c=>`
+
     <div class="result-item">
-      <strong>${c.firstName} ${c.lastName}</strong><br>
-      ${c.documentType}: ${c.documentNumber}<br>
-      Email: ${c.email || 'N/A'} | Tel: ${c.phone || 'N/A'}<br>
-      Tipo: ${c.clientType} | Activo: ${c.isActive !== false ? 'Sí' : 'No'}
+
+      <h3>
+        ${c.firstName}
+        ${c.lastName}
+      </h3>
+
+      <p>
+        📧 ${c.email || 'Sin email'}
+      </p>
+
+      <p>
+        📱 ${c.phone || 'Sin teléfono'}
+      </p>
+
     </div>
+
   `).join('');
+
 }
 
-// ==================== DOCUMENTS ====================
-async function uploadDocument(e) {
+// ========================================
+// DOCUMENTS
+// ========================================
+
+async function uploadDocument(e){
+
   e.preventDefault();
-  
+
   const formData = new FormData();
-  formData.append('file', document.getElementById('doc-file').files[0]);
-  formData.append('caseId', document.getElementById('doc-caseId').value);
-  formData.append('documentType', document.getElementById('doc-type').value);
-  formData.append('description', document.getElementById('doc-description').value);
 
-  try {
-    const res = await fetch(`${API_URL.documents}/`, {
-      method: 'POST',
-      headers: { 'Authorization': `Bearer ${authToken}` },
-      body: formData
-    });
+  formData.append(
+    'file',
+    document.getElementById('doc-file').files[0]
+  );
+
+  formData.append(
+    'caseId',
+    document.getElementById('doc-caseId').value
+  );
+
+  formData.append(
+    'description',
+    document.getElementById('doc-description').value
+  );
+
+  try{
+
+    const res = await fetch(
+      `${API_URL.documents}/`,
+      {
+
+        method:'POST',
+
+        headers:{
+          'Authorization':
+          `Bearer ${authToken}`
+        },
+
+        body:formData
+
+      }
+    );
+
     const result = await res.json();
-    alert(result.message || (result.success ? 'Documento subido!' : 'Error: ' + result.message));
-    getAllDocuments();
-  } catch (err) {
-    alert('Error: ' + err.message);
+
+    if(result.success){
+
+      showToast('Documento subido');
+
+      getAllDocuments();
+
+    }else{
+
+      showToast(result.message,'error');
+
+    }
+
+  }catch(err){
+
+    showToast(err.message,'error');
+
   }
+
 }
 
-async function getAllDocuments() {
-  try {
-    const res = await fetch(API_URL.documents + '/', { headers: getHeaders() });
+// ========================================
+// GET DOCUMENTS
+// ========================================
+
+async function getAllDocuments(){
+
+  showLoading('documents-list');
+
+  try{
+
+    const res = await fetch(
+      `${API_URL.documents}/`,
+      {
+
+        headers:getHeaders()
+
+      }
+    );
+
     const result = await res.json();
+
     displayDocuments(result.data || []);
-  } catch (err) {
-    alert('Error: ' + err.message);
+
+  }catch(err){
+
+    showToast(err.message,'error');
+
   }
+
 }
 
-async function getDocumentsByCase(e) {
-  e.preventDefault();
-  const caseId = document.getElementById('doc-search-caseId').value;
-  if (!caseId) return getAllDocuments();
-  
-  try {
-    const res = await fetch(`${API_URL.documents}/case/${caseId}`, { headers: getHeaders() });
-    const result = await res.json();
-    displayDocuments(result.data || []);
-  } catch (err) {
-    alert('Error: ' + err.message);
-  }
-}
+// ========================================
+// DISPLAY DOCUMENTS
+// ========================================
 
-function displayDocuments(docs) {
-  const container = document.getElementById('documents-list');
-  if (!docs.length) {
-    container.innerHTML = '<p>No hay documentos.</p>';
+function displayDocuments(docs){
+
+  const container =
+  document.getElementById('documents-list');
+
+  if(!docs.length){
+
+    container.innerHTML =
+    `<div class="empty-state">
+      No hay documentos
+    </div>`;
+
     return;
+
   }
-  
-  container.innerHTML = docs.map(d => `
+
+  container.innerHTML = docs.map(d=>`
+
     <div class="result-item">
-      <strong>${d.originalFileName}</strong><br>
-      Caso ID: ${d.caseId} | Tipo: ${d.documentType}<br>
-      Tamaño: ${(d.fileSize / 1024).toFixed(2)} KB<br>
-      <button onclick="downloadDocument('${d._id}')">Descargar</button>
-      <button class="danger" onclick="deleteDocument('${d._id}')">Eliminar</button>
+
+      <h3>
+        📄 ${d.originalFileName}
+      </h3>
+
+      <p>
+        Caso:
+        ${d.caseId}
+      </p>
+
+      <p>
+        ${(d.fileSize / 1024).toFixed(2)}
+        KB
+      </p>
+
+      <button
+      onclick="downloadDocument('${d._id}')">
+
+      Descargar
+
+      </button>
+
     </div>
+
   `).join('');
+
 }
 
-async function downloadDocument(id) {
-  window.open(`${API_URL.documents}/${id}/download`, '_blank');
+// ========================================
+// DOWNLOAD DOCUMENT
+// ========================================
+
+function downloadDocument(id){
+
+  window.open(
+    `${API_URL.documents}/${id}/download`,
+    '_blank'
+  );
+
 }
 
-async function deleteDocument(id) {
-  if (!confirm('Eliminar documento?')) return;
-  
-  try {
-    const res = await fetch(`${API_URL.documents}/${id}`, {
-      method: 'DELETE',
-      headers: getHeaders()
-    });
+// ========================================
+// DASHBOARD
+// ========================================
+
+async function loadDashboard(){
+
+  try{
+
+    const res = await fetch(
+      `${API_URL.dashboard}/stats`,
+      {
+
+        headers:getHeaders()
+
+      }
+    );
+
     const result = await res.json();
-    alert(result.message);
-    getAllDocuments();
-  } catch (err) {
-    alert('Error: ' + err.message);
+
+    updateDashboard(result.data);
+
+  }catch(err){
+
+    console.log(err);
+
   }
+
 }
 
-// ==================== TIME TRACKING ====================
-async function startTimeEntry(e) {
-  e.preventDefault();
-  const data = {
-    caseId: document.getElementById('time-caseId').value,
-    description: document.getElementById('time-description').value,
-    billable: document.getElementById('time-billable').checked,
-    hourlyRate: document.getElementById('time-rate').value || 0
-  };
+// ========================================
+// UPDATE DASHBOARD
+// ========================================
 
-  try {
-    const res = await fetch(`${API_URL.timetracking}/`, {
-      method: 'POST',
-      headers: getHeaders(),
-      body: JSON.stringify(data)
-    });
-    const result = await res.json();
-    alert(result.message || (result.success ? 'Temporizador iniciado!' : 'Error: ' + result.message));
-    getTimeEntries();
-  } catch (err) {
-    alert('Error: ' + err.message);
+function updateDashboard(data){
+
+  if(!data) return;
+
+  const statCards =
+  document.querySelectorAll('.stat-card h2');
+
+  if(statCards.length >= 4){
+
+    statCards[0].innerText =
+    data.cases || 0;
+
+    statCards[1].innerText =
+    data.clients || 0;
+
+    statCards[2].innerText =
+    `$${data.revenue || 0}`;
+
+    statCards[3].innerText =
+    data.notifications || 0;
+
   }
+
 }
 
-async function stopTimeEntry(e) {
-  e.preventDefault();
-  const id = document.getElementById('time-stop-id').value;
-  
-  try {
-    const res = await fetch(`${API_URL.timetracking}/${id}/stop`, {
-      method: 'PUT',
-      headers: getHeaders()
-    });
-    const result = await res.json();
-    alert(result.message);
-    getTimeEntries();
-  } catch (err) {
-    alert('Error: ' + err.message);
-  }
+// ========================================
+// DARK MODE
+// ========================================
+
+function toggleDarkMode(){
+
+  document.body.classList.toggle('dark');
+
+  localStorage.setItem(
+    'darkMode',
+    document.body.classList.contains('dark')
+  );
+
 }
 
-async function getTimeEntries(e) {
-  e?.preventDefault();
-  const caseId = document.getElementById('time-search-caseId').value;
-  let url = API_URL.timetracking + '/';
-  if (caseId) url += `?caseId=${caseId}`;
-  
-  try {
-    const res = await fetch(url, { headers: getHeaders() });
-    const result = await res.json();
-    displayTimeEntries(result.data || []);
-  } catch (err) {
-    alert('Error: ' + err.message);
-  }
+// ========================================
+// LOAD DARK MODE
+// ========================================
+
+if(localStorage.getItem('darkMode') === 'true'){
+
+  document.body.classList.add('dark');
+
 }
 
-function displayTimeEntries(entries) {
-  const container = document.getElementById('timetracking-list');
-  if (!entries.length) {
-    container.innerHTML = '<p>No hay entradas de tiempo.</p>';
-    return;
+// ========================================
+// AUTO LOAD
+// ========================================
+
+window.onload = ()=>{
+
+  if(authToken){
+
+    showSection('dashboard');
+
+    loadDashboard();
+
+  }else{
+
+    showSection('auth');
+
   }
-  
-  container.innerHTML = entries.map(e => `
-    <div class="result-item">
-      <strong>Caso: ${e.caseId}</strong><br>
-      Descripción: ${e.description}<br>
-      Estado: ${e.status} | Duración: ${e.duration || 0} min<br>
-      Facturable: ${e.billable ? 'Sí' : 'No'}
-    </div>
-  `).join('');
+
+};
+
+// ========================================
+// TOAST CSS AUTO
+// ========================================
+
+const style = document.createElement('style');
+
+style.innerHTML = `
+
+.toast{
+
+  position:fixed;
+
+  top:30px;
+  right:30px;
+
+  background:#111827;
+
+  color:white;
+
+  padding:16px 22px;
+
+  border-radius:14px;
+
+  box-shadow:
+  0 10px 30px rgba(0,0,0,.2);
+
+  transform:translateX(120%);
+
+  transition:.4s;
+
+  z-index:9999;
+
 }
 
-// ==================== BILLING ====================
-let invoiceItems = [];
+.toast.show{
 
-function addInvoiceItem() {
-  const desc = document.querySelector('.inv-item-desc')?.value;
-  const qty = document.querySelector('.inv-item-qty')?.value;
-  const price = document.querySelector('.inv-item-price')?.value;
-  
-  if (desc && qty && price) {
-    invoiceItems.push({ description: desc, quantity: parseInt(qty), unitPrice: parseFloat(price) });
-    alert('Ítem agregado. Agrega más si es necesario.');
-  } else {
-    alert('Completa los campos del ítem primero.');
-  }
+  transform:translateX(0);
+
 }
 
-async function createInvoice(e) {
-  e.preventDefault();
-  
-  if (invoiceItems.length === 0) {
-    alert('Agrega al menos un ítem a la factura.');
-    return;
-  }
-  
-  const data = {
-    clientId: document.getElementById('inv-clientId').value,
-    caseId: document.getElementById('inv-caseId').value || null,
-    items: invoiceItems,
-    tax: parseFloat(document.getElementById('inv-tax').value) || 0,
-    dueDate: document.getElementById('inv-dueDate').value,
-    notes: document.getElementById('inv-notes').value
-  };
+.toast.error{
 
-  try {
-    const res = await fetch(`${API_URL.billing}/`, {
-      method: 'POST',
-      headers: getHeaders(),
-      body: JSON.stringify(data)
-    });
-    const result = await res.json();
-    alert(result.message || (result.success ? 'Factura creada!' : 'Error: ' + result.message));
-    invoiceItems = [];
-    getAllInvoices();
-  } catch (err) {
-    alert('Error: ' + err.message);
-  }
+  background:#ef4444;
+
 }
 
-async function getAllInvoices() {
-  try {
-    const res = await fetch(API_URL.billing + '/', { headers: getHeaders() });
-    const result = await res.json();
-    displayInvoices(result.data || []);
-  } catch (err) {
-    alert('Error: ' + err.message);
+.loading-card{
+
+  padding:40px;
+
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+
+}
+
+.loader{
+
+  width:40px;
+  height:40px;
+
+  border:4px solid #e5e7eb;
+
+  border-top:4px solid #2563eb;
+
+  border-radius:50%;
+
+  animation:spin 1s linear infinite;
+
+  margin-bottom:15px;
+
+}
+
+@keyframes spin{
+
+  to{
+
+    transform:rotate(360deg);
+
   }
+
 }
 
-async function getInvoicesByClient(e) {
-  e.preventDefault();
-  const clientId = document.getElementById('inv-search-clientId').value;
-  if (!clientId) return getAllInvoices();
-  
-  try {
-    const res = await fetch(`${API_URL.billing}/client/${clientId}`, { headers: getHeaders() });
-    const result = await res.json();
-    displayInvoices(result.data || []);
-  } catch (err) {
-    alert('Error: ' + err.message);
-  }
+.empty-state{
+
+  padding:50px;
+
+  text-align:center;
+
+  color:#6b7280;
+
 }
 
-function displayInvoices(invoices) {
-  const container = document.getElementById('billing-list');
-  if (!invoices.length) {
-    container.innerHTML = '<p>No hay facturas.</p>';
-    return;
-  }
-  
-  container.innerHTML = invoices.map(i => `
-    <div class="result-item">
-      <strong>${i.invoiceNumber}</strong> - Cliente: ${i.clientId}<br>
-      Total: $${i.total} | Estado: ${i.status}<br>
-      ${i.status !== 'paid' ? `<button onclick="payInvoice('${i._id}')">Pagar</button>` : ''}
-    </div>
-  `).join('');
+.result-top{
+
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+
+  margin-bottom:15px;
+
 }
 
-async function payInvoice(id) {
-  try {
-    const res = await fetch(`${API_URL.billing}/${id}/pay`, {
-      method: 'PUT',
-      headers: getHeaders()
-    });
-    const result = await res.json();
-    alert(result.message);
-    getAllInvoices();
-  } catch (err) {
-    alert('Error: ' + err.message);
-  }
+.case-meta{
+
+  display:flex;
+  gap:15px;
+
+  margin-top:15px;
+
+  flex-wrap:wrap;
+
 }
 
-// ==================== NOTIFICATIONS ====================
-async function createNotification(e) {
-  e.preventDefault();
-  const data = {
-    userId: document.getElementById('notif-userId').value,
-    title: document.getElementById('notif-title').value,
-    message: document.getElementById('notif-message').value,
-    type: document.getElementById('notif-type').value
-  };
+`;
 
-  try {
-    const res = await fetch(`${API_URL.notifications}/`, {
-      method: 'POST',
-      headers: getHeaders(),
-      body: JSON.stringify(data)
-    });
-    const result = await res.json();
-    alert(result.message || (result.success ? 'Notificación creada!' : 'Error: ' + result.message));
-    getNotifications();
-  } catch (err) {
-    alert('Error: ' + err.message);
-  }
-}
-
-async function sendNotification(e) {
-  e.preventDefault();
-  const data = {
-    userId: document.getElementById('notif-send-userId').value,
-    email: document.getElementById('notif-send-email').value || null,
-    title: document.getElementById('notif-send-title').value,
-    message: document.getElementById('notif-send-message').value,
-    channel: document.getElementById('notif-send-channel').value
-  };
-
-  try {
-    const res = await fetch(`${API_URL.notifications}/send`, {
-      method: 'POST',
-      headers: getHeaders(),
-      body: JSON.stringify(data)
-    });
-    const result = await res.json();
-    alert(result.message || (result.success ? 'Notificación enviada!' : 'Error: ' + result.message));
-    getNotifications();
-  } catch (err) {
-    alert('Error: ' + err.message);
-  }
-}
-
-async function getNotifications() {
-  try {
-    const res = await fetch(API_URL.notifications + '/', { headers: getHeaders() });
-    const result = await res.json();
-    displayNotifications(result.data || []);
-  } catch (err) {
-    alert('Error: ' + err.message);
-  }
-}
-
-async function markAllAsRead() {
-  try {
-    const res = await fetch(`${API_URL.notifications}/read-all`, {
-      method: 'PUT',
-      headers: getHeaders()
-    });
-    const result = await res.json();
-    alert(result.message);
-    getNotifications();
-  } catch (err) {
-    alert('Error: ' + err.message);
-  }
-}
-
-function displayNotifications(notifs) {
-  const container = document.getElementById('notifications-list');
-  if (!notifs.length) {
-    container.innerHTML = '<p>No hay notificaciones.</p>';
-    return;
-  }
-  
-  container.innerHTML = notifs.map(n => `
-    <div class="result-item ${n.isRead ? '' : 'warning'}">
-      <strong>${n.title}</strong><br>
-      ${n.message}<br>
-      Tipo: ${n.type} | Leída: ${n.isRead ? 'Sí' : 'No'}
-    </div>
-  `).join('');
-}
-
-// ==================== DASHBOARD ====================
-async function getDashboardStats() {
-  try {
-    const res = await fetch(`${API_URL.dashboard}/stats`, { headers: getHeaders() });
-    const result = await res.json();
-    document.getElementById('dashboard-stats').textContent = JSON.stringify(result.data, null, 2);
-  } catch (err) {
-    alert('Error: ' + err.message);
-  }
-}
-
-async function getCasesStats() {
-  try {
-    const res = await fetch(`${API_URL.dashboard}/cases`, { headers: getHeaders() });
-    const result = await res.json();
-    document.getElementById('dashboard-cases').textContent = JSON.stringify(result.data, null, 2);
-  } catch (err) {
-    alert('Error: ' + err.message);
-  }
-}
-
-async function getFinancialStats() {
-  try {
-    const res = await fetch(`${API_URL.dashboard}/financial`, { headers: getHeaders() });
-    const result = await res.json();
-    document.getElementById('dashboard-financial').textContent = JSON.stringify(result.data, null, 2);
-  } catch (err) {
-    alert('Error: ' + err.message);
-  }
-}
-
-async function getClientsStats() {
-  try {
-    const res = await fetch(`${API_URL.dashboard}/clients`, { headers: getHeaders() });
-    const result = await res.json();
-    document.getElementById('dashboard-clients').textContent = JSON.stringify(result.data, null, 2);
-  } catch (err) {
-    alert('Error: ' + err.message);
-  }
-}
-
-// Verificar si hay sesión activa
-if (authToken) {
-  showSection('cases');
-} else {
-  showSection('auth');
-}
+document.head.appendChild(style);

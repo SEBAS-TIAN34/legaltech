@@ -264,6 +264,95 @@
         </div>
       </div>
     </main>
+
+    <!-- Modal Crear Caso -->
+    <div id="create-case-modal" class="modal-overlay">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h3>Crear Nuevo Caso</h3>
+          <button class="close-modal" onclick="closeModal('create-case-modal')">&times;</button>
+        </div>
+        <form onsubmit="createNewCase(event)">
+          <div class="form-group">
+            <label>Título del Caso</label>
+            <input type="text" id="new-case-title" placeholder="Ej: Demanda Civil por Incumplimiento" required>
+          </div>
+          <div class="form-group">
+            <label>Tipo de Caso</label>
+            <select id="new-case-type" required>
+              <option value="">Seleccionar tipo</option>
+              <option value="civil">Civil</option>
+              <option value="criminal">Penal</option>
+              <option value="commercial">Comercial</option>
+              <option value="family">Familia</option>
+              <option value="administrative">Administrativo</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Descripción</label>
+            <textarea id="new-case-description" rows="4" placeholder="Describe los detalles del caso..."></textarea>
+          </div>
+          <div class="form-group">
+            <label>Prioridad</label>
+            <select id="new-case-priority" required>
+              <option value="low">Baja</option>
+              <option value="medium" selected>Media</option>
+              <option value="high">Alta</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Presupuesto ($)</label>
+            <input type="number" id="new-case-budget" placeholder="Ej: 5000000" min="0">
+          </div>
+          <div class="modal-actions">
+            <button type="button" class="btn-cancel" onclick="closeModal('create-case-modal')">Cancelar</button>
+            <button type="submit" class="btn-primary">Crear Caso</button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- Modal Subir Documento -->
+    <div id="upload-doc-modal" class="modal-overlay">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h3>Subir Documento</h3>
+          <button class="close-modal" onclick="closeModal('upload-doc-modal')">&times;</button>
+        </div>
+        <form onsubmit="uploadNewDocument(event)">
+          <div class="form-group">
+            <label>Seleccionar Archivo</label>
+            <input type="file" id="doc-file" required>
+          </div>
+          <div class="form-group">
+            <label>Caso Asociado</label>
+            <select id="doc-case-id">
+              <option value="">Seleccionar caso (opcional)</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Tipo de Documento</label>
+            <select id="doc-type" required>
+              <option value="">Seleccionar tipo</option>
+              <option value="contrato">Contrato</option>
+              <option value="demanda">Demanda</option>
+              <option value="prueba">Prueba</option>
+              <option value="sentencia">Sentencia</option>
+              <option value="escrito">Escrito</option>
+              <option value="otro">Otro</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Descripción</label>
+            <input type="text" id="doc-description" placeholder="Descripción del documento">
+          </div>
+          <div class="modal-actions">
+            <button type="button" class="btn-cancel" onclick="closeModal('upload-doc-modal')">Cancelar</button>
+            <button type="submit" class="btn-primary">Subir Documento</button>
+          </div>
+        </form>
+      </div>
+    </div>
   </div>
 
   <script>
@@ -371,8 +460,8 @@
           registerData.documentNumber = document.getElementById('reg-client-docNumber').value;
           registerData.clientType = document.getElementById('reg-client-type').value;
         } else {
-          registerData.licenseNumber = document.getElementById('reg-lawyer-license').value;
-          registerData.specialty = document.getElementById('reg-lawyer-specialty').value;
+          registerData.barNumber = document.getElementById('reg-lawyer-license').value;
+          registerData.specialization = document.getElementById('reg-lawyer-specialty').value;
         }
 
         const res = await fetch(`${API_URL.auth}/register`, {
@@ -383,14 +472,121 @@
         const result = await res.json();
         
         if (result.success) {
-          showPortalMessage('Cuenta creada exitosamente. Ahora puedes iniciar sesión.', false);
-          setTimeout(() => {
+          // Auto-login after registration
+          showPortalMessage('Cuenta creada. Iniciando sesión...', false);
+          
+          const loginRes = await fetch(`${API_URL.auth}/login`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ email, password })
+          });
+          const loginResult = await loginRes.json();
+          
+          if (loginResult.success) {
+            portalToken = loginResult.data.token;
+            userType = type;
+            localStorage.setItem('portalToken', portalToken);
+            localStorage.setItem('userType', userType);
+            userData = loginResult.data.user;
+            
+            document.getElementById('login-section').style.display = 'none';
+            document.getElementById('portal-panel').style.display = 'flex';
+            initPortal();
+            
+            // Redirect to cases section after login
+            setTimeout(() => {
+              showPortalSection('cases');
+              // Show create case modal automatically
+              setTimeout(() => showCreateCaseModal(), 500);
+            }, 500);
+          } else {
+            showPortalMessage('Cuenta creada. Por favor inicia sesión.', false);
             showAuthMode('login');
-            // Pre-fill email
             document.getElementById(`${type}-email`).value = email;
-          }, 2000);
+          }
         } else {
           showPortalMessage(result.message || 'Error al crear cuenta', true);
+        }
+      } catch (err) {
+        showPortalMessage('Error: ' + err.message, true);
+      }
+    }
+
+    // Create new case
+    async function createNewCase(e) {
+      e.preventDefault();
+      
+      const caseNumber = 'CASE-' + Date.now();
+      const title = document.getElementById('new-case-title').value;
+      const description = document.getElementById('new-case-description').value;
+      const caseType = document.getElementById('new-case-type').value;
+      const priority = document.getElementById('new-case-priority').value;
+      const budget = document.getElementById('new-case-budget').value;
+
+      try {
+        const res = await fetch(`${API_URL.cases}/`, {
+          method: 'POST',
+          headers: getHeaders(),
+          body: JSON.stringify({
+            caseNumber,
+            title,
+            description,
+            caseType,
+            priority,
+            clientId: userData?.id || userData?._id,
+            status: 'open'
+          })
+        });
+        const result = await res.json();
+        
+        if (result.success) {
+          showPortalMessage('Caso creado exitosamente', false);
+          closeModal('create-case-modal');
+          loadPortalCases();
+        } else {
+          showPortalMessage(result.message || 'Error al crear caso', true);
+        }
+      } catch (err) {
+        showPortalMessage('Error: ' + err.message, true);
+      }
+    }
+
+    // Upload document
+    async function uploadNewDocument(e) {
+      e.preventDefault();
+      
+      const fileInput = document.getElementById('doc-file');
+      const caseId = document.getElementById('doc-case-id').value;
+      const docType = document.getElementById('doc-type').value;
+      const description = document.getElementById('doc-description').value;
+
+      if (!fileInput.files[0]) {
+        showPortalMessage('Selecciona un archivo', true);
+        return;
+      }
+
+      const formData = new FormData();
+      formData.append('file', fileInput.files[0]);
+      formData.append('caseId', caseId);
+      formData.append('documentType', docType);
+      formData.append('title', description || fileInput.files[0].name);
+
+      try {
+        const res = await fetch(`${API_URL.documents}/`, {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${portalToken}`
+          },
+          body: formData
+        });
+        const result = await res.json();
+        
+        if (result.success) {
+          showPortalMessage('Documento subido exitosamente', false);
+          closeModal('upload-doc-modal');
+          loadPortalDocuments();
+        } else {
+          showPortalMessage(result.message || 'Error al subir documento', true);
         }
       } catch (err) {
         showPortalMessage('Error: ' + err.message, true);
@@ -663,11 +859,33 @@
     }
 
     function showCreateCaseModal() {
-      showPortalMessage('Próximamente: Crear caso', false);
+      const modal = document.getElementById('create-case-modal');
+      modal.style.display = 'flex';
+      // Load cases for dropdown if needed
     }
 
     function showUploadDocumentModal() {
-      showPortalMessage('Próximamente: Subir documento', false);
+      const modal = document.getElementById('upload-doc-modal');
+      modal.style.display = 'flex';
+      // Load cases for dropdown
+      loadCasesForDropdown();
+    }
+
+    async function loadCasesForDropdown() {
+      try {
+        const res = await fetch(`${API_URL.cases}/`, { headers: getHeaders() });
+        const result = await res.json();
+        const cases = result.data || [];
+        const select = document.getElementById('doc-case-id');
+        select.innerHTML = '<option value="">Seleccionar caso (opcional)</option>' + 
+          cases.map(c => `<option value="${c.id}">${c.caseNumber} - ${c.title}</option>`).join('');
+      } catch (err) {
+        console.error('Error loading cases:', err);
+      }
+    }
+
+    function closeModal(modalId) {
+      document.getElementById(modalId).style.display = 'none';
     }
 
     function showTimeEntryModal() {

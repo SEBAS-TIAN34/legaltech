@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>LegalTech - Panel</title>
+  <link rel="stylesheet" href="styles.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+</head>
+<body class="login-page">
+  <div id="loading-screen" class="loading-screen">
+    <div class="loading-spinner">
+      <i class="fas fa-scale-balanced"></i>
+      <p>Cargando tu panel...</p>
+    </div>
+  </div>
+
+  <script>
+    const token = localStorage.getItem('token');
+    const user = JSON.parse(localStorage.getItem('user') || '{}');
+
+    if (!token) {
+      window.location.href = 'index.html';
+    }
+
+    // Redirect based on role
+    if (user.role === 'lawyer') {
+      window.location.href = 'dashboard.html';
+    } else {
+      window.location.href = 'client.html';
+    }
+  </script>
+
+  <style>
+    .loading-screen {
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+    }
+    .loading-spinner {
+      text-align: center;
+      color: white;
+    }
+    .loading-spinner i {
+      font-size: 4rem;
+      animation: spin 2s linear infinite;
+    }
+    .loading-spinner p {
+      margin-top: 1rem;
+      font-size: 1.2rem;
+    }
+    @keyframes spin {
+      from { transform: rotate(0deg); }
+      to { transform: rotate(360deg); }
+    }
+  </style>
+</body>
+</html>

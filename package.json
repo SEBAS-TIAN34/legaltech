@@ -1,0 +1,29 @@
+{
+  "name": "legaltech",
+  "version": "1.0.0",
+  "description": "![LegalTech](https://img.shields.io/badge/LegalTech-v2.0-green) ![Node.js](https://img.shields.io/badge/Node.js-18.x-brightgreen) ![PostgreSQL](https://img.shields.io/badge/PostgreSQL-15-blue) ![Kubernetes](https://img.shields.io/badge/Kubernetes-Ready-purple)",
+  "main": "server.js",
+  "directories": {
+    "doc": "docs"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "node server.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/SEBAS-TIAN34/LEGALTECH.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/SEBAS-TIAN34/LEGALTECH/issues"
+  },
+  "homepage": "https://github.com/SEBAS-TIAN34/LEGALTECH#readme",
+  "dependencies": {
+    "cors": "^2.8.6",
+    "express": "^5.2.1"
+  }
+}

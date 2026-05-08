@@ -1,0 +1,626 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>LegalTech - Mi Panel</title>
+  <link rel="stylesheet" href="styles.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+</head>
+<body class="login-page">
+  <!-- Header -->
+  <header class="client-header">
+    <div class="header-brand">
+      <i class="fas fa-scale-balanced"></i>
+      <span>LegalTech</span>
+    </div>
+    <div class="header-user">
+      <span id="user-name">Usuario</span>
+      <button class="btn-logout" onclick="logout()">
+        <i class="fas fa-sign-out-alt"></i> Salir
+      </button>
+    </div>
+  </header>
+
+  <!-- Main Content -->
+  <main class="client-main">
+    <div class="client-welcome">
+      <h1><i class="fas fa-user"></i> Bienvenido a tu Panel</h1>
+      <p>Gestiona tus denuncias, documentos y pagos legales</p>
+    </div>
+
+    <!-- Quick Actions -->
+    <div class="client-actions">
+      <button class="client-action-btn" onclick="showSection('complaint')">
+        <div class="action-icon complaint">
+          <i class="fas fa-exclamation-triangle"></i>
+        </div>
+        <div class="action-text">
+          <h3>Nueva Denuncia</h3>
+          <p>Presenta una denuncia o demanda</p>
+        </div>
+      </button>
+      
+      <button class="client-action-btn" onclick="showSection('my-cases')">
+        <div class="action-icon cases">
+          <i class="fas fa-briefcase"></i>
+        </div>
+        <div class="action-text">
+          <h3>Mis Casos</h3>
+          <p>Ver estado de tus denuncias</p>
+        </div>
+      </button>
+      
+      <button class="client-action-btn" onclick="showSection('documents')">
+        <div class="action-icon docs">
+          <i class="fas fa-file-alt"></i>
+        </div>
+        <div class="action-text">
+          <h3>Mis Documentos</h3>
+          <p>Ver y subir documentos</p>
+        </div>
+      </button>
+      
+      <button class="client-action-btn" onclick="showSection('upload-doc')">
+        <div class="action-icon upload">
+          <i class="fas fa-cloud-upload-alt"></i>
+        </div>
+        <div class="action-text">
+          <h3>Subir Documento</h3>
+          <p>Agregar archivos importantes</p>
+        </div>
+      </button>
+      
+      <button class="client-action-btn" onclick="showSection('wait-time')">
+        <div class="action-icon time">
+          <i class="fas fa-clock"></i>
+        </div>
+        <div class="action-text">
+          <h3>Tiempo de Espera</h3>
+          <p>Ver tiempo de resolución</p>
+        </div>
+      </button>
+      
+      <button class="client-action-btn" onclick="showSection('billing')">
+        <div class="action-icon billing">
+          <i class="fas fa-credit-card"></i>
+        </div>
+        <div class="action-text">
+          <h3>Mis Pagos</h3>
+          <p>Ver y pagar facturas</p>
+        </div>
+      </button>
+    </div>
+
+    <!-- Sections -->
+    <div class="client-sections">
+      <!-- Complaint Form -->
+      <section id="section-complaint" class="client-section active">
+        <div class="section-header">
+          <h2><i class="fas fa-exclamation-triangle"></i> Presentar Nueva Denuncia</h2>
+          <p>Describe tu situación legal para que un abogado pueda ayudarte</p>
+        </div>
+        
+        <form onsubmit="submitComplaint(event)" class="complaint-form">
+          <div class="form-grid">
+            <div class="form-group">
+              <label>Tipo de Denuncia *</label>
+              <select id="complaint-type" required>
+                <option value="">Selecciona el tipo</option>
+                <option value="civil">Demanda Civil</option>
+                <option value="laboral">Conflicto Laboral</option>
+                <option value="familiar">Asunto Familiar</option>
+                <option value="penal">Denuncia Penal</option>
+                <option value="mercantil">Problema Mercantil</option>
+                <option value="otro">Otro</option>
+              </select>
+            </div>
+            
+            <div class="form-group">
+              <label>Título de tu Denuncia *</label>
+              <input type="text" id="complaint-title" placeholder="Ej: Problema con alquiler" required>
+            </div>
+          </div>
+          
+          <div class="form-group">
+            <label>Descripción Detallada *</label>
+            <textarea id="complaint-description" rows="5" placeholder="Explica detalladamente tu situación, incluye fechas, personas involucradas y cualquier información relevante..." required></textarea>
+          </div>
+          
+          <div class="form-grid-3">
+            <div class="form-group">
+              <label>Fecha del Incidente</label>
+              <input type="date" id="complaint-date">
+            </div>
+            
+            <div class="form-group">
+              <label>Monto ($)</label>
+              <input type="number" id="complaint-amount" placeholder="0.00" min="0">
+            </div>
+            
+            <div class="form-group">
+              <label>Parte Contraria</label>
+              <input type="text" id="complaint-party" placeholder="Nombre">
+            </div>
+          </div>
+          
+          <button type="submit" class="btn-submit">
+            <i class="fas fa-paper-plane"></i> Enviar Denuncia
+          </button>
+        </form>
+      </section>
+
+      <!-- My Cases -->
+      <section id="section-my-cases" class="client-section">
+        <div class="section-header">
+          <h2><i class="fas fa-briefcase"></i> Mis Casos</h2>
+          <p>Estado de tus denuncias presentadas</p>
+        </div>
+        
+        <div class="stats-row">
+          <div class="mini-stat">
+            <span class="mini-stat-num" id="cases-active">0</span>
+            <span class="mini-stat-label">En Proceso</span>
+          </div>
+          <div class="mini-stat">
+            <span class="mini-stat-num" id="cases-pending">0</span>
+            <span class="mini-stat-label">Pendientes</span>
+          </div>
+          <div class="mini-stat">
+            <span class="mini-stat-num" id="cases-completed">0</span>
+            <span class="mini-stat-label">Resueltos</span>
+          </div>
+        </div>
+        
+        <div class="cases-list" id="cases-list">
+          <p class="loading-text">Cargando...</p>
+        </div>
+      </section>
+
+      <!-- Documents -->
+      <section id="section-documents" class="client-section">
+        <div class="section-header">
+          <h2><i class="fas fa-file-alt"></i> Mis Documentos</h2>
+          <p>Documentos y archivos recibidos</p>
+        </div>
+        
+        <div class="docs-grid" id="docs-list">
+          <p class="loading-text">Cargando...</p>
+        </div>
+      </section>
+
+      <!-- Upload Document -->
+      <section id="section-upload-doc" class="client-section">
+        <div class="section-header">
+          <h2><i class="fas fa-cloud-upload-alt"></i> Subir Documento</h2>
+          <p>Agrega documentos importantes para tu caso</p>
+        </div>
+        
+        <form onsubmit="uploadDocument(event)" class="upload-form">
+          <div class="form-group">
+            <label>Nombre del Documento *</label>
+            <input type="text" id="doc-name" placeholder="Ej: Contrato de arrendamiento" required>
+          </div>
+          
+          <div class="form-group">
+            <label>Tipo de Documento *</label>
+            <select id="doc-type" required>
+              <option value="">Selecciona el tipo</option>
+              <option value="contract">Contrato</option>
+              <option value="evidence">Evidencia</option>
+              <option value="identification">Identificación</option>
+              <option value="receipt">Recibo</option>
+              <option value="other">Otro</option>
+            </select>
+          </div>
+          
+          <div class="form-group">
+            <label>Descripción</label>
+            <textarea id="doc-description" rows="3" placeholder="Describe brevemente este documento..."></textarea>
+          </div>
+          
+          <div class="form-group">
+            <label>Archivo (simulado)</label>
+            <div class="file-input-wrapper">
+              <input type="file" id="doc-file" accept=".pdf,.doc,.docx,.jpg,.png">
+              <p class="file-hint">Nota: En este demo, el documento se registrará sin archivo real</p>
+            </div>
+          </div>
+          
+          <button type="submit" class="btn-submit">
+            <i class="fas fa-cloud-upload-alt"></i> Subir Documento
+          </button>
+        </form>
+      </section>
+
+      <!-- Wait Time -->
+      <section id="section-wait-time" class="client-section">
+        <div class="section-header">
+          <h2><i class="fas fa-clock"></i> Tiempo de Espera</h2>
+          <p>Tiempo de espera por caso</p>
+        </div>
+        
+        <div class="wait-time-display">
+          <div class="total-wait">
+            <i class="fas fa-hourglass-half"></i>
+            <div>
+              <h3 id="total-wait-days">0 días</h3>
+              <p>Tiempo total de espera</p>
+            </div>
+          </div>
+        </div>
+        
+        <div class="wait-list" id="wait-list">
+          <p class="loading-text">Cargando...</p>
+        </div>
+        
+        <div class="tips-box">
+          <h4><i class="fas fa-lightbulb"></i> Recomendaciones</h4>
+          <ul>
+            <li>Los tiempos varían según la complejidad del caso</li>
+            <li>Puedes revisar el estado en cualquier momento</li>
+            <li>Contacta a tu abogado para actualizaciones</li>
+          </ul>
+        </div>
+      </section>
+
+      <!-- Billing -->
+      <section id="section-billing" class="client-section">
+        <div class="section-header">
+          <h2><i class="fas fa-credit-card"></i> Mis Pagos</h2>
+          <p>Facturas y pagos</p>
+        </div>
+        
+        <div class="billing-stats">
+          <div class="billing-stat-box">
+            <span class="billing-amount" id="billing-total">$0</span>
+            <span class="billing-label">Total Facturado</span>
+          </div>
+          <div class="billing-stat-box pending">
+            <span class="billing-amount" id="billing-pending">$0</span>
+            <span class="billing-label">Por Pagar</span>
+          </div>
+        </div>
+        
+        <div class="invoices-section">
+          <h3>Mis Facturas</h3>
+          <div class="invoices-list" id="invoices-list">
+            <p class="loading-text">Cargando...</p>
+          </div>
+        </div>
+        
+        <div class="payment-section">
+          <h3>Realizar Pago</h3>
+          <form onsubmit="processPayment(event)" class="payment-form">
+            <div class="payment-grid">
+              <input type="number" id="pay-amount" placeholder="Monto" required>
+              <select id="pay-method">
+                <option value="card">Tarjeta</option>
+                <option value="transfer">Transferencia</option>
+                <option value="cash">Efectivo</option>
+              </select>
+              <button type="submit" class="btn-pay">
+                <i class="fas fa-lock"></i> Pagar
+              </button>
+            </div>
+          </form>
+        </div>
+      </section>
+    </div>
+  </main>
+
+  <script>
+    const API_URL = {
+      auth: '/api/auth',
+      cases: '/api/cases',
+      documents: '/api/documents',
+      billing: '/api/invoices'
+    };
+
+    const token = localStorage.getItem('token');
+    const user = JSON.parse(localStorage.getItem('user') || '{}');
+
+    if (!token) {
+      window.location.href = 'index.html';
+    }
+
+    // Redirect lawyers to their dashboard
+    if (user.role === 'lawyer') {
+      window.location.href = 'dashboard.html';
+    }
+
+    function getHeaders() {
+      return {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`,
+        'Cache-Control': 'no-cache'
+      };
+    }
+
+    // Force refresh data
+    function forceRefresh() {
+      loadClientCases();
+      loadClientDocs();
+      loadWaitTime();
+      loadClientBilling();
+    }
+
+    document.getElementById('user-name').textContent = `${user.firstName || ''} ${user.lastName || ''}`;
+
+    function logout() {
+      localStorage.removeItem('token');
+      localStorage.removeItem('user');
+      window.location.href = 'index.html';
+    }
+
+    // Show section
+    function showSection(section) {
+      document.querySelectorAll('.client-section').forEach(s => s.classList.remove('active'));
+      document.getElementById(`section-${section}`).classList.add('active');
+      
+      if (section === 'my-cases') loadClientCases();
+      else if (section === 'documents') loadClientDocs();
+      else if (section === 'upload-doc') {}
+      else if (section === 'wait-time') loadWaitTime();
+      else if (section === 'billing') loadClientBilling();
+    }
+
+    // Upload Document
+    async function uploadDocument(e) {
+      e.preventDefault();
+      
+      const submitBtn = e.target.querySelector('.btn-submit');
+      submitBtn.disabled = true;
+      submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Subiendo...';
+      
+      const data = {
+        title: document.getElementById('doc-name').value,
+        documentType: document.getElementById('doc-type').value,
+        description: document.getElementById('doc-description').value,
+        caseId: null,
+        originalFileName: document.getElementById('doc-file').value || 'documento_subido.pdf',
+        fileSize: Math.floor(Math.random() * 1000000)
+      };
+      
+      console.log('Uploading document:', data);
+      
+      try {
+        const res = await fetch(API_URL.documents, {
+          method: 'POST',
+          headers: getHeaders(),
+          body: JSON.stringify(data)
+        });
+        
+        const result = await res.json();
+        console.log('Response:', result);
+        
+        if (result.success) {
+          alert('Documento subido exitosamente!');
+          document.getElementById('doc-name').value = '';
+          document.getElementById('doc-type').value = '';
+          document.getElementById('doc-description').value = '';
+          document.getElementById('doc-file').value = '';
+          showSection('documents');
+          loadClientDocs();
+        } else {
+          alert(result.message || 'Error al subir documento');
+        }
+      } catch (err) {
+        console.error('Error:', err);
+        alert('Error de conexión: ' + err.message);
+      } finally {
+        submitBtn.disabled = false;
+        submitBtn.innerHTML = '<i class="fas fa-cloud-upload-alt"></i> Subir Documento';
+      }
+    }
+
+    // Submit Complaint
+    async function submitComplaint(e) {
+      e.preventDefault();
+      
+      const submitBtn = e.target.querySelector('.btn-submit');
+      submitBtn.disabled = true;
+      submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Enviando...';
+      
+      const data = {
+        caseNumber: 'DEN-' + Date.now(),
+        title: document.getElementById('complaint-title').value,
+        description: document.getElementById('complaint-description').value,
+        caseType: document.getElementById('complaint-type').value,
+        clientId: user.id,
+        incidentDate: document.getElementById('complaint-date').value,
+        amount: document.getElementById('complaint-amount').value,
+        opposingParty: document.getElementById('complaint-party').value,
+        status: 'pending'
+      };
+      
+      console.log('Sending complaint:', data);
+      
+      try {
+        const res = await fetch(API_URL.cases, {
+          method: 'POST',
+          headers: getHeaders(),
+          body: JSON.stringify(data)
+        });
+        
+        console.log('Response status:', res.status);
+        const result = await res.json();
+        console.log('Response:', result);
+        
+        if (result.success) {
+          alert('Denuncia enviada exitosamente!');
+          document.getElementById('complaint-title').value = '';
+          document.getElementById('complaint-description').value = '';
+          document.getElementById('complaint-type').value = '';
+          showSection('my-cases');
+          loadClientCases();
+        } else {
+          alert(result.message || 'Error al enviar');
+        }
+      } catch (err) {
+        console.error('Error:', err);
+        alert('Error de conexión: ' + err.message);
+      } finally {
+        submitBtn.disabled = false;
+        submitBtn.innerHTML = '<i class="fas fa-paper-plane"></i> Enviar Denuncia';
+      }
+    }
+
+    // Load Client Cases
+    async function loadClientCases() {
+      try {
+        const res = await fetch(API_URL.cases + '?t=' + Date.now(), { headers: getHeaders() });
+        const result = await res.json();
+        
+        const container = document.getElementById('cases-list');
+        
+        if (result.success && result.data.length > 0) {
+          const cases = result.data;
+          document.getElementById('cases-active').textContent = cases.filter(c => c.status === 'active').length;
+          document.getElementById('cases-pending').textContent = cases.filter(c => c.status === 'pending').length;
+          document.getElementById('cases-completed').textContent = cases.filter(c => c.status === 'closed' || c.status === 'completed').length;
+          
+          container.innerHTML = cases.map(c => `
+            <div class="case-card">
+              <div class="case-card-header">
+                <h4>${c.title}</h4>
+                <span class="status-${c.status}">${c.status === 'active' ? 'En Proceso' : c.status === 'pending' ? 'Pendiente' : 'Resuelto'}</span>
+              </div>
+              <div class="case-card-body">
+                <p><strong>Tipo:</strong> ${c.caseType || 'Denuncia'}</p>
+                <p><strong>Número:</strong> ${c.caseNumber || 'N/A'}</p>
+                <p><small>${c.description || ''}</small></p>
+              </div>
+            </div>
+          `).join('');
+        } else {
+          document.getElementById('cases-active').textContent = '0';
+          document.getElementById('cases-pending').textContent = '0';
+          document.getElementById('cases-completed').textContent = '0';
+          container.innerHTML = '<p class="no-data">No tienes denuncias</p>';
+        }
+      } catch (err) {
+        document.getElementById('cases-list').innerHTML = '<p class="no-data">Error</p>';
+      }
+    }
+
+    // Load Client Documents
+    async function loadClientDocs() {
+      try {
+        const res = await fetch(API_URL.documents + '?t=' + Date.now(), { headers: getHeaders() });
+        const result = await res.json();
+        
+        const container = document.getElementById('docs-list');
+        
+        if (result.success && result.data.length > 0) {
+          container.innerHTML = result.data.map(d => `
+            <div class="doc-card">
+              <i class="fas fa-file-alt"></i>
+              <div>
+                <h4>${d.originalFileName || d.title}</h4>
+                <p>${d.documentType || 'Documento'}</p>
+              </div>
+            </div>
+          `).join('');
+        } else {
+          container.innerHTML = '<p class="no-data">No hay documentos</p>';
+        }
+      } catch (err) {
+        document.getElementById('docs-list').innerHTML = '<p class="no-data">Error</p>';
+      }
+    }
+
+    // Load Wait Time
+    async function loadWaitTime() {
+      try {
+        const res = await fetch(API_URL.cases + '?t=' + Date.now(), { headers: getHeaders() });
+        const result = await res.json();
+        
+        const container = document.getElementById('wait-list');
+        
+        if (result.success && result.data.length > 0) {
+          let totalDays = 0;
+          const cases = result.data.map(c => {
+            const created = c.createdAt ? new Date(c.createdAt) : new Date();
+            const days = Math.floor((new Date() - created) / (1000 * 60 * 60 * 24));
+            totalDays += days;
+            return { ...c, days };
+          });
+          
+          document.getElementById('total-wait-days').textContent = `${totalDays} días`;
+          
+          container.innerHTML = cases.map(c => `
+            <div class="wait-item">
+              <div>
+                <h4>${c.title}</h4>
+                <p>${c.status === 'active' ? 'En proceso' : c.status === 'pending' ? 'Pendiente' : 'Resuelto'}</p>
+              </div>
+              <span class="days">${c.days} días</span>
+            </div>
+          `).join('');
+        } else {
+          document.getElementById('total-wait-days').textContent = '0 días';
+          container.innerHTML = '<p class="no-data">No hay casos</p>';
+        }
+      } catch (err) {
+        document.getElementById('wait-list').innerHTML = '<p class="no-data">Error</p>';
+      }
+    }
+
+    // Load Client Billing
+    async function loadClientBilling() {
+      try {
+        const res = await fetch(API_URL.billing + '?t=' + Date.now(), { headers: getHeaders() });
+        const result = await res.json();
+        
+        const container = document.getElementById('invoices-list');
+        
+        if (result.success && result.data.length > 0) {
+          const invoices = result.data;
+          const total = invoices.reduce((sum, i) => sum + (parseFloat(i.total) || 0), 0);
+          const pending = invoices.filter(i => i.status === 'pending').reduce((sum, i) => sum + (parseFloat(i.total) || 0), 0);
+          
+          document.getElementById('billing-total').textContent = `$${total.toFixed(2)}`;
+          document.getElementById('billing-pending').textContent = `$${pending.toFixed(2)}`;
+          
+          container.innerHTML = invoices.map(i => `
+            <div class="invoice-item">
+              <div>
+                <h4>${i.invoiceNumber}</h4>
+                <p>${i.description || 'Factura'}</p>
+                <small>Vence: ${i.dueDate ? new Date(i.dueDate).toLocaleDateString() : 'N/A'}</small>
+              </div>
+              <div class="invoice-right">
+                <span class="amount">$${i.total}</span>
+                <span class="status-${i.status}">${i.status === 'paid' ? 'Pagada' : 'Pendiente'}</span>
+              </div>
+            </div>
+          `).join('');
+        } else {
+          document.getElementById('billing-total').textContent = '$0';
+          document.getElementById('billing-pending').textContent = '$0';
+          container.innerHTML = '<p class="no-data">No hay facturas</p>';
+        }
+      } catch (err) {
+        document.getElementById('invoices-list').innerHTML = '<p class="no-data">Error</p>';
+      }
+    }
+
+    // Process Payment
+    async function processPayment(e) {
+      e.preventDefault();
+      const amount = document.getElementById('pay-amount').value;
+      const method = document.getElementById('pay-method').value;
+      
+      alert(`Pago de $${amount} procesado por ${method === 'card' ? 'Tarjeta' : method === 'transfer' ? 'Transferencia' : 'Efectivo'}`);
+      document.getElementById('pay-amount').value = '';
+      loadClientBilling();
+    }
+
+    // Load default
+    loadClientCases();
+  </script>
+</body>
+</html>

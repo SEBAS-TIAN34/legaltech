@@ -2,7 +2,6 @@
 // LEGALTECH - JAVASCRIPT SISTEMA JURIDICO
 // ========================================
 
-// ================= API URLS (Relative paths for nginx) =================
 const API_URL = {
   auth: '/api/auth',
   cases: '/api/cases',
@@ -10,14 +9,12 @@ const API_URL = {
   documents: '/api/documents',
   timetracking: '/api/time-entries',
   billing: '/api/invoices',
-  notifications: '/api/notifications',
   dashboard: '/api/dashboard'
 };
 
 let authToken = localStorage.getItem('token') || '';
 let currentUser = null;
 
-// ================= TOKEN MANAGEMENT =================
 function getHeaders() {
   return {
     'Content-Type': 'application/json',
@@ -25,42 +22,22 @@ function getHeaders() {
   };
 }
 
-// ================= SHOW SECTION =================
-function showSection(sectionId) {
-  // Hide all sections
-  document.querySelectorAll('.content-section').forEach(section => {
-    section.style.display = 'none';
-  });
+// ================= AUTH TABS =================
+function showAuthTab(tab) {
+  document.querySelectorAll('.auth-tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.auth-form').forEach(f => f.classList.add('hidden'));
   
-  // Remove active from menu
-  document.querySelectorAll('.menu li').forEach(li => {
-    li.classList.remove('active');
-  });
-  
-  // Show selected section
-  const section = document.getElementById(`${sectionId}-section`);
-  if (section) {
-    section.style.display = 'block';
+  if (tab === 'login') {
+    document.querySelectorAll('.auth-tab')[0].classList.add('active');
+    document.getElementById('login-form').classList.remove('hidden');
+  } else {
+    document.querySelectorAll('.auth-tab')[1].classList.add('active');
+    document.getElementById('register-form').classList.remove('hidden');
   }
-  
-  // Activate menu item
-  const menuItem = document.querySelector(`.menu li[onclick*="${sectionId}"]`);
-  if (menuItem) {
-    menuItem.classList.add('active');
-  }
-  
-  // Load data for section
-  if (sectionId === 'dashboard') loadDashboard();
-  else if (sectionId === 'cases') loadCases();
-  else if (sectionId === 'clients') loadClients();
-  else if (sectionId === 'documents') loadDocuments();
-  else if (sectionId === 'timetracking') loadTimeEntries();
-  else if (sectionId === 'billing') loadInvoices();
-  else if (sectionId === 'notifications') loadNotifications();
 }
 
 // ================= AUTH FUNCTIONS =================
-async function login(e) {
+async function handleLogin(e) {
   e.preventDefault();
   
   const email = document.getElementById('login-email').value;
@@ -79,36 +56,29 @@ async function login(e) {
       currentUser = result.data.user;
       localStorage.setItem('token', authToken);
       
-      showMessage('¡Bienvenido!', 'success');
-      setTimeout(() => {
-        document.getElementById('auth-section').style.display = 'none';
-        document.querySelector('.sidebar').style.display = 'flex';
-        document.querySelector('.main-content').style.display = 'block';
-        updateUserUI();
-        showSection('dashboard');
-      }, 500);
+      document.getElementById('auth-container').classList.add('hidden');
+      document.getElementById('app-container').classList.remove('hidden');
+      
+      document.getElementById('user-name').textContent = `${currentUser.firstName} ${currentUser.lastName}`;
+      document.getElementById('user-role').textContent = currentUser.role === 'lawyer' ? 'Abogado' : 'Cliente';
+      
+      loadDashboard();
     } else {
-      showMessage(result.message || 'Credenciales incorrectas', 'error');
+      alert(result.message || 'Credenciales incorrectas');
     }
   } catch (err) {
-    showMessage('Error de conexión', 'error');
+    alert('Error de conexión');
   }
 }
 
-async function register(e) {
+async function handleRegister(e) {
   e.preventDefault();
   
-  const firstName = document.getElementById('reg-firstName').value;
-  const lastName = document.getElementById('reg-lastName').value;
-  const email = document.getElementById('reg-email').value;
-  const password = document.getElementById('reg-password').value;
-  const confirmPassword = document.getElementById('reg-confirmPassword').value;
-  const role = document.getElementById('reg-role').value;
-  
-  if (password !== confirmPassword) {
-    showMessage('Las contraseñas no coinciden', 'error');
-    return;
-  }
+  const firstName = document.getElementById('register-firstName').value;
+  const lastName = document.getElementById('register-lastName').value;
+  const email = document.getElementById('register-email').value;
+  const password = document.getElementById('register-password').value;
+  const role = document.getElementById('register-role').value;
   
   try {
     const res = await fetch(`${API_URL.auth}/register`, {
@@ -119,32 +89,15 @@ async function register(e) {
     const result = await res.json();
     
     if (result.success) {
-      showMessage('Cuenta creada. Iniciando sesión...', 'success');
-      // Auto-login
-      setTimeout(async () => {
-        const loginRes = await fetch(`${API_URL.auth}/login`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ email, password })
-        });
-        const loginResult = await loginRes.json();
-        if (loginResult.success) {
-          authToken = loginResult.data.token;
-          currentUser = loginResult.data.user;
-          localStorage.setItem('token', authToken);
-          
-          document.getElementById('auth-section').style.display = 'none';
-          document.querySelector('.sidebar').style.display = 'flex';
-          document.querySelector('.main-content').style.display = 'block';
-          updateUserUI();
-          showSection('dashboard');
-        }
+      alert('Cuenta creada. Iniciando sesión...');
+      setTimeout(() => {
+        handleLogin(new Event('submit'));
       }, 1000);
     } else {
-      showMessage(result.message || 'Error al crear cuenta', 'error');
+      alert(result.message || 'Error al crear cuenta');
     }
   } catch (err) {
-    showMessage('Error de conexión', 'error');
+    alert('Error de conexión');
   }
 }
 
@@ -152,18 +105,23 @@ function logout() {
   authToken = '';
   currentUser = null;
   localStorage.removeItem('token');
-  document.getElementById('auth-section').style.display = 'block';
-  document.querySelector('.sidebar').style.display = 'none';
-  document.querySelector('.main-content').style.display = 'none';
+  document.getElementById('auth-container').classList.remove('hidden');
+  document.getElementById('app-container').classList.add('hidden');
 }
 
-function updateUserUI() {
-  if (currentUser) {
-    const initials = (currentUser.firstName?.charAt(0) || '') + (currentUser.lastName?.charAt(0) || '');
-    document.querySelector('.user-profile img').src = `https://i.pravatar.cc/100?u=${currentUser.id}`;
-    document.querySelector('.user-profile h4').textContent = `${currentUser.firstName} ${currentUser.lastName}`;
-    document.querySelector('.user-profile span').textContent = currentUser.role;
-  }
+// ================= NAVIGATION =================
+function showView(viewId) {
+  document.querySelectorAll('.view-section').forEach(v => v.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  
+  document.getElementById(`view-${viewId}`).classList.add('active');
+  document.querySelector(`.nav-item[onclick="showView('${viewId}')"]`).classList.add('active');
+  
+  if (viewId === 'dashboard') loadDashboard();
+  else if (viewId === 'my-cases') loadCases();
+  else if (viewId === 'my-documents') loadDocuments();
+  else if (viewId === 'time-tracking') loadTimeEntries();
+  else if (viewId === 'billing') loadInvoices();
 }
 
 // ================= DASHBOARD =================
@@ -174,16 +132,24 @@ async function loadDashboard() {
     
     if (result.success) {
       const data = result.data;
-      document.querySelector('.hero-stat h3:nth-child(1)').textContent = data.totalCases || 0;
-      document.querySelector('.hero-stat:nth-child(2) .trend span').textContent = data.successRate || '0%';
-      document.querySelector('.hero-stat:nth-child(3) .trend span').textContent = data.support || '24/7';
+      document.getElementById('stat-cases').textContent = data.totalCases || 0;
+      document.getElementById('stat-documents').textContent = data.totalDocuments || 0;
+      document.getElementById('stat-hours').textContent = `${data.billableHours || 0}h`;
+      document.getElementById('stat-billing').textContent = `$${data.totalRevenue || 0}`;
       
-      // Update stats
-      const stats = data.stats || {};
-      document.querySelectorAll('.stat-card h3')[0].textContent = stats.totalCases || 0;
-      document.querySelectorAll('.stat-card h3')[1].textContent = stats.totalClients || 0;
-      document.querySelectorAll('.stat-card h3')[2].textContent = `$${stats.totalRevenue || 0}`;
-      document.querySelectorAll('.stat-card h3')[3].textContent = `${stats.billableHours || 0}h`;
+      const activity = data.recentActivity || [];
+      const container = document.getElementById('activity-list');
+      if (activity.length > 0) {
+        container.innerHTML = activity.map(a => `
+          <div class="activity-item">
+            <i class="fas fa-circle"></i>
+            <span>${a.description || 'Actividad'}</span>
+            <small>${a.time || ''}</small>
+          </div>
+        `).join('');
+      } else {
+        container.innerHTML = '<p class="no-data">No hay actividad reciente</p>';
+      }
     }
   } catch (err) {
     console.error('Error loading dashboard:', err);
@@ -196,30 +162,28 @@ async function loadCases() {
     const res = await fetch(`${API_URL.cases}`, { headers: getHeaders() });
     const result = await res.json();
     
-    if (result.success) {
-      const cases = result.data || [];
-      const container = document.getElementById('cases-list');
-      container.innerHTML = cases.map(c => `
-        <div class="data-card">
-          <div class="card-header">
-            <h4>${c.caseNumber || 'N/A'} - ${c.title}</h4>
-            <span class="status-badge status-${c.status}">${c.status}</span>
+    const container = document.getElementById('cases-container');
+    if (result.success && result.data.length > 0) {
+      container.innerHTML = result.data.map(c => `
+        <div class="data-item">
+          <div class="data-info">
+            <h4>${c.title}</h4>
+            <p>${c.caseType || 'Civil'} - ${c.status || 'Activo'}</p>
+            <small>${c.caseNumber || ''}</small>
           </div>
-          <div class="card-body">
-            <p><strong>Tipo:</strong> ${c.caseType || 'N/A'}</p>
-            <p><strong>Prioridad:</strong> ${c.priority || 'N/A'}</p>
-            <p><strong>Cliente:</strong> ${c.clientId || 'N/A'}</p>
-          </div>
-          <div class="card-actions">
-            <button class="btn-small" onclick="viewCase('${c.id}')">Ver</button>
-            <button class="btn-small btn-outline" onclick="editCase('${c.id}')">Editar</button>
-          </div>
+          <div class="data-status status-${c.status}">${c.status}</div>
         </div>
       `).join('');
+    } else {
+      container.innerHTML = '<p class="no-data">No hay casos disponibles</p>';
     }
   } catch (err) {
-    console.error('Error loading cases:', err);
+    document.getElementById('cases-container').innerHTML = '<p class="no-data">Error al cargar casos</p>';
   }
+}
+
+function showCreateCaseForm() {
+  document.getElementById('modal-create-case').classList.remove('hidden');
 }
 
 async function createCase(e) {
@@ -230,8 +194,7 @@ async function createCase(e) {
     title: document.getElementById('case-title').value,
     description: document.getElementById('case-description').value,
     caseType: document.getElementById('case-type').value,
-    priority: document.getElementById('case-priority').value,
-    clientId: document.getElementById('case-clientId').value
+    status: document.getElementById('case-status').value
   };
   
   try {
@@ -243,46 +206,14 @@ async function createCase(e) {
     const result = await res.json();
     
     if (result.success) {
-      showMessage('Caso creado exitosamente', 'success');
-      closeModal('create-case-modal');
+      alert('Caso creado exitosamente');
+      closeModal('modal-create-case');
       loadCases();
     } else {
-      showMessage(result.message || 'Error al crear caso', 'error');
+      alert(result.message || 'Error al crear caso');
     }
   } catch (err) {
-    showMessage('Error de conexión', 'error');
-  }
-}
-
-// ================= CLIENTS =================
-async function loadClients() {
-  try {
-    const res = await fetch(`${API_URL.clients}`, { headers: getHeaders() });
-    const result = await res.json();
-    
-    if (result.success) {
-      const clients = result.data || [];
-      const container = document.getElementById('clients-list');
-      container.innerHTML = clients.map(c => `
-        <div class="data-card">
-          <div class="card-header">
-            <h4>${c.firstName} ${c.lastName}</h4>
-            <span class="client-type">${c.clientType || 'N/A'}</span>
-          </div>
-          <div class="card-body">
-            <p><strong>Email:</strong> ${c.email || 'N/A'}</p>
-            <p><strong>Documento:</strong> ${c.documentType || 'N/A'}: ${c.documentNumber || 'N/A'}</p>
-            <p><strong>Teléfono:</strong> ${c.phone || 'N/A'}</p>
-          </div>
-          <div class="card-actions">
-            <button class="btn-small" onclick="viewClient('${c.id}')">Ver</button>
-            <button class="btn-small btn-outline" onclick="editClient('${c.id}')">Editar</button>
-          </div>
-        </div>
-      `).join('');
-    }
-  } catch (err) {
-    console.error('Error loading clients:', err);
+    alert('Error de conexión');
   }
 }
 
@@ -292,30 +223,33 @@ async function loadDocuments() {
     const res = await fetch(`${API_URL.documents}`, { headers: getHeaders() });
     const result = await res.json();
     
-    if (result.success) {
-      const docs = result.data || [];
-      const container = document.getElementById('documents-list');
-      container.innerHTML = docs.map(d => `
-        <div class="data-card">
-          <div class="card-header">
-            <i class="fas fa-file"></i>
-            <h4>${d.originalFileName || d.title}</h4>
-            <span class="doc-type">${d.documentType}</span>
+    const container = document.getElementById('documents-container');
+    if (result.success && result.data.length > 0) {
+      container.innerHTML = result.data.map(d => `
+        <div class="data-item">
+          <div class="data-info">
+            <h4><i class="fas fa-file"></i> ${d.originalFileName || d.title}</h4>
+            <p>${d.documentType || 'Documento'}</p>
           </div>
-          <div class="card-body">
-            <p><strong>Tamaño:</strong> ${d.fileSize ? (d.fileSize / 1024).toFixed(2) + ' KB' : 'N/A'}</p>
-            <p><strong>Caso:</strong> ${d.caseId || 'N/A'}</p>
-          </div>
-          <div class="card-actions">
-            <button class="btn-small" onclick="viewDocument('${d.id}')">Ver</button>
-            <button class="btn-small btn-outline" onclick="downloadDocument('${d.id}')">Descargar</button>
-          </div>
+          <button class="btn-small">Ver</button>
         </div>
       `).join('');
+    } else {
+      container.innerHTML = '<p class="no-data">No hay documentos</p>';
     }
   } catch (err) {
-    console.error('Error loading documents:', err);
+    document.getElementById('documents-container').innerHTML = '<p class="no-data">Error al cargar documentos</p>';
   }
+}
+
+function showUploadDocumentForm() {
+  document.getElementById('modal-upload-document').classList.remove('hidden');
+}
+
+async function uploadDocument(e) {
+  e.preventDefault();
+  alert('Documento subido (simulado)');
+  closeModal('modal-upload-document');
 }
 
 // ================= TIME TRACKING =================
@@ -324,26 +258,34 @@ async function loadTimeEntries() {
     const res = await fetch(`${API_URL.timetracking}`, { headers: getHeaders() });
     const result = await res.json();
     
-    if (result.success) {
-      const entries = result.data || [];
-      const container = document.getElementById('timetracking-list');
-      container.innerHTML = entries.map(e => `
-        <div class="data-card">
-          <div class="card-header">
-            <h4>Caso: ${e.caseId || 'N/A'}</h4>
-            <span class="status-badge ${e.billable ? 'status-active' : 'status-inactive'}">${e.billable ? 'Facturable' : 'No facturable'}</span>
+    const container = document.getElementById('time-container');
+    if (result.success && result.data.length > 0) {
+      container.innerHTML = result.data.map(t => `
+        <div class="data-item">
+          <div class="data-info">
+            <h4>Caso: ${t.caseId || 'N/A'}</h4>
+            <p>${t.description || 'Sin descripción'}</p>
+            <small>${t.duration || 0} min - $${t.rate || 0}/hr</small>
           </div>
-          <div class="card-body">
-            <p><strong>Descripción:</strong> ${e.description || 'N/A'}</p>
-            <p><strong>Duración:</strong> ${e.duration || 0} min</p>
-            <p><strong>Estado:</strong> ${e.status}</p>
-          </div>
+          <div class="data-status">${t.status || 'Activo'}</div>
         </div>
       `).join('');
+    } else {
+      container.innerHTML = '<p class="no-data">No hay registros de tiempo</p>';
     }
   } catch (err) {
-    console.error('Error loading time entries:', err);
+    document.getElementById('time-container').innerHTML = '<p class="no-data">Error al cargar tiempo</p>';
   }
+}
+
+function showTimeEntryForm() {
+  document.getElementById('modal-time-entry').classList.remove('hidden');
+}
+
+async function createTimeEntry(e) {
+  e.preventDefault();
+  alert('Tiempo registrado');
+  closeModal('modal-time-entry');
 }
 
 // ================= BILLING =================
@@ -352,109 +294,58 @@ async function loadInvoices() {
     const res = await fetch(`${API_URL.billing}`, { headers: getHeaders() });
     const result = await res.json();
     
-    if (result.success) {
-      const invoices = result.data || [];
-      const container = document.getElementById('billing-list');
-      container.innerHTML = invoices.map(i => `
-        <div class="data-card">
-          <div class="card-header">
+    const container = document.getElementById('billing-container');
+    if (result.success && result.data.length > 0) {
+      container.innerHTML = result.data.map(i => `
+        <div class="data-item">
+          <div class="data-info">
             <h4>${i.invoiceNumber}</h4>
-            <span class="status-badge status-${i.status}">${i.status}</span>
+            <p>${i.description || 'Factura'}</p>
+            <small>Vence: ${i.dueDate ? new Date(i.dueDate).toLocaleDateString() : 'N/A'}</small>
           </div>
-          <div class="card-body">
-            <p><strong>Total:</strong> $${i.total || 0}</p>
-            <p><strong>Cliente:</strong> ${i.clientId || 'N/A'}</p>
-            <p><strong>Fecha:</strong> ${i.createdAt ? new Date(i.createdAt).toLocaleDateString() : 'N/A'}</p>
-          </div>
-          <div class="card-actions">
-            <button class="btn-small" onclick="viewInvoice('${i.id}')">Ver</button>
-            <button class="btn-small btn-outline" onclick="downloadInvoice('${i.id}')">PDF</button>
-          </div>
+          <div class="data-amount">$${i.total || 0}</div>
         </div>
       `).join('');
+    } else {
+      container.innerHTML = '<p class="no-data">No hay facturas</p>';
     }
   } catch (err) {
-    console.error('Error loading invoices:', err);
+    document.getElementById('billing-container').innerHTML = '<p class="no-data">Error al cargar facturas</p>';
   }
 }
 
-// ================= NOTIFICATIONS =================
-async function loadNotifications() {
-  try {
-    const res = await fetch(`${API_URL.notifications}`, { headers: getHeaders() });
-    const result = await res.json();
-    
-    if (result.success) {
-      const notifications = result.data || [];
-      const container = document.getElementById('notifications-list');
-      container.innerHTML = notifications.map(n => `
-        <div class="notification-card ${n.isRead ? '' : 'unread'}">
-          <div class="notification-icon">
-            <i class="fas fa-${n.type === 'error' ? 'exclamation-circle' : n.type === 'warning' ? 'exclamation-triangle' : 'info-circle'}"></i>
-          </div>
-          <div class="notification-content">
-            <h4>${n.title}</h4>
-            <p>${n.message}</p>
-            <span class="notification-date">${n.createdAt ? new Date(n.createdAt).toLocaleDateString() : ''}</span>
-          </div>
-        </div>
-      `).join('');
-    }
-  } catch (err) {
-    console.error('Error loading notifications:', err);
-  }
+function showCreateInvoiceForm() {
+  document.getElementById('modal-create-invoice').classList.remove('hidden');
 }
 
-// ================= MODAL FUNCTIONS =================
-function showCreateCaseModal() {
-  document.getElementById('create-case-modal').style.display = 'flex';
+async function createInvoice(e) {
+  e.preventDefault();
+  alert('Factura creada');
+  closeModal('modal-create-invoice');
 }
 
+// ================= MODALS =================
 function closeModal(modalId) {
-  document.getElementById(modalId).style.display = 'none';
-}
-
-// ================= UTILITY FUNCTIONS =================
-function showMessage(msg, type) {
-  const el = document.getElementById('auth-message') || document.getElementById('main-message');
-  if (el) {
-    el.textContent = msg;
-    el.className = type === 'error' ? 'message-error' : 'message-success';
-    el.style.display = 'block';
-    setTimeout(() => {
-      el.style.display = 'none';
-    }, 5000);
-  }
+  document.getElementById(modalId).classList.add('hidden');
 }
 
 // ================= INIT =================
 window.onload = function() {
-  // Check if already logged in
   if (authToken) {
     fetch(`${API_URL.auth}/profile`, { headers: getHeaders() })
       .then(res => res.json())
       .then(result => {
         if (result.success) {
           currentUser = result.data;
-          document.getElementById('auth-section').style.display = 'none';
-          document.querySelector('.sidebar').style.display = 'flex';
-          document.querySelector('.main-content').style.display = 'block';
-          updateUserUI();
-          showSection('dashboard');
+          document.getElementById('auth-container').classList.add('hidden');
+          document.getElementById('app-container').classList.remove('hidden');
+          document.getElementById('user-name').textContent = `${currentUser.firstName} ${currentUser.lastName}`;
+          document.getElementById('user-role').textContent = currentUser.role === 'lawyer' ? 'Abogado' : 'Cliente';
+          loadDashboard();
         }
       })
       .catch(() => {
         localStorage.removeItem('token');
       });
   }
-  
-  // Set up form submissions
-  const loginForm = document.getElementById('login-form');
-  if (loginForm) loginForm.addEventListener('submit', login);
-  
-  const registerForm = document.getElementById('register-form');
-  if (registerForm) registerForm.addEventListener('submit', register);
-  
-  // Show login by default
-  showSection('auth');
 };

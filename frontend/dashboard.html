@@ -1,0 +1,1545 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>LegalTech - Dashboard</title>
+  <link rel="stylesheet" href="styles.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+</head>
+<body>
+  <!-- Header -->
+  <header class="dashboard-header">
+    <div class="header-brand">
+      <i class="fas fa-scale-balanced"></i>
+      <span>LegalTech</span>
+    </div>
+    <div class="header-user">
+      <span id="user-name">Usuario</span>
+      <span id="user-role" class="role-badge">Rol</span>
+      <button class="btn-logout" onclick="logout()">
+        <i class="fas fa-sign-out-alt"></i> Salir
+      </button>
+    </div>
+  </header>
+
+  <!-- Main Layout -->
+  <div class="dashboard-layout">
+    <!-- Sidebar -->
+    <aside class="dashboard-sidebar">
+      <nav class="sidebar-nav">
+        <button class="nav-item active" onclick="showView('dashboard')">
+          <i class="fas fa-chart-pie"></i>
+          <span>Dashboard</span>
+        </button>
+        <button class="nav-item" onclick="showView('cases')">
+          <i class="fas fa-gavel"></i>
+          <span>Casos</span>
+        </button>
+        <button class="nav-item" onclick="showView('documents')">
+          <i class="fas fa-file-alt"></i>
+          <span>Documentos</span>
+        </button>
+        <button class="nav-item" onclick="showView('billing')">
+          <i class="fas fa-file-invoice-dollar"></i>
+          <span>Facturación</span>
+        </button>
+      </nav>
+    </aside>
+
+    <!-- Content -->
+    <main class="dashboard-content">
+      <!-- Dashboard View -->
+      <section id="view-dashboard" class="view-section active">
+        <div class="dashboard-header-animated">
+          <h2 id="dashboard-title"><i class="fas fa-chart-pie"></i> Panel de Control</h2>
+          <p id="dashboard-subtitle">Gestiona casos, documentos y facturación</p>
+        </div>
+
+        <!-- Quick Actions for Client -->
+        <div class="quick-actions" id="quick-actions" style="display: none;">
+          <button class="action-btn" onclick="showView('new-complaint')">
+            <i class="fas fa-exclamation-triangle"></i>
+            <span>Nueva Denuncia</span>
+          </button>
+          <button class="action-btn" onclick="showView('my-documents')">
+            <i class="fas fa-file-alt"></i>
+            <span>Mis Documentos</span>
+          </button>
+          <button class="action-btn" onclick="showView('wait-time')">
+            <i class="fas fa-clock"></i>
+            <span>Ver Estado</span>
+          </button>
+          <button class="action-btn" onclick="showView('billing')">
+            <i class="fas fa-credit-card"></i>
+            <span>Mis Pagos</span>
+          </button>
+        </div>
+
+        <!-- Stats Grid -->
+        <div class="stats-grid">
+          <div class="stat-card stat-active">
+            <div class="stat-icon"><i class="fas fa-gavel"></i></div>
+            <div class="stat-info">
+              <h3 id="stat-cases">0</h3>
+              <p id="stat-cases-label">Casos Activos</p>
+            </div>
+          </div>
+          <div class="stat-card stat-pending">
+            <div class="stat-icon"><i class="fas fa-clock"></i></div>
+            <div class="stat-info">
+              <h3 id="stat-pending-cases">0</h3>
+              <p id="stat-pending-label">Casos Pendientes</p>
+            </div>
+          </div>
+          <div class="stat-card stat-completed">
+            <div class="stat-icon"><i class="fas fa-file-alt"></i></div>
+            <div class="stat-info">
+              <h3 id="stat-documents">0</h3>
+              <p>Documentos</p>
+            </div>
+          </div>
+          <div class="stat-card stat-revenue">
+            <div class="stat-icon"><i class="fas fa-dollar-sign"></i></div>
+            <div class="stat-info">
+              <h3 id="stat-billing">$0</h3>
+              <p id="stat-billing-label">Ingresos</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Dashboard Grid -->
+        <div class="billing-summary-grid">
+          <!-- Active Cases -->
+          <div class="dashboard-card cases-column">
+            <div class="card-header">
+              <h3><i class="fas fa-briefcase"></i> Casos Activos</h3>
+              <span class="card-badge">En curso</span>
+            </div>
+            <div id="active-cases" class="card-content">
+              <p class="loading-text">Cargando...</p>
+            </div>
+          </div>
+
+          <!-- Pending Cases -->
+          <div class="dashboard-card pending-column">
+            <div class="card-header">
+              <h3><i class="fas fa-hourglass-half"></i> Casos Pendientes</h3>
+              <span class="card-badge badge-pending">Por resolver</span>
+            </div>
+            <div id="pending-cases" class="card-content">
+              <p class="loading-text">Cargando...</p>
+            </div>
+          </div>
+
+          <!-- Documents -->
+          <div class="dashboard-card documents-column">
+            <div class="card-header">
+              <h3><i class="fas fa-file-alt"></i> Documentos</h3>
+              <span class="card-badge badge-docs">Recientes</span>
+            </div>
+            <div id="documents-list" class="card-content">
+              <p class="loading-text">Cargando...</p>
+            </div>
+          </div>
+
+          <!-- Billing Summary -->
+          <div class="dashboard-card billing-column">
+            <div class="card-header">
+              <h3><i class="fas fa-file-invoice-dollar"></i> Resumen Facturación</h3>
+            </div>
+            <div class="card-content">
+              <div class="billing-summary">
+                <div class="billing-stat">
+                  <span class="billing-label">Total Ingresado</span>
+                  <span class="billing-value" id="stat-total">$0</span>
+                </div>
+                <div class="billing-stat">
+                  <span class="billing-label">Por Cobrar</span>
+                  <span class="billing-value pending" id="stat-pending-amount">$0</span>
+                </div>
+                <div class="billing-stat">
+                  <span class="billing-label">Facturas Pagadas</span>
+                  <span class="billing-value" id="stat-paid">0</span>
+                </div>
+              </div>
+              <button class="btn-primary btn-small" onclick="showView('billing')">
+                Ver Facturación Completa
+              </button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Cases View -->
+      <section id="view-cases" class="view-section">
+        <div class="billing-full-view">
+          <h2><i class="fas fa-gavel"></i> Gestión de Casos</h2>
+          
+          <div class="stats-grid" style="margin-bottom: 1.5rem;">
+            <div class="stat-card stat-active">
+              <div class="stat-icon"><i class="fas fa-play"></i></div>
+              <div class="stat-info">
+                <h3 id="cases-active-count">0</h3>
+                <p>Activos</p>
+              </div>
+            </div>
+            <div class="stat-card stat-pending">
+              <div class="stat-icon"><i class="fas fa-pause"></i></div>
+              <div class="stat-info">
+                <h3 id="cases-pending-count">0</h3>
+                <p>Pendientes</p>
+              </div>
+            </div>
+            <div class="stat-card stat-completed">
+              <div class="stat-icon"><i class="fas fa-check"></i></div>
+              <div class="stat-info">
+                <h3 id="cases-completed-count">0</h3>
+                <p>Completados</p>
+              </div>
+            </div>
+          </div>
+
+          <div class="cases-grid">
+            <div class="invoices-list-card">
+              <div class="card-header">
+                <h3><i class="fas fa-list"></i> Todos los Casos</h3>
+              </div>
+              <div id="cases-list" class="card-content">
+                <p class="loading-text">Cargando...</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Documents View -->
+      <section id="view-documents" class="view-section">
+        <div class="billing-full-view">
+          <h2><i class="fas fa-file-alt"></i> Documentos</h2>
+          
+          <div class="stats-grid" style="margin-bottom: 1.5rem;">
+            <div class="stat-card stat-revenue">
+              <div class="stat-icon"><i class="fas fa-file"></i></div>
+              <div class="stat-info">
+                <h3 id="docs-total">0</h3>
+                <p>Total Documentos</p>
+              </div>
+            </div>
+          </div>
+
+          <div class="cases-grid">
+            <div class="invoices-list-card">
+              <div class="card-header">
+                <h3><i class="fas fa-folder"></i> Documentos Recibidos</h3>
+              </div>
+              <div id="docs-list" class="card-content">
+                <p class="loading-text">Cargando...</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Client: New Complaint View -->
+      <section id="view-new-complaint" class="view-section">
+        <div class="billing-full-view">
+          <h2><i class="fas fa-exclamation-triangle"></i> Presentar Denuncia</h2>
+          
+          <div class="complaint-form-container">
+            <div class="complaint-intro">
+              <i class="fas fa-info-circle"></i>
+              <p>Describe tu situación o problema legal. Un abogado revisará tu caso y te contactará.</p>
+            </div>
+            
+            <form onsubmit="submitComplaint(event)" class="complaint-form">
+              <div class="form-group">
+                <label>Tipo de Denuncia</label>
+                <select id="complaint-type" required>
+                  <option value="">Selecciona el tipo</option>
+                  <option value="civil">Demanda Civil</option>
+                  <option value="laboral">Conflicto Laboral</option>
+                  <option value="familiar">Asunto Familiar</option>
+                  <option value="penal">Denuncia Penal</option>
+                  <option value="mercantil">Problema Mercantil</option>
+                  <option value="otro">Otro</option>
+                </select>
+              </div>
+              
+              <div class="form-group">
+                <label>Título de tu Denuncia</label>
+                <input type="text" id="complaint-title" placeholder="Ej: Problema con contrato de alquiler" required>
+              </div>
+              
+              <div class="form-group">
+                <label>Descripción Detallada</label>
+                <textarea id="complaint-description" rows="6" placeholder="Explica detalladamente tu situación, incluye fechas, personas involucradas y cualquier información relevante..." required></textarea>
+              </div>
+              
+              <div class="form-row">
+                <div class="form-group">
+                  <label>Fecha del Incidente</label>
+                  <input type="date" id="complaint-date">
+                </div>
+                <div class="form-group">
+                  <label>Monto Involved (si aplica)</label>
+                  <input type="number" id="complaint-amount" placeholder="$0.00" min="0">
+                </div>
+              </div>
+              
+              <div class="form-group">
+                <label>Nombre de la Parte Contraria (si aplica)</label>
+                <input type="text" id="complaint-party" placeholder="Persona o empresa">
+              </div>
+              
+              <button type="submit" class="btn-primary btn-submit-complaint">
+                <i class="fas fa-paper-plane"></i> Enviar Denuncia
+              </button>
+            </form>
+          </div>
+        </div>
+      </section>
+
+      <!-- Client: My Cases View -->
+      <section id="view-my-cases" class="view-section">
+        <div class="billing-full-view">
+          <h2><i class="fas fa-briefcase"></i> Mis Casos</h2>
+          
+          <div class="stats-grid" style="margin-bottom: 1.5rem;">
+            <div class="stat-card stat-active">
+              <div class="stat-icon"><i class="fas fa-play"></i></div>
+              <div class="stat-info">
+                <h3 id="client-cases-active">0</h3>
+                <p>En Proceso</p>
+              </div>
+            </div>
+            <div class="stat-card stat-completed">
+              <div class="stat-icon"><i class="fas fa-check"></i></div>
+              <div class="stat-info">
+                <h3 id="client-cases-completed">0</h3>
+                <p>Completados</p>
+              </div>
+            </div>
+          </div>
+
+          <div class="cases-grid">
+            <div class="invoices-list-card">
+              <div class="card-header">
+                <h3><i class="fas fa-list"></i> Estado de Mis Casos</h3>
+              </div>
+              <div id="client-cases-list" class="card-content">
+                <p class="loading-text">Cargando...</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Client: My Documents View -->
+      <section id="view-my-documents" class="view-section">
+        <div class="billing-full-view">
+          <h2><i class="fas fa-file-alt"></i> Mis Documentos</h2>
+          
+          <div class="stats-grid" style="margin-bottom: 1.5rem;">
+            <div class="stat-card stat-revenue">
+              <div class="stat-icon"><i class="fas fa-folder-open"></i></div>
+              <div class="stat-info">
+                <h3 id="client-docs-count">0</h3>
+                <p>Documentos Míos</p>
+              </div>
+            </div>
+          </div>
+
+          <div class="cases-grid">
+            <div class="invoices-list-card">
+              <div class="card-header">
+                <h3><i class="fas fa-file"></i> Mis Documentos</h3>
+              </div>
+              <div id="client-docs-list" class="card-content">
+                <p class="loading-text">Cargando...</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Client: Wait Time View -->
+      <section id="view-wait-time" class="view-section">
+        <div class="billing-full-view">
+          <h2><i class="fas fa-clock"></i> Tiempo de Espera</h2>
+          
+          <div class="wait-time-container">
+            <div class="wait-time-card">
+              <div class="wait-icon">
+                <i class="fas fa-hourglass-half"></i>
+              </div>
+              <div class="wait-info">
+                <h3 id="total-wait-time">0 días</h3>
+                <p>Tiempo total de espera</p>
+              </div>
+            </div>
+            
+            <div class="wait-time-breakdown">
+              <h3>Desglose por Caso</h3>
+              <div id="wait-time-list" class="wait-list">
+                <p class="loading-text">Cargando...</p>
+              </div>
+            </div>
+            
+            <div class="wait-time-tips">
+              <h3><i class="fas fa-lightbulb"></i> Recomendaciones</h3>
+              <ul>
+                <li>Los tiempos de espera varían según la complejidad del caso</li>
+                <li>Puedes revisar el estado de tus casos en cualquier momento</li>
+                <li>Contacta a tu abogado para actualizaciones directas</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Billing View -->
+      <section id="view-billing" class="view-section">
+        <div class="billing-full-view">
+          <h2><i class="fas fa-file-invoice-dollar"></i> Gestión de Facturas</h2>
+          
+          <div class="billing-stats-row">
+            <div class="stat-card stat-revenue">
+              <div class="stat-icon"><i class="fas fa-dollar-sign"></i></div>
+              <div class="stat-info">
+                <h3 id="billing-total">$0</h3>
+                <p>Total Facturado</p>
+              </div>
+            </div>
+            <div class="stat-card stat-pending">
+              <div class="stat-icon"><i class="fas fa-clock"></i></div>
+              <div class="stat-info">
+                <h3 id="billing-pending">$0</h3>
+                <p>Por Cobrar</p>
+              </div>
+            </div>
+            <div class="stat-card stat-completed">
+              <div class="stat-icon"><i class="fas fa-check-circle"></i></div>
+              <div class="stat-info">
+                <h3 id="billing-paid">0</h3>
+                <p>Pagadas</p>
+              </div>
+            </div>
+          </div>
+
+          <div class="billing-invoices-grid">
+            <div class="invoices-list-card">
+              <div class="card-header">
+                <h3><i class="fas fa-list"></i> Todas las Facturas</h3>
+              </div>
+              <div id="billing-invoices-list" class="card-content">
+                <p class="loading-text">Cargando...</p>
+              </div>
+            </div>
+            
+            <div class="payment-form-card">
+              <div class="card-header">
+                <h3><i class="fas fa-credit-card"></i> Procesar Pago</h3>
+              </div>
+              <div class="card-content">
+                <form onsubmit="processPayment(event)">
+                  <div class="form-group">
+                    <label>Monto</label>
+                    <input type="number" id="pay-amount" placeholder="0.00" step="0.01" required>
+                  </div>
+                  <div class="form-group">
+                    <label>Método</label>
+                    <select id="pay-method">
+                      <option value="card">Tarjeta</option>
+                      <option value="transfer">Transferencia</option>
+                      <option value="cash">Efectivo</option>
+                    </select>
+                  </div>
+                  <button type="submit" class="btn-primary">
+                    <i class="fas fa-check"></i> Pagar
+                  </button>
+                </form>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <!-- Modals -->
+  <!-- Case Modal -->
+  <div id="modal-case" class="modal hidden">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3>Nuevo Caso</h3>
+        <button onclick="closeModal('modal-case')">&times;</button>
+      </div>
+      <form onsubmit="createCase(event)">
+        <div class="form-group">
+          <label>Título</label>
+          <input type="text" id="case-title" required>
+        </div>
+        <div class="form-group">
+          <label>Descripción</label>
+          <textarea id="case-description" rows="3"></textarea>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>Tipo</label>
+            <select id="case-type">
+              <option value="civil">Civil</option>
+              <option value="penal">Penal</option>
+              <option value="laboral">Laboral</option>
+              <option value="mercantil">Mercantil</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Estado</label>
+            <select id="case-status">
+              <option value="active">Activo</option>
+              <option value="pending">Pendiente</option>
+              <option value="closed">Cerrado</option>
+            </select>
+          </div>
+        </div>
+        <div class="modal-actions">
+          <button type="button" class="btn-cancel" onclick="closeModal('modal-case')">Cancelar</button>
+          <button type="submit" class="btn-primary">Crear</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Client Modal -->
+  <div id="modal-client" class="modal hidden">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3>Nuevo Cliente</h3>
+        <button onclick="closeModal('modal-client')">&times;</button>
+      </div>
+      <form onsubmit="createClient(event)">
+        <div class="form-row">
+          <div class="form-group">
+            <label>Nombre</label>
+            <input type="text" id="client-firstName" required>
+          </div>
+          <div class="form-group">
+            <label>Apellido</label>
+            <input type="text" id="client-lastName" required>
+          </div>
+        </div>
+        <div class="form-group">
+          <label>Email</label>
+          <input type="email" id="client-email" required>
+        </div>
+        <div class="form-group">
+          <label>Teléfono</label>
+          <input type="tel" id="client-phone">
+        </div>
+        <div class="form-group">
+          <label>Tipo</label>
+          <select id="client-type">
+            <option value="individual">Individual</option>
+            <option value="company">Empresa</option>
+          </select>
+        </div>
+        <div class="modal-actions">
+          <button type="button" class="btn-cancel" onclick="closeModal('modal-client')">Cancelar</button>
+          <button type="submit" class="btn-primary">Crear</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Document Modal -->
+  <div id="modal-document" class="modal hidden">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3>Subir Documento</h3>
+        <button onclick="closeModal('modal-document')">&times;</button>
+      </div>
+      <form onsubmit="createDocument(event)">
+        <div class="form-group">
+          <label>Nombre</label>
+          <input type="text" id="doc-name" required>
+        </div>
+        <div class="form-group">
+          <label>Tipo</label>
+          <select id="doc-type">
+            <option value="contract">Contrato</option>
+            <option value="evidence">Evidencia</option>
+            <option value="motion">Escritura</option>
+            <option value="other">Otro</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Caso (opcional)</label>
+          <select id="doc-case"></select>
+        </div>
+        <div class="modal-actions">
+          <button type="button" class="btn-cancel" onclick="closeModal('modal-document')">Cancelar</button>
+          <button type="submit" class="btn-primary">Subir</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Time Modal -->
+  <div id="modal-time" class="modal hidden">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3>Registrar Tiempo</h3>
+        <button onclick="closeModal('modal-time')">&times;</button>
+      </div>
+      <form onsubmit="createTime(event)">
+        <div class="form-group">
+          <label>Caso</label>
+          <select id="time-case" required></select>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>Horas</label>
+            <input type="number" id="time-hours" min="0.5" step="0.5" required>
+          </div>
+          <div class="form-group">
+            <label>Tarifa ($)</label>
+            <input type="number" id="time-rate" min="0" required>
+          </div>
+        </div>
+        <div class="form-group">
+          <label>Descripción</label>
+          <textarea id="time-description" rows="2"></textarea>
+        </div>
+        <div class="modal-actions">
+          <button type="button" class="btn-cancel" onclick="closeModal('modal-time')">Cancelar</button>
+          <button type="submit" class="btn-primary">Guardar</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Invoice Modal -->
+  <div id="modal-invoice" class="modal hidden">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3>Nueva Factura</h3>
+        <button onclick="closeModal('modal-invoice')">&times;</button>
+      </div>
+      <form onsubmit="createInvoice(event)">
+        <div class="form-group">
+          <label>Cliente</label>
+          <select id="invoice-client" required></select>
+        </div>
+        <div class="form-group">
+          <label>Concepto</label>
+          <input type="text" id="invoice-description" required>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>Monto ($)</label>
+            <input type="number" id="invoice-amount" min="0" required>
+          </div>
+          <div class="form-group">
+            <label>Fecha Vencimiento</label>
+            <input type="date" id="invoice-dueDate" required>
+          </div>
+        </div>
+        <div class="modal-actions">
+          <button type="button" class="btn-cancel" onclick="closeModal('modal-invoice')">Cancelar</button>
+          <button type="submit" class="btn-primary">Crear</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <script>
+    const API_URL = {
+      auth: '/api/auth',
+      cases: '/api/cases',
+      clients: '/api/clients',
+      documents: '/api/documents',
+      timetracking: '/api/time-entries',
+      billing: '/api/invoices',
+      dashboard: '/api/dashboard'
+    };
+
+    const token = localStorage.getItem('token');
+    const user = JSON.parse(localStorage.getItem('user') || '{}');
+
+    if (!token) {
+      window.location.href = 'index.html';
+    }
+
+    // Redirect non-lawyers to client page
+    if (user.role !== 'lawyer') {
+      window.location.href = 'client.html';
+    }
+
+    function getHeaders() {
+      return {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      };
+    }
+
+    // User info
+    const isLawyer = user.role === 'lawyer';
+    document.getElementById('user-name').textContent = `${user.firstName || ''} ${user.lastName || ''}`;
+    document.getElementById('user-role').textContent = isLawyer ? 'Abogado' : 'Cliente';
+
+    // Adjust UI based on role
+    if (!isLawyer) {
+      setupClientDashboard();
+    }
+
+    function setupClientDashboard() {
+      // Change header for client
+      document.getElementById('dashboard-title').innerHTML = '<i class="fas fa-user"></i> Mi Panel de Cliente';
+      document.getElementById('dashboard-subtitle').textContent = 'Presenta tu denuncia o consulta legal';
+      
+      // Change stats labels for client
+      document.getElementById('stat-cases-label').textContent = 'En Proceso';
+      document.getElementById('stat-pending-label').textContent = 'Pendientes';
+      document.getElementById('stat-billing-label').textContent = 'Por Pagar';
+      
+      // Show quick actions
+      document.getElementById('quick-actions').style.display = 'flex';
+      
+      // Update sidebar for client (no admin, just regular user)
+      document.querySelector('.sidebar-nav').innerHTML = `
+        <button class="nav-item active" onclick="showView('dashboard')">
+          <i class="fas fa-home"></i>
+          <span>Inicio</span>
+        </button>
+        <button class="nav-item" onclick="showView('new-complaint')">
+          <i class="fas fa-exclamation-triangle"></i>
+          <span>Nueva Denuncia</span>
+        </button>
+        <button class="nav-item" onclick="showView('my-documents')">
+          <i class="fas fa-file-alt"></i>
+          <span>Mis Documentos</span>
+        </button>
+        <button class="nav-item" onclick="showView('wait-time')">
+          <i class="fas fa-clock"></i>
+          <span>Estado de mi Caso</span>
+        </button>
+        <button class="nav-item" onclick="showView('billing')">
+          <i class="fas fa-file-invoice-dollar"></i>
+          <span>Mis Pagos</span>
+        </button>
+      `;
+    }
+
+    function logout() {
+      localStorage.removeItem('token');
+      localStorage.removeItem('user');
+      window.location.href = 'index.html';
+    }
+
+    // Navigation
+    function showView(view) {
+      document.querySelectorAll('.view-section').forEach(v => v.classList.remove('active'));
+      document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+      
+      document.getElementById(`view-${view}`).classList.add('active');
+      document.querySelector(`.nav-item[onclick="showView('${view}')"]`).classList.add('active');
+      
+      if (view === 'dashboard') loadDashboard();
+      else if (view === 'cases') loadCases();
+      else if (view === 'new-complaint') {} // Just show form
+      else if (view === 'documents') loadDocuments();
+      else if (view === 'my-documents') loadClientDocuments();
+      else if (view === 'wait-time') loadWaitTime();
+      else if (view === 'billing') loadBilling();
+    }
+
+    // Dashboard - Full View
+    async function loadDashboard() {
+      if (isLawyer) {
+        loadCasesData();
+        loadDocumentsData();
+        loadBillingData();
+      } else {
+        loadClientDashboard();
+      }
+    }
+
+    // Client Dashboard
+    async function loadClientDashboard() {
+      // Load client's cases as complaints
+      try {
+        const res = await fetch(API_URL.cases, { headers: getHeaders() });
+        const result = await res.json();
+        
+        const activeContainer = document.getElementById('active-cases');
+        const pendingContainer = document.getElementById('pending-cases');
+        
+        if (result.success && result.data.length > 0) {
+          const cases = result.data;
+          const active = cases.filter(c => c.status === 'active');
+          const pending = cases.filter(c => c.status === 'pending');
+          
+          document.getElementById('stat-cases').textContent = active.length;
+          document.getElementById('stat-pending-cases').textContent = pending.length;
+          
+          // Update active cases (En proceso)
+          if (active.length > 0) {
+            activeContainer.innerHTML = active.slice(0, 3).map(c => `
+              <div class="case-item">
+                <div class="case-info">
+                  <h4>${c.title}</h4>
+                  <p>${c.caseType || 'Denuncia'} - ${c.caseNumber || ''}</p>
+                </div>
+                <span class="status-dot active"></span>
+              </div>
+            `).join('');
+          } else {
+            activeContainer.innerHTML = '<p class="no-data">Sin casos en proceso</p>';
+          }
+          
+          // Update pending cases (Pendientes)
+          if (pending.length > 0) {
+            pendingContainer.innerHTML = pending.slice(0, 3).map(c => `
+              <div class="case-item">
+                <div class="case-info">
+                  <h4>${c.title}</h4>
+                  <p>${c.caseType || 'Denuncia'} - ${c.caseNumber || ''}</p>
+                </div>
+                <span class="status-dot pending"></span>
+              </div>
+            `).join('');
+          } else {
+            pendingContainer.innerHTML = '<p class="no-data">Sin denuncias pendientes</p>';
+          }
+        } else {
+          document.getElementById('stat-cases').textContent = '0';
+          document.getElementById('stat-pending-cases').textContent = '0';
+          activeContainer.innerHTML = '<p class="no-data">No tienes casos activos</p>';
+          pendingContainer.innerHTML = '<p class="no-data">No tienes denuncias pendientes</p>';
+        }
+      } catch (err) {
+        console.error('Error:', err);
+      }
+      
+      // Load documents
+      loadClientDocuments();
+      
+      // Update billing for client (just show pending payments)
+      try {
+        const res = await fetch(API_URL.billing, { headers: getHeaders() });
+        const result = await res.json();
+        
+        if (result.success && result.data.length > 0) {
+          const pending = result.data.filter(i => i.status === 'pending');
+          const pendingAmount = pending.reduce((sum, i) => sum + (parseFloat(i.total) || 0), 0);
+          
+          document.getElementById('stat-billing').textContent = `$${pendingAmount.toFixed(2)}`;
+          document.getElementById('stat-documents').textContent = result.data.length;
+        } else {
+          document.getElementById('stat-billing').textContent = '$0';
+        }
+      } catch (err) {
+        console.error('Error:', err);
+      }
+    }
+
+    // Load cases for dashboard
+    async function loadCasesData() {
+      try {
+        const res = await fetch(API_URL.cases, { headers: getHeaders() });
+        const result = await res.json();
+        
+        if (result.success && result.data.length > 0) {
+          const cases = result.data;
+          const active = cases.filter(c => c.status === 'active').length;
+          const pending = cases.filter(c => c.status === 'pending').length;
+          const completed = cases.filter(c => c.status === 'closed' || c.status === 'completed').length;
+          
+          document.getElementById('stat-cases').textContent = active;
+          document.getElementById('stat-pending-cases').textContent = pending;
+          
+          // Active cases list
+          const activeContainer = document.getElementById('active-cases');
+          const activeCases = cases.filter(c => c.status === 'active');
+          if (activeCases.length > 0) {
+            activeContainer.innerHTML = activeCases.slice(0, 4).map(c => `
+              <div class="case-item">
+                <div class="case-info">
+                  <h4>${c.title}</h4>
+                  <p>${c.caseType || 'Civil'} - ${c.caseNumber || ''}</p>
+                </div>
+                <span class="status-dot active"></span>
+              </div>
+            `).join('');
+          } else {
+            activeContainer.innerHTML = '<p class="no-data">Sin casos activos</p>';
+          }
+          
+          // Pending cases list
+          const pendingContainer = document.getElementById('pending-cases');
+          const pendingCases = cases.filter(c => c.status === 'pending');
+          if (pendingCases.length > 0) {
+            pendingContainer.innerHTML = pendingCases.slice(0, 4).map(c => `
+              <div class="case-item">
+                <div class="case-info">
+                  <h4>${c.title}</h4>
+                  <p>${c.caseType || 'Civil'} - ${c.caseNumber || ''}</p>
+                </div>
+                <span class="status-dot pending"></span>
+              </div>
+            `).join('');
+          } else {
+            pendingContainer.innerHTML = '<p class="no-data">Sin casos pendientes</p>';
+          }
+        } else {
+          document.getElementById('stat-cases').textContent = '0';
+          document.getElementById('stat-pending-cases').textContent = '0';
+          document.getElementById('active-cases').innerHTML = '<p class="no-data">Sin casos</p>';
+          document.getElementById('pending-cases').innerHTML = '<p class="no-data">Sin casos pendientes</p>';
+        }
+      } catch (err) {
+        console.error('Error:', err);
+      }
+    }
+
+    // Load documents for dashboard
+    async function loadDocumentsData() {
+      try {
+        const res = await fetch(API_URL.documents, { headers: getHeaders() });
+        const result = await res.json();
+        
+        document.getElementById('stat-documents').textContent = result.success ? result.data.length : 0;
+        
+        const container = document.getElementById('documents-list');
+        if (result.success && result.data.length > 0) {
+          container.innerHTML = result.data.slice(0, 5).map(d => `
+            <div class="doc-item">
+              <i class="fas fa-file-alt"></i>
+              <div class="doc-info">
+                <h4>${d.originalFileName || d.title}</h4>
+                <p>${d.documentType || 'Documento'}</p>
+              </div>
+            </div>
+          `).join('');
+        } else {
+          container.innerHTML = '<p class="no-data">Sin documentos</p>';
+        }
+      } catch (err) {
+        console.error('Error:', err);
+      }
+    }
+
+    // Load billing data for dashboard
+    async function loadBillingData() {
+      try {
+        const res = await fetch(API_URL.billing, { headers: getHeaders() });
+        const result = await res.json();
+        
+        if (result.success && result.data.length > 0) {
+          const invoices = result.data;
+          
+          // Stats
+          const total = invoices.reduce((sum, i) => sum + (parseFloat(i.total) || 0), 0);
+          const pending = invoices.filter(i => i.status === 'pending').reduce((sum, i) => sum + (parseFloat(i.total) || 0), 0);
+          const paid = invoices.filter(i => i.status === 'paid').length;
+          
+          document.getElementById('stat-total').textContent = `$${total.toFixed(2)}`;
+          document.getElementById('stat-pending-amount').textContent = `$${pending.toFixed(2)}`;
+          document.getElementById('stat-paid').textContent = paid;
+          document.getElementById('stat-total-invoices').textContent = invoices.length;
+          
+          // Payment History
+          const historyContainer = document.getElementById('payment-history');
+          const paidInvoices = invoices.filter(i => i.status === 'paid');
+          if (paidInvoices.length > 0) {
+            historyContainer.innerHTML = paidInvoices.slice(0, 5).map(i => `
+              <div class="payment-item">
+                <div class="payment-info">
+                  <h4>${i.invoiceNumber}</h4>
+                  <p>${i.description || 'Factura'}</p>
+                </div>
+                <span class="amount-paid">$${i.total}</span>
+              </div>
+            `).join('');
+          } else {
+            historyContainer.innerHTML = '<p class="no-data">Sin pagos realizados</p>';
+          }
+          
+          // Pending Invoices
+          const pendingContainer = document.getElementById('pending-invoices');
+          const pendingInvoices = invoices.filter(i => i.status === 'pending');
+          if (pendingInvoices.length > 0) {
+            pendingContainer.innerHTML = pendingInvoices.slice(0, 5).map(i => `
+              <div class="invoice-item">
+                <div class="invoice-info">
+                  <h4>${i.invoiceNumber}</h4>
+                  <p>${i.description || 'Factura'}</p>
+                  <small>Vence: ${i.dueDate ? new Date(i.dueDate).toLocaleDateString() : 'N/A'}</small>
+                </div>
+                <span class="amount-pending">$${i.total}</span>
+              </div>
+            `).join('');
+          } else {
+            pendingContainer.innerHTML = '<p class="no-data">No hay facturas pendientes</p>';
+          }
+        } else {
+          document.getElementById('stat-total').textContent = '$0';
+          document.getElementById('stat-pending-amount').textContent = '$0';
+          document.getElementById('stat-paid').textContent = '0';
+          document.getElementById('stat-total-invoices').textContent = '0';
+          document.getElementById('payment-history').innerHTML = '<p class="no-data">Sin facturas</p>';
+          document.getElementById('pending-invoices').innerHTML = '<p class="no-data">Sin facturas pendientes</p>';
+        }
+      } catch (err) {
+        console.error('Error:', err);
+      }
+    }
+
+    // Process Payment
+    async function processPayment(e) {
+      e.preventDefault();
+      const amount = document.getElementById('payment-amount').value;
+      const method = document.getElementById('payment-method').value;
+      const invoiceNum = document.getElementById('payment-invoice').value;
+      
+      // Simulate payment
+      alert(`Pago de $${amount} procesado por ${method === 'card' ? 'Tarjeta' : method === 'transfer' ? 'Transferencia' : 'Efectivo'}`);
+      
+      // Clear form
+      document.getElementById('payment-amount').value = '';
+      document.getElementById('payment-invoice').value = '';
+      
+      loadBillingDashboard();
+    }
+
+    // Create Invoice from dashboard
+    async function createInvoice(e) {
+      e.preventDefault();
+      const data = {
+        invoiceNumber: 'INV-' + Date.now(),
+        clientId: document.getElementById('invoice-client-name').value,
+        description: document.getElementById('invoice-concept').value,
+        total: document.getElementById('invoice-amount').value,
+        dueDate: document.getElementById('invoice-due-date').value,
+        status: 'pending'
+      };
+      
+      try {
+        const res = await fetch(API_URL.billing, {
+          method: 'POST',
+          headers: getHeaders(),
+          body: JSON.stringify(data)
+        });
+        const result = await res.json();
+        
+        if (result.success) {
+          alert('Factura creada exitosamente');
+          document.getElementById('invoice-client-name').value = '';
+          document.getElementById('invoice-concept').value = '';
+          document.getElementById('invoice-amount').value = '';
+          loadBillingDashboard();
+        } else {
+          alert(result.message || 'Error al crear factura');
+        }
+      } catch (err) {
+        alert('Error de conexión');
+      }
+    }
+
+    // Load Billing View
+    async function loadBilling() {
+      try {
+        const res = await fetch(API_URL.billing, { headers: getHeaders() });
+        const result = await res.json();
+        
+        if (result.success && result.data.length > 0) {
+          const invoices = result.data;
+          
+          const total = invoices.reduce((sum, i) => sum + (parseFloat(i.total) || 0), 0);
+          const pending = invoices.filter(i => i.status === 'pending').reduce((sum, i) => sum + (parseFloat(i.total) || 0), 0);
+          const paid = invoices.filter(i => i.status === 'paid').length;
+          
+          document.getElementById('billing-total').textContent = `$${total.toFixed(2)}`;
+          document.getElementById('billing-pending').textContent = `$${pending.toFixed(2)}`;
+          document.getElementById('billing-paid').textContent = paid;
+          
+          const container = document.getElementById('billing-invoices-list');
+          container.innerHTML = invoices.map(i => `
+            <div class="invoice-list-item">
+              <div class="invoice-details">
+                <h4>${i.invoiceNumber}</h4>
+                <p>${i.description || 'Sin descripción'}</p>
+                <small>Vence: ${i.dueDate ? new Date(i.dueDate).toLocaleDateString() : 'N/A'}</small>
+              </div>
+              <div class="invoice-actions">
+                <span class="invoice-amount">$${i.total}</span>
+                <span class="status-badge status-${i.status}">${i.status === 'paid' ? 'Pagada' : i.status === 'pending' ? 'Pendiente' : i.status}</span>
+              </div>
+            </div>
+          `).join('');
+        } else {
+          document.getElementById('billing-total').textContent = '$0';
+          document.getElementById('billing-pending').textContent = '$0';
+          document.getElementById('billing-paid').textContent = '0';
+          document.getElementById('billing-invoices-list').innerHTML = '<p class="no-data">No hay facturas</p>';
+        }
+      } catch (err) {
+        console.error('Error:', err);
+      }
+    }
+
+    // Cases
+    async function loadCases() {
+      try {
+        const res = await fetch(API_URL.cases, { headers: getHeaders() });
+        const result = await res.json();
+        const container = document.getElementById('cases-list');
+        
+        if (result.success && result.data.length > 0) {
+          const cases = result.data;
+          const active = cases.filter(c => c.status === 'active').length;
+          const pending = cases.filter(c => c.status === 'pending').length;
+          const completed = cases.filter(c => c.status === 'closed' || c.status === 'completed').length;
+          
+          document.getElementById('cases-active-count').textContent = active;
+          document.getElementById('cases-pending-count').textContent = pending;
+          document.getElementById('cases-completed-count').textContent = completed;
+          
+          container.innerHTML = cases.map(c => `
+            <div class="invoice-list-item">
+              <div class="invoice-details">
+                <h4>${c.title}</h4>
+                <p>${c.caseType || 'Civil'} - ${c.caseNumber || ''}</p>
+                <small>${c.description || ''}</small>
+              </div>
+              <div class="invoice-actions">
+                <span class="invoice-amount">${c.status}</span>
+                <span class="status-badge status-${c.status}">${c.status === 'active' ? 'Activo' : c.status === 'pending' ? 'Pendiente' : c.status === 'closed' ? 'Cerrado' : c.status}</span>
+              </div>
+            </div>
+          `).join('');
+        } else {
+          document.getElementById('cases-active-count').textContent = '0';
+          document.getElementById('cases-pending-count').textContent = '0';
+          document.getElementById('cases-completed-count').textContent = '0';
+          container.innerHTML = '<p class="no-data">No hay casos</p>';
+        }
+      } catch (err) {
+        document.getElementById('cases-list').innerHTML = '<p class="no-data">Error</p>';
+      }
+    }
+
+    // Documents
+    async function loadDocuments() {
+      try {
+        const res = await fetch(API_URL.documents, { headers: getHeaders() });
+        const result = await res.json();
+        
+        document.getElementById('docs-total').textContent = result.success ? result.data.length : 0;
+        
+        const container = document.getElementById('docs-list');
+        if (result.success && result.data.length > 0) {
+          container.innerHTML = result.data.map(d => `
+            <div class="invoice-list-item">
+              <div class="invoice-details">
+                <h4><i class="fas fa-file-alt"></i> ${d.originalFileName || d.title}</h4>
+                <p>${d.documentType || 'Documento'}</p>
+                <small>Tamaño: ${d.fileSize ? (d.fileSize/1024).toFixed(1) + ' KB' : 'N/A'}</small>
+              </div>
+              <div class="invoice-actions">
+                <span class="status-badge">Recibido</span>
+              </div>
+            </div>
+          `).join('');
+        } else {
+          container.innerHTML = '<p class="no-data">No hay documentos</p>';
+        }
+      } catch (err) {
+        document.getElementById('docs-list').innerHTML = '<p class="no-data">Error</p>';
+      }
+    }
+
+    // Client: My Cases
+    async function loadClientCases() {
+      try {
+        const res = await fetch(API_URL.cases, { headers: getHeaders() });
+        const result = await res.json();
+        
+        if (result.success && result.data.length > 0) {
+          const cases = result.data;
+          const active = cases.filter(c => c.status === 'active').length;
+          const completed = cases.filter(c => c.status === 'closed' || c.status === 'completed').length;
+          
+          document.getElementById('client-cases-active').textContent = active;
+          document.getElementById('client-cases-completed').textContent = completed;
+          
+          const container = document.getElementById('client-cases-list');
+          container.innerHTML = cases.map(c => `
+            <div class="invoice-list-item">
+              <div class="invoice-details">
+                <h4>${c.title}</h4>
+                <p>${c.caseType || 'Caso legal'} - ${c.caseNumber || ''}</p>
+                <small>${c.description || 'Sin descripción'}</small>
+              </div>
+              <div class="invoice-actions">
+                <span class="status-badge status-${c.status}">${c.status === 'active' ? 'En Proceso' : c.status === 'pending' ? 'Pendiente' : 'Completado'}</span>
+              </div>
+            </div>
+          `).join('');
+        } else {
+          document.getElementById('client-cases-active').textContent = '0';
+          document.getElementById('client-cases-completed').textContent = '0';
+          document.getElementById('client-cases-list').innerHTML = '<p class="no-data">No tienes casos asociados</p>';
+        }
+      } catch (err) {
+        document.getElementById('client-cases-list').innerHTML = '<p class="no-data">Error</p>';
+      }
+    }
+
+    // Client: My Documents
+    async function loadClientDocuments() {
+      try {
+        const res = await fetch(API_URL.documents, { headers: getHeaders() });
+        const result = await res.json();
+        
+        document.getElementById('client-docs-count').textContent = result.success ? result.data.length : 0;
+        
+        const container = document.getElementById('client-docs-list');
+        if (result.success && result.data.length > 0) {
+          container.innerHTML = result.data.map(d => `
+            <div class="invoice-list-item">
+              <div class="invoice-details">
+                <h4><i class="fas fa-file-alt"></i> ${d.originalFileName || d.title}</h4>
+                <p>${d.documentType || 'Documento'}</p>
+                <small>Subido: ${d.createdAt ? new Date(d.createdAt).toLocaleDateString() : 'N/A'}</small>
+              </div>
+              <div class="invoice-actions">
+                <button class="btn-small" style="width:auto; padding: 0.4rem 0.8rem;">Ver</button>
+              </div>
+            </div>
+          `).join('');
+        } else {
+          container.innerHTML = '<p class="no-data">No tienes documentos</p>';
+        }
+      } catch (err) {
+        document.getElementById('client-docs-list').innerHTML = '<p class="no-data">Error</p>';
+      }
+    }
+
+    // Client: Wait Time
+    async function loadWaitTime() {
+      try {
+        const res = await fetch(API_URL.cases, { headers: getHeaders() });
+        const result = await res.json();
+        
+        const container = document.getElementById('wait-time-list');
+        
+        if (result.success && result.data.length > 0) {
+          const cases = result.data;
+          
+          // Calculate total wait days (simulation based on case age)
+          let totalDays = 0;
+          const caseDays = cases.map(c => {
+            const created = c.createdAt ? new Date(c.createdAt) : new Date();
+            const days = Math.floor((new Date() - created) / (1000 * 60 * 60 * 24));
+            return { title: c.title, days: days, status: c.status };
+          });
+          
+          totalDays = caseDays.reduce((sum, c) => sum + c.days, 0);
+          document.getElementById('total-wait-time').textContent = `${totalDays} días`;
+          
+          container.innerHTML = caseDays.map(c => `
+            <div class="wait-item">
+              <div class="wait-case-info">
+                <h4>${c.title}</h4>
+                <p>${c.status === 'active' ? 'En proceso' : c.status === 'pending' ? 'Pendiente' : 'Completado'}</p>
+              </div>
+              <div class="wait-days">
+                <span class="days-number">${c.days}</span>
+                <span class="days-label">días</span>
+              </div>
+            </div>
+          `).join('');
+        } else {
+          document.getElementById('total-wait-time').textContent = '0 días';
+          container.innerHTML = '<p class="no-data">No hay casos para mostrar</p>';
+        }
+      } catch (err) {
+        document.getElementById('wait-time-list').innerHTML = '<p class="no-data">Error</p>';
+      }
+    }
+
+    // Submit Complaint (Client)
+    async function submitComplaint(e) {
+      e.preventDefault();
+      
+      const complaintData = {
+        caseNumber: 'DEN-' + Date.now(),
+        title: document.getElementById('complaint-title').value,
+        description: document.getElementById('complaint-description').value,
+        caseType: document.getElementById('complaint-type').value,
+        incidentDate: document.getElementById('complaint-date').value,
+        amount: document.getElementById('complaint-amount').value,
+        opposingParty: document.getElementById('complaint-party').value,
+        status: 'pending',
+        submittedBy: user.id
+      };
+      
+      try {
+        const res = await fetch(API_URL.cases, {
+          method: 'POST',
+          headers: getHeaders(),
+          body: JSON.stringify(complaintData)
+        });
+        const result = await res.json();
+        
+        if (result.success) {
+          alert('Tu denuncia ha sido enviada exitosamente. Un abogado la revisará pronto.');
+          // Clear form
+          document.getElementById('complaint-title').value = '';
+          document.getElementById('complaint-description').value = '';
+          document.getElementById('complaint-type').value = '';
+          document.getElementById('complaint-date').value = '';
+          document.getElementById('complaint-amount').value = '';
+          document.getElementById('complaint-party').value = '';
+          showView('dashboard');
+        } else {
+          alert(result.message || 'Error al enviar denuncia');
+        }
+      } catch (err) {
+        alert('Error de conexión');
+      }
+    }
+
+    async function createCase(e) {
+      e.preventDefault();
+      const data = {
+        caseNumber: 'CASE-' + Date.now(),
+        title: document.getElementById('case-title').value,
+        description: document.getElementById('case-description').value,
+        caseType: document.getElementById('case-type').value,
+        status: document.getElementById('case-status').value,
+        clientId: user.id
+      };
+      
+      try {
+        const res = await fetch(API_URL.cases, {
+          method: 'POST',
+          headers: getHeaders(),
+          body: JSON.stringify(data)
+        });
+        const result = await res.json();
+        
+        if (result.success) {
+          alert('Caso creado');
+          closeModal('modal-case');
+          loadCases();
+        } else {
+          alert(result.message || 'Error');
+        }
+      } catch (err) {
+        alert('Error de conexión');
+      }
+    }
+
+    // Clients
+    async function loadClients() {
+      try {
+        const res = await fetch(API_URL.clients, { headers: getHeaders() });
+        const result = await res.json();
+        const container = document.getElementById('clients-list');
+        
+        if (result.success && result.data.length > 0) {
+          container.innerHTML = result.data.map(c => `
+            <div class="data-card">
+              <div class="card-header">
+                <h4>${c.firstName} ${c.lastName}</h4>
+                <span class="status-badge">${c.clientType || 'Cliente'}</span>
+              </div>
+              <div class="card-body">
+                <p><strong>Email:</strong> ${c.email || 'N/A'}</p>
+                <p><strong>Teléfono:</strong> ${c.phone || 'N/A'}</p>
+              </div>
+            </div>
+          `).join('');
+        } else {
+          container.innerHTML = '<p class="no-data">No hay clientes</p>';
+        }
+      } catch (err) {
+        document.getElementById('clients-list').innerHTML = '<p class="no-data">Error</p>';
+      }
+    }
+
+    async function createClient(e) {
+      e.preventDefault();
+      const data = {
+        firstName: document.getElementById('client-firstName').value,
+        lastName: document.getElementById('client-lastName').value,
+        email: document.getElementById('client-email').value,
+        phone: document.getElementById('client-phone').value,
+        clientType: document.getElementById('client-type').value
+      };
+      
+      try {
+        const res = await fetch(API_URL.clients, {
+          method: 'POST',
+          headers: getHeaders(),
+          body: JSON.stringify(data)
+        });
+        const result = await res.json();
+        
+        if (result.success) {
+          alert('Cliente creado');
+          closeModal('modal-client');
+          loadClients();
+        } else {
+          alert(result.message || 'Error');
+        }
+      } catch (err) {
+        alert('Error de conexión');
+      }
+    }
+
+    // Documents
+    async function loadDocuments() {
+      try {
+        const res = await fetch(API_URL.documents, { headers: getHeaders() });
+        const result = await res.json();
+        const container = document.getElementById('documents-list');
+        
+        if (result.success && result.data.length > 0) {
+          container.innerHTML = result.data.map(d => `
+            <div class="data-card">
+              <div class="card-header">
+                <h4><i class="fas fa-file"></i> ${d.originalFileName || d.title}</h4>
+                <span class="status-badge">${d.documentType}</span>
+              </div>
+              <div class="card-body">
+                <p><strong>Tamaño:</strong> ${d.fileSize ? (d.fileSize/1024).toFixed(1) + ' KB' : 'N/A'}</p>
+              </div>
+            </div>
+          `).join('');
+        } else {
+          container.innerHTML = '<p class="no-data">No hay documentos</p>';
+        }
+      } catch (err) {
+        document.getElementById('documents-list').innerHTML = '<p class="no-data">Error</p>';
+      }
+    }
+
+    async function createDocument(e) {
+      e.preventDefault();
+      alert('Documento subido (simulado)');
+      closeModal('modal-document');
+    }
+
+    // Time
+    async function loadTime() {
+      try {
+        const res = await fetch(API_URL.timetracking, { headers: getHeaders() });
+        const result = await res.json();
+        const container = document.getElementById('time-list');
+        
+        if (result.success && result.data.length > 0) {
+          container.innerHTML = result.data.map(t => `
+            <div class="data-card">
+              <div class="card-header">
+                <h4>Caso: ${t.caseId || 'N/A'}</h4>
+                <span class="status-badge status-active">${t.status || 'Activo'}</span>
+              </div>
+              <div class="card-body">
+                <p><strong>Duración:</strong> ${t.duration || 0} min</p>
+                <p><strong>Tarifa:</strong> $${t.rate || 0}/hr</p>
+              </div>
+            </div>
+          `).join('');
+        } else {
+          container.innerHTML = '<p class="no-data">No hay registros</p>';
+        }
+      } catch (err) {
+        document.getElementById('time-list').innerHTML = '<p class="no-data">Error</p>';
+      }
+    }
+
+    async function createTime(e) {
+      e.preventDefault();
+      alert('Tiempo registrado');
+      closeModal('modal-time');
+    }
+
+    // Billing
+    async function loadBilling() {
+      try {
+        const res = await fetch(API_URL.billing, { headers: getHeaders() });
+        const result = await res.json();
+        const container = document.getElementById('billing-list');
+        
+        if (result.success && result.data.length > 0) {
+          container.innerHTML = result.data.map(i => `
+            <div class="data-card">
+              <div class="card-header">
+                <h4>${i.invoiceNumber}</h4>
+                <span class="status-badge status-${i.status}">${i.status}</span>
+              </div>
+              <div class="card-body">
+                <p><strong>Total:</strong> $${i.total || 0}</p>
+                <p><strong>Vence:</strong> ${i.dueDate ? new Date(i.dueDate).toLocaleDateString() : 'N/A'}</p>
+              </div>
+            </div>
+          `).join('');
+        } else {
+          container.innerHTML = '<p class="no-data">No hay facturas</p>';
+        }
+      } catch (err) {
+        document.getElementById('billing-list').innerHTML = '<p class="no-data">Error</p>';
+      }
+    }
+
+    async function createInvoice(e) {
+      e.preventDefault();
+      const data = {
+        invoiceNumber: 'INV-' + Date.now(),
+        clientId: document.getElementById('invoice-client').value,
+        description: document.getElementById('invoice-description').value,
+        total: document.getElementById('invoice-amount').value,
+        dueDate: document.getElementById('invoice-dueDate').value,
+        status: 'pending'
+      };
+      
+      try {
+        const res = await fetch(API_URL.billing, {
+          method: 'POST',
+          headers: getHeaders(),
+          body: JSON.stringify(data)
+        });
+        const result = await res.json();
+        
+        if (result.success) {
+          alert('Factura creada');
+          closeModal('modal-invoice');
+          loadBilling();
+        } else {
+          alert(result.message || 'Error');
+        }
+      } catch (err) {
+        alert('Error de conexión');
+      }
+    }
+
+    // Modals
+    function openModal(id) {
+      document.getElementById(id).classList.remove('hidden');
+    }
+
+    function closeModal(id) {
+      document.getElementById(id).classList.add('hidden');
+    }
+
+    // Load dashboard on start
+    loadDashboard();
+  </script>
+</body>
+</html>

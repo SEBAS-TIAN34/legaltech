@@ -42,7 +42,7 @@ body {
   border-radius: 20px;
   box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
   width: 100%;
-  max-width: 420px;
+  max-width: 480px;
 }
 
 #login-section .login-header {
@@ -60,6 +60,40 @@ body {
 #login-section .login-header p {
   color: #666;
   font-size: 0.95rem;
+}
+
+/* Auth Toggle */
+.auth-toggle {
+  display: flex;
+  margin-bottom: 1.5rem;
+  border-radius: 12px;
+  overflow: hidden;
+  background: #f0f0f0;
+}
+
+.toggle-btn {
+  flex: 1;
+  padding: 1rem;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  font-weight: 600;
+  color: #666;
+  transition: all 0.3s;
+}
+
+.toggle-btn.active {
+  background: var(--gradient);
+  color: white;
+}
+
+/* Auth Mode */
+.auth-mode {
+  display: none;
+}
+
+.auth-mode.active {
+  display: block;
 }
 
 /* Tabs */
@@ -93,6 +127,91 @@ body {
 
 .login-form.active {
   display: block;
+}
+
+/* Register Form */
+.register-tabs {
+  display: flex;
+  margin-bottom: 1.5rem;
+  border-radius: 12px;
+  overflow: hidden;
+  background: #f0f0f0;
+}
+
+.register-tabs .tab-btn {
+  flex: 1;
+  padding: 0.8rem;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  font-weight: 600;
+  color: #666;
+  transition: all 0.3s;
+}
+
+.register-tabs .tab-btn.active {
+  background: var(--gradient-accent);
+  color: white;
+}
+
+.register-form {
+  display: none;
+}
+
+.register-form.active {
+  display: block;
+}
+
+.register-form h3 {
+  color: var(--primary);
+  margin-bottom: 1.5rem;
+  font-size: 1.1rem;
+  text-align: center;
+}
+
+.register-form input,
+.register-form select {
+  width: 100%;
+  padding: 0.8rem 1rem;
+  margin-bottom: 0.8rem;
+  border: 2px solid #e0e0e0;
+  border-radius: 10px;
+  font-size: 0.9rem;
+  transition: border-color 0.3s;
+}
+
+.register-form input:focus,
+.register-form select:focus {
+  outline: none;
+  border-color: var(--accent);
+}
+
+.form-row {
+  display: flex;
+  gap: 0.8rem;
+}
+
+.form-row input {
+  flex: 1;
+}
+
+.register-form button {
+  width: 100%;
+  padding: 1rem;
+  background: var(--gradient-accent);
+  color: white;
+  border: none;
+  border-radius: 10px;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: transform 0.2s, box-shadow 0.2s;
+  margin-top: 0.5rem;
+}
+
+.register-form button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(233, 69, 96, 0.3);
 }
 
 .login-form h3 {

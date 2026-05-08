@@ -14,29 +14,94 @@
         <h1>LegalTech</h1>
         <p>Portal de Acceso - Cliente & Abogado</p>
       </div>
-      <div class="login-tabs">
-        <button class="tab-btn active" onclick="showLoginTab('client')">Cliente</button>
-        <button class="tab-btn" onclick="showLoginTab('lawyer')">Abogado</button>
+      
+      <!-- Toggle between Login and Register -->
+      <div class="auth-toggle">
+        <button class="toggle-btn active" onclick="showAuthMode('login')" id="btn-login">Iniciar Sesión</button>
+        <button class="toggle-btn" onclick="showAuthMode('register')" id="btn-register">Crear Cuenta</button>
       </div>
       
-      <!-- Login Cliente -->
-      <div id="client-login" class="login-form active">
-        <h3>Acceso Cliente</h3>
-        <form onsubmit="portalLogin(event, 'client')">
-          <input type="email" id="client-email" placeholder="Email" required>
-          <input type="password" id="client-password" placeholder="Contraseña" required>
-          <button type="submit">Ingresar</button>
-        </form>
+      <!-- LOGIN SECTION -->
+      <div id="login-mode" class="auth-mode active">
+        <div class="login-tabs">
+          <button class="tab-btn active" onclick="showLoginTab('client')">Cliente</button>
+          <button class="tab-btn" onclick="showLoginTab('lawyer')">Abogado</button>
+        </div>
+        
+        <!-- Login Cliente -->
+        <div id="client-login" class="login-form active">
+          <h3>Acceso Cliente</h3>
+          <form onsubmit="portalLogin(event, 'client')">
+            <input type="email" id="client-email" placeholder="Email" required>
+            <input type="password" id="client-password" placeholder="Contraseña" required>
+            <button type="submit">Ingresar</button>
+          </form>
+        </div>
+        
+        <!-- Login Abogado -->
+        <div id="lawyer-login" class="login-form">
+          <h3>Acceso Abogado</h3>
+          <form onsubmit="portalLogin(event, 'lawyer')">
+            <input type="email" id="lawyer-email" placeholder="Email" required>
+            <input type="password" id="lawyer-password" placeholder="Contraseña" required>
+            <button type="submit">Ingresar</button>
+          </form>
+        </div>
       </div>
       
-      <!-- Login Abogado -->
-      <div id="lawyer-login" class="login-form">
-        <h3>Acceso Abogado</h3>
-        <form onsubmit="portalLogin(event, 'lawyer')">
-          <input type="email" id="lawyer-email" placeholder="Email" required>
-          <input type="password" id="lawyer-password" placeholder="Contraseña" required>
-          <button type="submit">Ingresar</button>
-        </form>
+      <!-- REGISTER SECTION -->
+      <div id="register-mode" class="auth-mode">
+        <div class="register-tabs">
+          <button class="tab-btn active" onclick="showRegisterTab('client')">Soy Cliente</button>
+          <button class="tab-btn" onclick="showRegisterTab('lawyer')">Soy Abogado</button>
+        </div>
+        
+        <!-- Register Cliente -->
+        <div id="client-register" class="register-form active">
+          <h3>Crear Cuenta - Cliente</h3>
+          <form onsubmit="portalRegister(event, 'client')">
+            <div class="form-row">
+              <input type="text" id="reg-client-firstName" placeholder="Nombre" required>
+              <input type="text" id="reg-client-lastName" placeholder="Apellido" required>
+            </div>
+            <input type="email" id="reg-client-email" placeholder="Email" required>
+            <input type="tel" id="reg-client-phone" placeholder="Teléfono">
+            <select id="reg-client-docType" required>
+              <option value="">Tipo de Documento</option>
+              <option value="CC">Cédula de Ciudadanía</option>
+              <option value="NIT">NIT</option>
+              <option value="CE">Cédula de Extranjería</option>
+              <option value="PP">Pasaporte</option>
+            </select>
+            <input type="text" id="reg-client-docNumber" placeholder="Número de Documento" required>
+            <select id="reg-client-type" required>
+              <option value="">Tipo de Cliente</option>
+              <option value="individual">Persona Natural</option>
+              <option value="company">Empresa</option>
+            </select>
+            <input type="password" id="reg-client-password" placeholder="Contraseña" required>
+            <input type="password" id="reg-client-confirmPassword" placeholder="Confirmar Contraseña" required>
+            <button type="submit">Crear Cuenta</button>
+          </form>
+        </div>
+        
+        <!-- Register Abogado -->
+        <div id="lawyer-register" class="register-form">
+          <h3>Crear Cuenta - Abogado</h3>
+          <form onsubmit="portalRegister(event, 'lawyer')">
+            <div class="form-row">
+              <input type="text" id="reg-lawyer-firstName" placeholder="Nombre" required>
+              <input type="text" id="reg-lawyer-lastName" placeholder="Apellido" required>
+            </div>
+            <input type="email" id="reg-lawyer-email" placeholder="Email" required>
+            <input type="tel" id="reg-lawyer-phone" placeholder="Teléfono">
+            <input type="text" id="reg-lawyer-license" placeholder="Número de Tarjeta Profesional" required>
+            <input type="text" id="reg-lawyer-specialty" placeholder="Especialidad (ej. Derecho Penal, Civil)" required>
+            <input type="password" id="reg-lawyer-password" placeholder="Contraseña" required>
+            <input type="password" id="reg-lawyer-confirmPassword" placeholder="Confirmar Contraseña" required>
+            <button type="submit">Crear Cuenta como Abogado</button>
+          </form>
+        </div>
       </div>
       
       <div id="portal-message"></div>
@@ -251,10 +316,85 @@
     }
 
     function showLoginTab(type) {
-      document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+      document.querySelectorAll('.login-tabs .tab-btn').forEach(b => b.classList.remove('active'));
       document.querySelectorAll('.login-form').forEach(f => f.classList.remove('active'));
-      document.querySelector(`.tab-btn:${type === 'client' ? 'first' : 'last'}-child`).classList.add('active');
+      document.querySelector(`.login-tabs .tab-btn:${type === 'client' ? 'first' : 'last'}-child`).classList.add('active');
       document.getElementById(`${type}-login`).classList.add('active');
+    }
+
+    function showRegisterTab(type) {
+      document.querySelectorAll('.register-tabs .tab-btn').forEach(b => b.classList.remove('active'));
+      document.querySelectorAll('.register-form').forEach(f => f.classList.remove('active'));
+      document.querySelector(`.register-tabs .tab-btn:${type === 'client' ? 'first' : 'last'}-child`).classList.add('active');
+      document.getElementById(`${type}-register`).classList.add('active');
+    }
+
+    function showAuthMode(mode) {
+      document.querySelectorAll('.toggle-btn').forEach(b => b.classList.remove('active'));
+      document.querySelectorAll('.auth-mode').forEach(m => m.classList.remove('active'));
+      document.getElementById(`btn-${mode}`).classList.add('active');
+      document.getElementById(`${mode}-mode`).classList.add('active');
+    }
+
+    async function portalRegister(e, type) {
+      e.preventDefault();
+      
+      const firstName = document.getElementById(`reg-${type}-firstName`).value;
+      const lastName = document.getElementById(`reg-${type}-lastName`).value;
+      const email = document.getElementById(`reg-${type}-email`).value;
+      const phone = document.getElementById(`reg-${type}-phone`).value;
+      const password = document.getElementById(`reg-${type}-password`).value;
+      const confirmPassword = document.getElementById(`reg-${type}-confirmPassword`).value;
+
+      if (password !== confirmPassword) {
+        showPortalMessage('Las contraseñas no coinciden', true);
+        return;
+      }
+
+      if (password.length < 6) {
+        showPortalMessage('La contraseña debe tener al menos 6 caracteres', true);
+        return;
+      }
+
+      try {
+        let registerData = {
+          firstName,
+          lastName,
+          email,
+          phone,
+          password,
+          role: type === 'lawyer' ? 'lawyer' : 'client'
+        };
+
+        if (type === 'client') {
+          registerData.documentType = document.getElementById('reg-client-docType').value;
+          registerData.documentNumber = document.getElementById('reg-client-docNumber').value;
+          registerData.clientType = document.getElementById('reg-client-type').value;
+        } else {
+          registerData.licenseNumber = document.getElementById('reg-lawyer-license').value;
+          registerData.specialty = document.getElementById('reg-lawyer-specialty').value;
+        }
+
+        const res = await fetch(`${API_URL.auth}/register`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(registerData)
+        });
+        const result = await res.json();
+        
+        if (result.success) {
+          showPortalMessage('Cuenta creada exitosamente. Ahora puedes iniciar sesión.', false);
+          setTimeout(() => {
+            showAuthMode('login');
+            // Pre-fill email
+            document.getElementById(`${type}-email`).value = email;
+          }, 2000);
+        } else {
+          showPortalMessage(result.message || 'Error al crear cuenta', true);
+        }
+      } catch (err) {
+        showPortalMessage('Error: ' + err.message, true);
+      }
     }
 
     async function portalLogin(e, type) {

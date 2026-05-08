@@ -1,0 +1,559 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>LegalTech - Portal Cliente/Abogado</title>
+  <link rel="stylesheet" href="portal-styles.css">
+</head>
+<body>
+  <!-- Login Section -->
+  <div id="login-section">
+    <div class="login-container">
+      <div class="login-header">
+        <h1>LegalTech</h1>
+        <p>Portal de Acceso - Cliente & Abogado</p>
+      </div>
+      <div class="login-tabs">
+        <button class="tab-btn active" onclick="showLoginTab('client')">Cliente</button>
+        <button class="tab-btn" onclick="showLoginTab('lawyer')">Abogado</button>
+      </div>
+      
+      <!-- Login Cliente -->
+      <div id="client-login" class="login-form active">
+        <h3>Acceso Cliente</h3>
+        <form onsubmit="portalLogin(event, 'client')">
+          <input type="email" id="client-email" placeholder="Email" required>
+          <input type="password" id="client-password" placeholder="Contraseña" required>
+          <button type="submit">Ingresar</button>
+        </form>
+      </div>
+      
+      <!-- Login Abogado -->
+      <div id="lawyer-login" class="login-form">
+        <h3>Acceso Abogado</h3>
+        <form onsubmit="portalLogin(event, 'lawyer')">
+          <input type="email" id="lawyer-email" placeholder="Email" required>
+          <input type="password" id="lawyer-password" placeholder="Contraseña" required>
+          <button type="submit">Ingresar</button>
+        </form>
+      </div>
+      
+      <div id="portal-message"></div>
+    </div>
+  </div>
+
+  <!-- Portal Principal -->
+  <div id="portal-panel" class="portal-container">
+    <nav class="portal-sidebar">
+      <div class="user-info">
+        <div class="user-avatar" id="user-avatar">U</div>
+        <div class="user-details">
+          <h3 id="user-name">Usuario</h3>
+          <p id="user-type">Tipo</p>
+        </div>
+      </div>
+      
+      <ul class="portal-menu" id="portal-menu">
+        <!-- Menú dinámico según tipo de usuario -->
+      </ul>
+      
+      <div class="logout-section">
+        <button onclick="portalLogout()" class="logout-btn">Cerrar Sesión</button>
+      </div>
+    </nav>
+
+    <main class="portal-main">
+      <header class="portal-header">
+        <h1 id="portal-title">Dashboard</h1>
+        <div class="header-actions">
+          <button class="notification-btn" onclick="showNotifications()">
+            <span class="notification-icon">🔔</span>
+            <span class="notification-badge" id="notif-count">0</span>
+          </button>
+        </div>
+      </header>
+
+      <!-- Dashboard Section -->
+      <div id="section-dashboard" class="section-content active">
+        <div class="stats-row" id="portal-stats">
+          <!-- Stats se cargan dinámicamente -->
+        </div>
+        <div class="portal-card">
+          <h3>Actividad Reciente</h3>
+          <div id="recent-activity">
+            <p class="empty-message">No hay actividad reciente</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Mis Casos Section (Cliente/Abogado) -->
+      <div id="section-cases" class="section-content">
+        <div class="portal-card">
+          <div class="card-header">
+            <h3>Mis Casos</h3>
+            <button class="btn-primary" onclick="showCreateCaseModal()">+ Nuevo Caso</button>
+          </div>
+          <div id="my-cases-list">
+            <!-- Casos se cargan dinámicamente -->
+          </div>
+        </div>
+      </div>
+
+      <!-- Documentos Section -->
+      <div id="section-documents" class="section-content">
+        <div class="portal-card">
+          <div class="card-header">
+            <h3>Mis Documentos</h3>
+            <button class="btn-primary" onclick="showUploadDocumentModal()">Subir Documento</button>
+          </div>
+          <div id="my-documents-list">
+            <!-- Documentos se cargan dinámicamente -->
+          </div>
+        </div>
+      </div>
+
+      <!-- Facturas Section (Cliente) -->
+      <div id="section-invoices" class="section-content">
+        <div class="stats-row">
+          <div class="stat-box">
+            <h4 id="invoice-total">$0</h4>
+            <p>Total Facturado</p>
+          </div>
+          <div class="stat-box">
+            <h4 id="invoice-paid">0</h4>
+            <p>Pagadas</p>
+          </div>
+          <div class="stat-box">
+            <h4 id="invoice-pending">0</h4>
+            <p>Pendientes</p>
+          </div>
+        </div>
+        <div class="portal-card">
+          <h3>Mis Facturas</h3>
+          <div id="my-invoices-list">
+            <!-- Facturas se cargan dinámicamente -->
+          </div>
+        </div>
+      </div>
+
+      <!-- Tiempo Section (Abogado) -->
+      <div id="section-time" class="section-content">
+        <div class="stats-row">
+          <div class="stat-box">
+            <h4 id="time-hours">0</h4>
+            <p>Horas Registradas</p>
+          </div>
+          <div class="stat-box">
+            <h4 id="time-billable">$0</h4>
+            <p>Facturable</p>
+          </div>
+        </div>
+        <div class="portal-card">
+          <div class="card-header">
+            <h3>Registro de Tiempo</h3>
+            <button class="btn-primary" onclick="showTimeEntryModal()">+ Registrar Tiempo</button>
+          </div>
+          <div id="my-time-list">
+            <!-- Tiempo se carga dinámicamente -->
+          </div>
+        </div>
+      </div>
+
+      <!-- Citas/Audiencias Section -->
+      <div id="section-appointments" class="section-content">
+        <div class="portal-card">
+          <div class="card-header">
+            <h3>Citas y Audiencias</h3>
+            <button class="btn-primary" onclick="showAppointmentModal()">+ Agendar Cita</button>
+          </div>
+          <div id="my-appointments-list">
+            <!-- Citas se cargan dinámicamente -->
+          </div>
+        </div>
+      </div>
+
+      <!-- Perfil Section -->
+      <div id="section-profile" class="section-content">
+        <div class="portal-card">
+          <h3>Mi Perfil</h3>
+          <form onsubmit="updateProfile(event)" id="profile-form">
+            <div class="form-group">
+              <label>Nombre</label>
+              <input type="text" id="profile-firstName" required>
+            </div>
+            <div class="form-group">
+              <label>Apellido</label>
+              <input type="text" id="profile-lastName" required>
+            </div>
+            <div class="form-group">
+              <label>Email</label>
+              <input type="email" id="profile-email" required>
+            </div>
+            <div class="form-group">
+              <label>Teléfono</label>
+              <input type="tel" id="profile-phone">
+            </div>
+            <button type="submit" class="btn-primary">Actualizar Perfil</button>
+          </form>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <script>
+    const API_URL = {
+      auth: '/api/auth',
+      cases: '/api/cases',
+      clients: '/api/clients',
+      documents: '/api/documents',
+      timetracking: '/api/time-entries',
+      billing: '/api/invoices',
+      notifications: '/api/notifications',
+      dashboard: '/api/dashboard'
+    };
+
+    let portalToken = localStorage.getItem('portalToken') || '';
+    let userType = localStorage.getItem('userType') || '';
+    let userData = null;
+
+    const menuItems = {
+      client: [
+        { id: 'dashboard', label: 'Dashboard', icon: '📊' },
+        { id: 'cases', label: 'Mis Casos', icon: '⚖️' },
+        { id: 'documents', label: 'Documentos', icon: '📄' },
+        { id: 'invoices', label: 'Facturas', icon: '💰' },
+        { id: 'appointments', label: 'Citas', icon: '📅' },
+        { id: 'profile', label: 'Mi Perfil', icon: '👤' }
+      ],
+      lawyer: [
+        { id: 'dashboard', label: 'Dashboard', icon: '📊' },
+        { id: 'cases', label: 'Mis Casos', icon: '⚖️' },
+        { id: 'documents', label: 'Documentos', icon: '📄' },
+        { id: 'time', label: 'Tiempo', icon: '⏱️' },
+        { id: 'appointments', label: 'Audiencias', icon: '📅' },
+        { id: 'profile', label: 'Mi Perfil', icon: '👤' }
+      ]
+    };
+
+    function getHeaders() {
+      return {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${portalToken}`
+      };
+    }
+
+    function showPortalMessage(msg, isError = false) {
+      const el = document.getElementById('portal-message');
+      el.className = isError ? 'message-error' : 'message-success';
+      el.textContent = msg;
+      setTimeout(() => el.textContent = '', 5000);
+    }
+
+    function showLoginTab(type) {
+      document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+      document.querySelectorAll('.login-form').forEach(f => f.classList.remove('active'));
+      document.querySelector(`.tab-btn:${type === 'client' ? 'first' : 'last'}-child`).classList.add('active');
+      document.getElementById(`${type}-login`).classList.add('active');
+    }
+
+    async function portalLogin(e, type) {
+      e.preventDefault();
+      const email = document.getElementById(`${type}-email`).value;
+      const password = document.getElementById(`${type}-password`).value;
+
+      try {
+        const res = await fetch(`${API_URL.auth}/login`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email, password })
+        });
+        const result = await res.json();
+        
+        if (result.success) {
+          portalToken = result.data.token;
+          userType = type;
+          localStorage.setItem('portalToken', portalToken);
+          localStorage.setItem('userType', userType);
+          userData = result.data.user;
+          
+          showPortalMessage('Bienvenido al Portal', false);
+          setTimeout(() => {
+            document.getElementById('login-section').style.display = 'none';
+            document.getElementById('portal-panel').style.display = 'flex';
+            initPortal();
+          }, 500);
+        } else {
+          showPortalMessage(result.message, true);
+        }
+      } catch (err) {
+        showPortalMessage('Error: ' + err.message, true);
+      }
+    }
+
+    function portalLogout() {
+      portalToken = '';
+      userType = '';
+      userData = null;
+      localStorage.removeItem('portalToken');
+      localStorage.removeItem('userType');
+      document.getElementById('login-section').style.display = 'flex';
+      document.getElementById('portal-panel').style.display = 'none';
+    }
+
+    function initPortal() {
+      const initials = userData?.firstName?.charAt(0) || 'U';
+      document.getElementById('user-avatar').textContent = initials;
+      document.getElementById('user-name').textContent = `${userData?.firstName || ''} ${userData?.lastName || ''}`;
+      document.getElementById('user-type').textContent = userType === 'client' ? 'Cliente' : 'Abogado';
+      
+      const menu = document.getElementById('portal-menu');
+      menu.innerHTML = menuItems[userType].map(item => `
+        <li><a href="#" onclick="showPortalSection('${item.id}')" class="${item.id === 'dashboard' ? 'active' : ''}">${item.icon} ${item.label}</a></li>
+      `).join('');
+      
+      showPortalSection('dashboard');
+    }
+
+    function showPortalSection(section) {
+      document.querySelectorAll('.section-content').forEach(s => s.classList.remove('active'));
+      document.querySelectorAll('.portal-menu a').forEach(a => a.classList.remove('active'));
+      
+      document.getElementById(`section-${section}`).classList.add('active');
+      document.querySelector(`.portal-menu a[onclick*="${section}"]`)?.classList.add('active');
+      
+      const titles = {
+        dashboard: 'Dashboard',
+        cases: 'Mis Casos',
+        documents: 'Mis Documentos',
+        invoices: 'Mis Facturas',
+        time: 'Control de Tiempo',
+        appointments: 'Citas y Audiencias',
+        profile: 'Mi Perfil'
+      };
+      document.getElementById('portal-title').textContent = titles[section];
+      
+      if (section === 'dashboard') loadPortalDashboard();
+      else if (section === 'cases') loadPortalCases();
+      else if (section === 'documents') loadPortalDocuments();
+      else if (section === 'invoices') loadPortalInvoices();
+      else if (section === 'time') loadPortalTime();
+      else if (section === 'profile') loadProfile();
+    }
+
+    async function loadPortalDashboard() {
+      const statsContainer = document.getElementById('portal-stats');
+      
+      try {
+        const casesRes = await fetch(`${API_URL.cases}/`, { headers: getHeaders() });
+        const casesData = await casesRes.json();
+        const cases = casesData.data || [];
+        
+        let statsHTML = `
+          <div class="stat-box">
+            <h4>${cases.length}</h4>
+            <p>Casos Activos</p>
+          </div>
+        `;
+        
+        if (userType === 'client') {
+          const invoicesRes = await fetch(`${API_URL.billing}/`, { headers: getHeaders() });
+          const invoicesData = await invoicesRes.json();
+          const invoices = invoicesData.data || [];
+          const pending = invoices.filter(i => i.status !== 'paid').length;
+          statsHTML += `
+            <div class="stat-box">
+              <h4>${pending}</h4>
+              <p>Facturas Pendientes</p>
+            </div>
+          `;
+        } else {
+          const timeRes = await fetch(`${API_URL.timetracking}/`, { headers: getHeaders() });
+          const timeData = await timeRes.json();
+          const timeEntries = timeData.data || [];
+          const hours = timeEntries.reduce((sum, t) => sum + (t.duration || 0), 0) / 60;
+          statsHTML += `
+            <div class="stat-box">
+              <h4>${hours.toFixed(1)}</h4>
+              <p>Horas Trabajadas</p>
+            </div>
+          `;
+        }
+        
+        statsContainer.innerHTML = statsHTML;
+        
+        const activityContainer = document.getElementById('recent-activity');
+        activityContainer.innerHTML = cases.slice(0, 5).map(c => `
+          <div class="activity-item">
+            <div class="activity-icon">⚖️</div>
+            <div class="activity-content">
+              <h4>${c.title}</h4>
+              <p>${c.caseNumber} - ${c.status}</p>
+              <span class="activity-date">${c.createdAt ? new Date(c.createdAt).toLocaleDateString() : ''}</span>
+            </div>
+          </div>
+        `).join('') || '<p class="empty-message">No hay actividad reciente</p>';
+        
+      } catch (err) {
+        console.error('Error loading dashboard:', err);
+      }
+    }
+
+    async function loadPortalCases() {
+      try {
+        const res = await fetch(`${API_URL.cases}/`, { headers: getHeaders() });
+        const result = await res.json();
+        const cases = result.data || [];
+        
+        document.getElementById('my-cases-list').innerHTML = cases.map(c => `
+          <div class="data-item">
+            <div class="item-header">
+              <h4>${c.title}</h4>
+              <span class="status-badge status-${c.status}">${c.status}</span>
+            </div>
+            <div class="item-details">
+              <p><strong>Caso:</strong> ${c.caseNumber}</p>
+              <p><strong>Tipo:</strong> ${c.caseType}</p>
+              <p><strong>Prioridad:</strong> ${c.priority}</p>
+            </div>
+          </div>
+        `).join('') || '<p class="empty-message">No hay casos registrados</p>';
+      } catch (err) {
+        console.error('Error:', err);
+      }
+    }
+
+    async function loadPortalDocuments() {
+      try {
+        const res = await fetch(`${API_URL.documents}/`, { headers: getHeaders() });
+        const result = await res.json();
+        const docs = result.data || [];
+        
+        document.getElementById('my-documents-list').innerHTML = docs.map(d => `
+          <div class="data-item">
+            <div class="item-header">
+              <h4>${d.originalFileName || d.title}</h4>
+              <span class="doc-type">${d.documentType}</span>
+            </div>
+            <div class="item-details">
+              <p><strong>Tamaño:</strong> ${d.fileSize ? (d.fileSize / 1024).toFixed(2) + ' KB' : 'N/A'}</p>
+              <p><strong>Fecha:</strong> ${d.createdAt ? new Date(d.createdAt).toLocaleDateString() : 'N/A'}</p>
+            </div>
+          </div>
+        `).join('') || '<p class="empty-message">No hay documentos</p>';
+      } catch (err) {
+        console.error('Error:', err);
+      }
+    }
+
+    async function loadPortalInvoices() {
+      try {
+        const res = await fetch(`${API_URL.billing}/`, { headers: getHeaders() });
+        const result = await res.json();
+        const invoices = result.data || [];
+        
+        const paid = invoices.filter(i => i.status === 'paid').length;
+        const pending = invoices.filter(i => i.status !== 'paid').length;
+        const total = invoices.reduce((sum, i) => sum + (i.total || 0), 0);
+        
+        document.getElementById('invoice-total').textContent = '$' + total.toLocaleString();
+        document.getElementById('invoice-paid').textContent = paid;
+        document.getElementById('invoice-pending').textContent = pending;
+        
+        document.getElementById('my-invoices-list').innerHTML = invoices.map(i => `
+          <div class="data-item">
+            <div class="item-header">
+              <h4>${i.invoiceNumber}</h4>
+              <span class="status-badge status-${i.status}">${i.status}</span>
+            </div>
+            <div class="item-details">
+              <p><strong>Total:</strong> $${i.total || 0}</p>
+              <p><strong>Fecha:</strong> ${i.createdAt ? new Date(i.createdAt).toLocaleDateString() : 'N/A'}</p>
+            </div>
+          </div>
+        `).join('') || '<p class="empty-message">No hay facturas</p>';
+      } catch (err) {
+        console.error('Error:', err);
+      }
+    }
+
+    async function loadPortalTime() {
+      try {
+        const res = await fetch(`${API_URL.timetracking}/`, { headers: getHeaders() });
+        const result = await res.json();
+        const entries = result.data || [];
+        
+        const hours = entries.reduce((sum, t) => sum + (t.duration || 0), 0) / 60;
+        const billable = entries.filter(t => t.billable).length;
+        
+        document.getElementById('time-hours').textContent = hours.toFixed(1);
+        document.getElementById('time-billable').textContent = billable;
+        
+        document.getElementById('my-time-list').innerHTML = entries.map(e => `
+          <div class="data-item">
+            <div class="item-header">
+              <h4>${e.caseId || 'Sin caso'}</h4>
+              <span class="status-badge ${e.billable ? 'status-active' : 'status-inactive'}">${e.billable ? 'Facturable' : 'No facturable'}</span>
+            </div>
+            <div class="item-details">
+              <p><strong>Duración:</strong> ${e.duration || 0} min</p>
+              <p><strong>Descripción:</strong> ${e.description || 'Sin descripción'}</p>
+            </div>
+          </div>
+        `).join('') || '<p class="empty-message">No hay registros de tiempo</p>';
+      } catch (err) {
+        console.error('Error:', err);
+      }
+    }
+
+    function loadProfile() {
+      document.getElementById('profile-firstName').value = userData?.firstName || '';
+      document.getElementById('profile-lastName').value = userData?.lastName || '';
+      document.getElementById('profile-email').value = userData?.email || '';
+      document.getElementById('profile-phone').value = userData?.phone || '';
+    }
+
+    function updateProfile(e) {
+      e.preventDefault();
+      showPortalMessage('Perfil actualizado correctamente', false);
+    }
+
+    function showNotifications() {
+      showPortalMessage('Próximamente: Centro de notificaciones', false);
+    }
+
+    function showCreateCaseModal() {
+      showPortalMessage('Próximamente: Crear caso', false);
+    }
+
+    function showUploadDocumentModal() {
+      showPortalMessage('Próximamente: Subir documento', false);
+    }
+
+    function showTimeEntryModal() {
+      showPortalMessage('Próximamente: Registrar tiempo', false);
+    }
+
+    function showAppointmentModal() {
+      showPortalMessage('Próximamente: Agendar cita', false);
+    }
+
+    // Check for existing session
+    if (portalToken && userType) {
+      fetch(`${API_URL.auth}/profile`, { headers: getHeaders() })
+        .then(res => res.json())
+        .then(result => {
+          if (result.success) {
+            userData = result.data;
+            document.getElementById('login-section').style.display = 'none';
+            document.getElementById('portal-panel').style.display = 'flex';
+            initPortal();
+          } else {
+            portalLogout();
+          }
+        })
+        .catch(() => portalLogout());
+    }
+  </script>
+</body>
+</html>

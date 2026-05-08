@@ -7,6 +7,8 @@ COPY frontend/app-v2.js /usr/share/nginx/html/app-v2.js
 COPY frontend/styles.css /usr/share/nginx/html/styles.css
 COPY frontend/admin.html /usr/share/nginx/html/admin.html
 COPY frontend/admin-styles.css /usr/share/nginx/html/admin-styles.css
+COPY frontend/portal.html /usr/share/nginx/html/portal.html
+COPY frontend/portal-styles.css /usr/share/nginx/html/portal-styles.css
 
 EXPOSE 80
 

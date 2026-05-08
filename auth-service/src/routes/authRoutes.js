@@ -42,7 +42,7 @@ const registerValidation = [
     .withMessage('Last name is required'),
   body('role')
     .optional()
-    .isIn(['admin', 'lawyer', 'paralegal', 'assistant'])
+    .isIn(['admin', 'lawyer', 'paralegal', 'assistant', 'client'])
     .withMessage('Invalid role specified')
 ];
 

@@ -8,7 +8,7 @@ services:
       - "80:80"
       - "443:443"
     volumes:
-      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./backend/nginx/nginx.conf:/etc/nginx/nginx.conf:ro
     depends_on:
       - auth-service
       - cases-service
@@ -49,7 +49,7 @@ services:
       retries: 5
 
   auth-service:
-    build: ./auth-service
+    build: ./backend/auth-service
     container_name: auth-service
     environment:
       PORT: 3001
@@ -68,7 +68,7 @@ services:
     restart: unless-stopped
 
   cases-service:
-    build: ./cases-service
+    build: ./backend/cases-service
     container_name: cases-service
     environment:
       PORT: 3002
@@ -87,7 +87,7 @@ services:
     restart: unless-stopped
 
   clients-service:
-    build: ./clients-service
+    build: ./backend/clients-service
     container_name: clients-service
     environment:
       PORT: 3003
@@ -106,7 +106,7 @@ services:
     restart: unless-stopped
 
   documents-service:
-    build: ./documents-service
+    build: ./backend/documents-service
     container_name: documents-service
     environment:
       PORT: 3004
@@ -125,7 +125,7 @@ services:
     restart: unless-stopped
 
   time-tracking-service:
-    build: ./time-tracking-service
+    build: ./backend/time-tracking-service
     container_name: time-tracking-service
     environment:
       PORT: 3005
@@ -144,7 +144,7 @@ services:
     restart: unless-stopped
 
   billing-service:
-    build: ./billing-service
+    build: ./backend/billing-service
     container_name: billing-service
     environment:
       PORT: 3006
@@ -163,7 +163,7 @@ services:
     restart: unless-stopped
 
   notifications-service:
-    build: ./notifications-service
+    build: ./backend/notifications-service
     container_name: notifications-service
     environment:
       PORT: 3007
@@ -182,7 +182,7 @@ services:
     restart: unless-stopped
 
   dashboard-service:
-    build: ./dashboard-service
+    build: ./backend/dashboard-service
     container_name: dashboard-service
     environment:
       PORT: 3008

@@ -43,7 +43,7 @@ jobs:
       - name: Build and push auth-service
         uses: docker/build-push-action@v5
         with:
-          context: ./auth-service
+          context: ./backend/auth-service
           push: true
           tags: ghcr.io/${{ env.REPO_LOWER }}/auth-service:latest
           cache-from: type=gha
@@ -52,7 +52,7 @@ jobs:
       - name: Build and push cases-service
         uses: docker/build-push-action@v5
         with:
-          context: ./cases-service
+          context: ./backend/cases-service
           push: true
           tags: ghcr.io/${{ env.REPO_LOWER }}/cases-service:latest
           cache-from: type=gha
@@ -61,7 +61,7 @@ jobs:
       - name: Build and push clients-service
         uses: docker/build-push-action@v5
         with:
-          context: ./clients-service
+          context: ./backend/clients-service
           push: true
           tags: ghcr.io/${{ env.REPO_LOWER }}/clients-service:latest
           cache-from: type=gha
@@ -70,7 +70,7 @@ jobs:
       - name: Build and push documents-service
         uses: docker/build-push-action@v5
         with:
-          context: ./documents-service
+          context: ./backend/documents-service
           push: true
           tags: ghcr.io/${{ env.REPO_LOWER }}/documents-service:latest
           cache-from: type=gha
@@ -79,7 +79,7 @@ jobs:
       - name: Build and push time-tracking-service
         uses: docker/build-push-action@v5
         with:
-          context: ./time-tracking-service
+          context: ./backend/time-tracking-service
           push: true
           tags: ghcr.io/${{ env.REPO_LOWER }}/time-tracking-service:latest
           cache-from: type=gha
@@ -88,7 +88,7 @@ jobs:
       - name: Build and push billing-service
         uses: docker/build-push-action@v5
         with:
-          context: ./billing-service
+          context: ./backend/billing-service
           push: true
           tags: ghcr.io/${{ env.REPO_LOWER }}/billing-service:latest
           cache-from: type=gha
@@ -97,7 +97,7 @@ jobs:
       - name: Build and push notifications-service
         uses: docker/build-push-action@v5
         with:
-          context: ./notifications-service
+          context: ./backend/notifications-service
           push: true
           tags: ghcr.io/${{ env.REPO_LOWER }}/notifications-service:latest
           cache-from: type=gha
@@ -106,7 +106,7 @@ jobs:
       - name: Build and push dashboard-service
         uses: docker/build-push-action@v5
         with:
-          context: ./dashboard-service
+          context: ./backend/dashboard-service
           push: true
           tags: ghcr.io/${{ env.REPO_LOWER }}/dashboard-service:latest
           cache-from: type=gha
@@ -115,7 +115,7 @@ jobs:
       - name: Build and push nginx
         uses: docker/build-push-action@v5
         with:
-          context: ./nginx
+          context: ./backend/nginx
           push: true
           tags: ghcr.io/${{ env.REPO_LOWER }}/nginx:latest
           cache-from: type=gha

@@ -23,7 +23,7 @@ services:
 
   auth-service:
     build:
-      context: ./auth-service
+      context: ./backend/auth-service
       dockerfile: Dockerfile
     container_name: auth-service
     ports:
@@ -46,7 +46,7 @@ services:
 
   cases-service:
     build:
-      context: ./cases-service
+      context: ./backend/cases-service
       dockerfile: Dockerfile
     container_name: cases-service
     ports:
@@ -72,7 +72,7 @@ services:
 
   clients-service:
     build:
-      context: ./clients-service
+      context: ./backend/clients-service
       dockerfile: Dockerfile
     container_name: clients-service
     ports:
@@ -98,7 +98,7 @@ services:
 
   documents-service:
     build:
-      context: ./documents-service
+      context: ./backend/documents-service
       dockerfile: Dockerfile
     container_name: documents-service
     ports:
@@ -128,7 +128,7 @@ services:
 
   time-tracking-service:
     build:
-      context: ./time-tracking-service
+      context: ./backend/time-tracking-service
       dockerfile: Dockerfile
     container_name: time-tracking-service
     ports:
@@ -157,7 +157,7 @@ services:
 
   billing-service:
     build:
-      context: ./billing-service
+      context: ./backend/billing-service
       dockerfile: Dockerfile
     container_name: billing-service
     ports:
@@ -189,7 +189,7 @@ services:
 
   notifications-service:
     build:
-      context: ./notifications-service
+      context: ./backend/notifications-service
       dockerfile: Dockerfile
     container_name: notifications-service
     ports:
@@ -220,7 +220,7 @@ services:
 
   dashboard-service:
     build:
-      context: ./dashboard-service
+      context: ./backend/dashboard-service
       dockerfile: Dockerfile
     container_name: dashboard-service
     ports:

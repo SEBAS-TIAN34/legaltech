@@ -311,6 +311,23 @@
     </div>
   </main>
 
+  <!-- Invoice Modal -->
+  <div id="invoice-modal" class="invoice-modal hidden" onclick="closeInvoiceModal(event)">
+    <div class="invoice-content" onclick="event.stopPropagation()">
+      <div class="invoice-header">
+        <button class="close-invoice" onclick="closeInvoiceModal()">&times;</button>
+      </div>
+      <div class="invoice-body" id="invoice-display">
+        <!-- Invoice will be rendered here -->
+      </div>
+      <div class="invoice-footer">
+        <button class="btn-download" onclick="downloadInvoice()">
+          <i class="fas fa-download"></i> Descargar Factura
+        </button>
+      </div>
+    </div>
+  </div>
+
   <script>
     const API_URL = {
       auth: '/api/auth',
@@ -595,6 +612,7 @@
               <div class="invoice-right">
                 <span class="amount">$${i.total}</span>
                 <span class="status-${i.status}">${i.status === 'paid' ? 'Pagada' : 'Pendiente'}</span>
+                ${i.status === 'paid' ? `<button class="btn-view-invoice" onclick="showInvoice('${i.id}')"><i class="fas fa-eye"></i> Ver</button>` : ''}
               </div>
             </div>
           `).join('');
@@ -608,15 +626,178 @@
       }
     }
 
-    // Process Payment
+    // Process Payment - Create invoice with paid status
     async function processPayment(e) {
       e.preventDefault();
       const amount = document.getElementById('pay-amount').value;
       const method = document.getElementById('pay-method').value;
       
-      alert(`Pago de $${amount} procesado por ${method === 'card' ? 'Tarjeta' : method === 'transfer' ? 'Transferencia' : 'Efectivo'}`);
+      const invoiceData = {
+        invoiceNumber: 'INV-' + Date.now(),
+        clientId: user.id,
+        description: 'Pago por servicios legales - ' + (method === 'card' ? 'Tarjeta' : method === 'transfer' ? 'Transferencia' : 'Efectivo'),
+        total: amount,
+        paidAmount: amount,
+        status: 'paid',
+        issueDate: new Date().toISOString(),
+        dueDate: new Date().toISOString()
+      };
+      
+      try {
+        const res = await fetch(API_URL.billing, {
+          method: 'POST',
+          headers: getHeaders(),
+          body: JSON.stringify(invoiceData)
+        });
+        
+        const result = await res.json();
+        
+        if (result.success) {
+          alert(`Pago de $${amount} procesado exitosamente!`);
+        } else {
+          alert('Pago procesado (simulado)');
+        }
+      } catch (err) {
+        alert('Pago procesado (simulado)');
+      }
+      
       document.getElementById('pay-amount').value = '';
       loadClientBilling();
+    }
+
+    // Show Invoice Modal
+    async function showInvoice(invoiceId) {
+      try {
+        const res = await fetch(API_URL.billing + '?t=' + Date.now(), { headers: getHeaders() });
+        const result = await res.json();
+        
+        if (result.success && result.data.length > 0) {
+          const invoice = result.data.find(i => i.id === invoiceId);
+          if (invoice) {
+            renderInvoice(invoice);
+            document.getElementById('invoice-modal').classList.remove('hidden');
+          }
+        }
+      } catch (err) {
+        console.error('Error:', err);
+      }
+    }
+
+    // Render Invoice
+    function renderInvoice(invoice) {
+      const qrCode = `LEGALTECH-${invoice.invoiceNumber}-${invoice.total}-${new Date().toISOString().split('T')[0]}`;
+      const container = document.getElementById('invoice-display');
+      container.innerHTML = `
+        <div class="invoice-paper">
+          <div class="invoice-brand">
+            <div class="brand-logo">
+              <i class="fas fa-scale-balanced"></i>
+              <span>LEGALTECH</span>
+            </div>
+            <div class="company-info">
+              <p><strong>LegalTech Solutions S.A.S.</strong></p>
+              <p>NIT: 901.234.567-8</p>
+              <p>Dirección: Calle 45 #12-34, Bogotá</p>
+              <p>Tel: (601) 123-4567</p>
+              <p>Email: contactolegaltech@legaltech.com</p>
+            </div>
+          </div>
+          
+          <div class="invoice-title">
+            <h2>FACTURA ELECTRÓNICA DE VENTA</h2>
+            <p>No. ${invoice.invoiceNumber}</p>
+          </div>
+          
+          <div class="invoice-details-grid">
+            <div class="detail-box">
+              <label>Fecha de Emisión:</label>
+              <span>${invoice.issueDate ? new Date(invoice.issueDate).toLocaleDateString() : new Date().toLocaleDateString()}</span>
+            </div>
+            <div class="detail-box">
+              <label>Fecha de Vencimiento:</label>
+              <span>${invoice.dueDate ? new Date(invoice.dueDate).toLocaleDateString() : 'N/A'}</span>
+            </div>
+            <div class="detail-box">
+              <label>Cliente:</label>
+              <span>${user.firstName} ${user.lastName}</span>
+            </div>
+            <div class="detail-box">
+              <label>Método de Pago:</label>
+              <span>${invoice.description || 'Efectivo'}</span>
+            </div>
+          </div>
+          
+          <table class="invoice-table">
+            <thead>
+              <tr>
+                <th>Descripción</th>
+                <th>Cantidad</th>
+                <th>Valor Unitario</th>
+                <th>Total</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>${invoice.description || 'Servicios LegalTech'}</td>
+                <td>1</td>
+                <td>$${parseFloat(invoice.total).toLocaleString()}</td>
+                <td>$${parseFloat(invoice.total).toLocaleString()}</td>
+              </tr>
+            </tbody>
+            <tfoot>
+              <tr>
+                <td colspan="3"><strong>SUBTOTAL:</strong></td>
+                <td>$${parseFloat(invoice.total).toLocaleString()}</td>
+              </tr>
+              <tr>
+                <td colspan="3"><strong>IVA (19%):</strong></td>
+                <td>$${((invoice.total || 0) * 0.19).toLocaleString()}</td>
+              </tr>
+              <tr class="total-row">
+                <td colspan="3"><strong>TOTAL A PAGAR:</strong></td>
+                <td>$${((invoice.total || 0) * 1.19).toLocaleString()}</td>
+              </tr>
+            </tfoot>
+          </table>
+          
+          <div class="invoice-status-paid">
+            <span class="paid-badge">PAGADA</span>
+            <p>Fecha de pago: ${invoice.issueDate ? new Date(invoice.issueDate).toLocaleDateString() : new Date().toLocaleDateString()}</p>
+          </div>
+          
+          <div class="invoice-qr">
+            <div class="qr-placeholder">
+              <i class="fas fa-qrcode"></i>
+              <p>${qrCode.substring(0, 30)}...</p>
+            </div>
+            <p class="qr-text">Código de verificación: ${qrCode}</p>
+          </div>
+          
+          <div class="invoice-footer-text">
+            <p>Gracias por confiar en LegalTech</p>
+            <p>Esta factura es válida sin firma autógrafa según artículo 10 del Decreto 2242 de 2015</p>
+            <p>Generado electrónicamente - www.legaltech.com</p>
+          </div>
+        </div>
+      `;
+    }
+
+    // Close Invoice Modal
+    function closeInvoiceModal(event) {
+      if (event && event.target !== event.currentTarget) return;
+      document.getElementById('invoice-modal').classList.add('hidden');
+    }
+
+    // Download Invoice (simple version)
+    function downloadInvoice() {
+      const invoiceContent = document.getElementById('invoice-display').innerText;
+      const blob = new Blob([invoiceContent], { type: 'text/plain' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'factura-legaltech.txt';
+      a.click();
+      URL.revokeObjectURL(url);
     }
 
     // Load default

@@ -3198,3 +3198,257 @@ body.login-page {
     grid-template-columns: 1fr;
   }
 }
+
+/* Invoice Modal */
+.invoice-modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 2rem;
+}
+
+.invoice-modal.hidden {
+  display: none;
+}
+
+.invoice-content {
+  background: white;
+  border-radius: 16px;
+  max-width: 700px;
+  width: 100%;
+  max-height: 90vh;
+  overflow-y: auto;
+}
+
+.invoice-header {
+  padding: 1rem;
+  display: flex;
+  justify-content: flex-end;
+  border-bottom: 1px solid #eee;
+}
+
+.close-invoice {
+  background: none;
+  border: none;
+  font-size: 1.5rem;
+  cursor: pointer;
+  color: #666;
+}
+
+.invoice-body {
+  padding: 2rem;
+}
+
+.invoice-paper {
+  background: white;
+  border: 1px solid #ddd;
+  padding: 2rem;
+}
+
+.invoice-brand {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 2rem;
+  border-bottom: 2px solid #1a1a2e;
+  padding-bottom: 1rem;
+}
+
+.brand-logo {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.brand-logo i {
+  font-size: 2rem;
+  color: #e94560;
+}
+
+.brand-logo span {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #1a1a2e;
+}
+
+.company-info p {
+  font-size: 0.85rem;
+  color: #666;
+  margin: 0.2rem 0;
+}
+
+.invoice-title {
+  text-align: center;
+  margin-bottom: 2rem;
+}
+
+.invoice-title h2 {
+  color: #1a1a2e;
+  font-size: 1.3rem;
+  margin-bottom: 0.5rem;
+}
+
+.invoice-title p {
+  color: #666;
+  font-weight: 600;
+}
+
+.invoice-details-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+  margin-bottom: 2rem;
+}
+
+.detail-box {
+  background: #f8f9fa;
+  padding: 0.8rem;
+  border-radius: 8px;
+}
+
+.detail-box label {
+  display: block;
+  font-size: 0.8rem;
+  color: #666;
+  margin-bottom: 0.3rem;
+}
+
+.detail-box span {
+  font-weight: 600;
+  color: #1a1a2e;
+}
+
+.invoice-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-bottom: 1rem;
+}
+
+.invoice-table th,
+.invoice-table td {
+  padding: 0.8rem;
+  border: 1px solid #ddd;
+  text-align: left;
+}
+
+.invoice-table th {
+  background: #1a1a2e;
+  color: white;
+  font-weight: 600;
+}
+
+.invoice-table td {
+  color: #333;
+}
+
+.invoice-table tfoot td {
+  font-weight: 600;
+}
+
+.invoice-table .total-row {
+  background: #e8f5e9;
+  font-size: 1.1rem;
+}
+
+.invoice-status-paid {
+  text-align: center;
+  padding: 1rem;
+  background: #d1fae5;
+  border-radius: 8px;
+  margin-bottom: 1rem;
+}
+
+.paid-badge {
+  display: inline-block;
+  background: #10b981;
+  color: white;
+  padding: 0.3rem 1rem;
+  border-radius: 20px;
+  font-weight: 700;
+  margin-bottom: 0.5rem;
+}
+
+.invoice-qr {
+  text-align: center;
+  margin: 1.5rem 0;
+  padding: 1rem;
+  background: #f8f9fa;
+  border-radius: 8px;
+}
+
+.qr-placeholder {
+  width: 120px;
+  height: 120px;
+  margin: 0 auto 1rem;
+  background: white;
+  border: 2px solid #1a1a2e;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+.qr-placeholder i {
+  font-size: 3rem;
+  color: #1a1a2e;
+}
+
+.qr-placeholder p {
+  font-size: 0.6rem;
+  color: #666;
+}
+
+.qr-text {
+  font-size: 0.75rem;
+  color: #666;
+  word-break: break-all;
+}
+
+.invoice-footer-text {
+  text-align: center;
+  font-size: 0.8rem;
+  color: #999;
+  padding-top: 1rem;
+  border-top: 1px solid #eee;
+}
+
+.invoice-footer {
+  padding: 1rem;
+  border-top: 1px solid #eee;
+  display: flex;
+  justify-content: center;
+}
+
+.btn-download {
+  background: linear-gradient(135deg, #1a1a2e, #16213e);
+  color: white;
+  border: none;
+  padding: 0.8rem 1.5rem;
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.btn-download:hover {
+  transform: translateY(-2px);
+}
+
+.btn-view-invoice {
+  background: #3b82f6;
+  color: white;
+  border: none;
+  padding: 0.3rem 0.8rem;
+  border-radius: 6px;
+  font-size: 0.8rem;
+  cursor: pointer;
+  margin-top: 0.3rem;
+}

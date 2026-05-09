@@ -632,15 +632,23 @@
       const amount = document.getElementById('pay-amount').value;
       const method = document.getElementById('pay-method').value;
       
+      const today = new Date();
+      const dueDate = new Date(today);
+      dueDate.setDate(dueDate.getDate() + 30);
+      
       const invoiceData = {
         invoiceNumber: 'INV-' + Date.now(),
         clientId: user.id,
-        description: 'Pago por servicios legales - ' + (method === 'card' ? 'Tarjeta' : method === 'transfer' ? 'Transferencia' : 'Efectivo'),
-        total: amount,
-        paidAmount: amount,
+        caseId: null,
         status: 'paid',
-        issueDate: new Date().toISOString(),
-        dueDate: new Date().toISOString()
+        issueDate: today.toISOString(),
+        dueDate: dueDate.toISOString(),
+        subtotal: amount,
+        tax: (amount * 0.19).toFixed(2),
+        total: (amount * 1.19).toFixed(2),
+        paidAmount: amount,
+        notes: 'Pago por servicios legales - ' + (method === 'card' ? 'Tarjeta' : method === 'transfer' ? 'Transferencia' : 'Efectivo'),
+        items: JSON.stringify([{ description: 'Servicios LegalTech', quantity: 1, unitPrice: amount, total: amount }])
       };
       
       try {

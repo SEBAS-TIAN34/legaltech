@@ -329,11 +329,14 @@
   </div>
 
   <script>
+    // Backend URL - Production (Render)
+    const BASE_URL = 'https://juridico-z8ue.onrender.com';
+
     const API_URL = {
-      auth: '/api/auth',
-      cases: '/api/cases',
-      documents: '/api/documents',
-      billing: '/api/invoices'
+      auth: `${BASE_URL}/api/auth`,
+      cases: `${BASE_URL}/api/cases`,
+      documents: `${BASE_URL}/api/documents`,
+      billing: `${BASE_URL}/api/invoices`
     };
 
     const token = localStorage.getItem('token');

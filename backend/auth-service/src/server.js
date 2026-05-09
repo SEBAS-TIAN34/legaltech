@@ -42,9 +42,9 @@ app.use('/api/auth/register', (req, res, next) => next()); // No rate limit for 
 app.use('/api/auth/login', (req, res, next) => next()); // No rate limit for login
 app.use(limiter);
 
-// CORS configuration
+// CORS configuration - Allow all origins for production
 const corsOptions = {
-  origin: process.env.ALLOWED_ORIGINS ? process.env.ALLOWED_ORIGINS.split(',') : ['http://localhost:8080', 'http://127.0.0.1:8080', 'http://localhost:3000', 'http://127.0.0.1:3000', 'http://localhost:3001', 'http://127.0.0.1:3001'],
+  origin: true,
   credentials: true,
   optionsSuccessStatus: 200
 };

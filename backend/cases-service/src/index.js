@@ -9,8 +9,14 @@ const app = express();
 // Connect to database
 connectDB();
 
-// Middleware
-app.use(cors());
+// CORS configuration - Allow all origins for production
+const corsOptions = {
+  origin: true,
+  credentials: true,
+  optionsSuccessStatus: 200
+};
+
+app.use(cors(corsOptions));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 

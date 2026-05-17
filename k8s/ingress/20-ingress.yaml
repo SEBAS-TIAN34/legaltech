@@ -1,0 +1,93 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: legaltech-ingress
+  namespace: legaltech
+  annotations:
+    nginx.ingress.kubernetes.io/rewrite-target: /
+    nginx.ingress.kubernetes.io/proxy-connect-timeout: "30"
+    nginx.ingress.kubernetes.io/proxy-read-timeout: "300"
+    nginx.ingress.kubernetes.io/proxy-send-timeout: "300"
+spec:
+  ingressClassName: nginx
+  rules:
+  - host: legaltech.local
+    http:
+      paths:
+      - path: /api/auth
+        pathType: Prefix
+        backend:
+          service:
+            name: auth-service
+            port:
+              number: 3001
+      - path: /api/cases
+        pathType: Prefix
+        backend:
+          service:
+            name: cases-service
+            port:
+              number: 3002
+      - path: /api/clients
+        pathType: Prefix
+        backend:
+          service:
+            name: clients-service
+            port:
+              number: 3003
+      - path: /api/documents
+        pathType: Prefix
+        backend:
+          service:
+            name: documents-service
+            port:
+              number: 3004
+      - path: /api/time-entries
+        pathType: Prefix
+        backend:
+          service:
+            name: time-tracking-service
+            port:
+              number: 3005
+      - path: /api/invoices
+        pathType: Prefix
+        backend:
+          service:
+            name: billing-service
+            port:
+              number: 3006
+      - path: /api/notifications
+        pathType: Prefix
+        backend:
+          service:
+            name: notifications-service
+            port:
+              number: 3007
+      - path: /api/dashboard
+        pathType: Prefix
+        backend:
+          service:
+            name: dashboard-service
+            port:
+              number: 3008
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: legaltech-web-ingress
+  namespace: legaltech
+  annotations:
+    nginx.ingress.kubernetes.io/rewrite-target: /
+spec:
+  ingressClassName: nginx
+  rules:
+  - host: legaltech.local
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: dashboard-service
+            port:
+              number: 3008

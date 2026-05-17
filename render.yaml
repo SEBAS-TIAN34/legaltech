@@ -14,7 +14,7 @@ services:
       - key: DB_NAME
         value: legaltech
       - key: DB_USER
-        value: legaltech
+        value: ${PGUSER}
       - key: DB_PASSWORD
         value: ${PGPASSWORD}
       - key: JWT_SECRET
@@ -35,7 +35,7 @@ services:
       - key: DB_NAME
         value: legaltech
       - key: DB_USER
-        value: legaltech
+        value: ${PGUSER}
       - key: DB_PASSWORD
         value: ${PGPASSWORD}
       - key: JWT_SECRET
@@ -58,7 +58,7 @@ services:
       - key: DB_NAME
         value: legaltech
       - key: DB_USER
-        value: legaltech
+        value: ${PGUSER}
       - key: DB_PASSWORD
         value: ${PGPASSWORD}
       - key: JWT_SECRET
@@ -104,7 +104,7 @@ services:
       - key: DB_NAME
         value: legaltech
       - key: DB_USER
-        value: legaltech
+        value: ${PGUSER}
       - key: DB_PASSWORD
         value: ${PGPASSWORD}
       - key: JWT_SECRET
@@ -127,7 +127,7 @@ services:
       - key: DB_NAME
         value: legaltech
       - key: DB_USER
-        value: legaltech
+        value: ${PGUSER}
       - key: DB_PASSWORD
         value: ${PGPASSWORD}
       - key: JWT_SECRET
@@ -150,7 +150,7 @@ services:
       - key: DB_NAME
         value: legaltech
       - key: DB_USER
-        value: legaltech
+        value: ${PGUSER}
       - key: DB_PASSWORD
         value: ${PGPASSWORD}
       - key: JWT_SECRET
@@ -173,7 +173,7 @@ services:
       - key: DB_NAME
         value: legaltech
       - key: DB_USER
-        value: legaltech
+        value: ${PGUSER}
       - key: DB_PASSWORD
         value: ${PGPASSWORD}
       - key: JWT_SECRET

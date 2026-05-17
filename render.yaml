@@ -1,196 +1,111 @@
 services:
   - name: auth-service
     type: web
-    runtime: docker
-    image: "ghcr.io/sebas-tian34/legalthtech/auth-service:latest"
+    runtime: node
+    buildCommand: npm install && npm start
+    repo: https://github.com/SEBAS-TIAN34/legaltech
+    branch: main
     plan: free
     envVars:
       - key: PORT
         value: "3001"
-      - key: DB_HOST
-        value: ${PGHOST}
-      - key: DB_PORT
-        value: "5432"
-      - key: DB_NAME
-        value: ${PGDATABASE}
-      - key: DB_USER
-        value: ${PGUSER}
-      - key: DB_PASSWORD
-        value: ${PGPASSWORD}
       - key: JWT_SECRET
         value: ${JWT_SECRET}
+      - key: NODE_ENV
+        value: production
 
   - name: cases-service
     type: web
-    runtime: docker
-    image: "ghcr.io/sebas-tian34/legalthtech/cases-service:latest"
+    runtime: node
+    buildCommand: npm install && npm start
+    repo: https://github.com/SEBAS-TIAN34/legaltech
+    branch: main
     plan: free
     envVars:
       - key: PORT
         value: "3002"
-      - key: DB_HOST
-        value: ${PGHOST}
-      - key: DB_PORT
-        value: "5432"
-      - key: DB_NAME
-        value: ${PGDATABASE}
-      - key: DB_USER
-        value: ${PGUSER}
-      - key: DB_PASSWORD
-        value: ${PGPASSWORD}
       - key: JWT_SECRET
         value: ${JWT_SECRET}
       - key: AUTH_SERVICE_URL
-        value: http://auth-service:3001
+        value: https://auth-service-[SERVICE_ID].onrender.com
 
   - name: clients-service
     type: web
-    runtime: docker
-    image: "ghcr.io/sebas-tian34/legalthtech/clients-service:latest"
+    runtime: node
+    buildCommand: npm install && npm start
+    repo: https://github.com/SEBAS-TIAN34/legaltech
+    branch: main
     plan: free
     envVars:
       - key: PORT
         value: "3003"
-      - key: DB_HOST
-        value: ${PGHOST}
-      - key: DB_PORT
-        value: "5432"
-      - key: DB_NAME
-        value: ${PGDATABASE}
-      - key: DB_USER
-        value: ${PGUSER}
-      - key: DB_PASSWORD
-        value: ${PGPASSWORD}
       - key: JWT_SECRET
         value: ${JWT_SECRET}
-      - key: AUTH_SERVICE_URL
-        value: http://auth-service:3001
 
   - name: documents-service
     type: web
-    runtime: docker
-    image: "ghcr.io/sebas-tian34/legalthtech/documents-service:latest"
+    runtime: node
+    buildCommand: npm install && npm start
+    repo: https://github.com/SEBAS-TIAN34/legaltech
+    branch: main
     plan: free
     envVars:
       - key: PORT
         value: "3004"
-      - key: DB_HOST
-        value: ${PGHOST}
-      - key: DB_PORT
-        value: "5432"
-      - key: DB_NAME
-        value: legaltech
-      - key: DB_USER
-        value: legaltech
-      - key: DB_PASSWORD
-        value: ${PGPASSWORD}
       - key: JWT_SECRET
         value: ${JWT_SECRET}
-      - key: AUTH_SERVICE_URL
-        value: http://auth-service:3001
 
   - name: time-tracking-service
     type: web
-    runtime: docker
-    image: "ghcr.io/sebas-tian34/legalthtech/time-tracking-service:latest"
+    runtime: node
+    buildCommand: npm install && npm start
+    repo: https://github.com/SEBAS-TIAN34/legaltech
+    branch: main
     plan: free
     envVars:
       - key: PORT
         value: "3005"
-      - key: DB_HOST
-        value: ${PGHOST}
-      - key: DB_PORT
-        value: "5432"
-      - key: DB_NAME
-        value: ${PGDATABASE}
-      - key: DB_USER
-        value: ${PGUSER}
-      - key: DB_PASSWORD
-        value: ${PGPASSWORD}
       - key: JWT_SECRET
         value: ${JWT_SECRET}
-      - key: AUTH_SERVICE_URL
-        value: http://auth-service:3001
 
   - name: billing-service
     type: web
-    runtime: docker
-    image: "ghcr.io/sebas-tian34/legalthtech/billing-service:latest"
+    runtime: node
+    buildCommand: npm install && npm start
+    repo: https://github.com/SEBAS-TIAN34/legaltech
+    branch: main
     plan: free
     envVars:
       - key: PORT
         value: "3006"
-      - key: DB_HOST
-        value: ${PGHOST}
-      - key: DB_PORT
-        value: "5432"
-      - key: DB_NAME
-        value: ${PGDATABASE}
-      - key: DB_USER
-        value: ${PGUSER}
-      - key: DB_PASSWORD
-        value: ${PGPASSWORD}
       - key: JWT_SECRET
         value: ${JWT_SECRET}
-      - key: AUTH_SERVICE_URL
-        value: http://auth-service:3001
 
   - name: notifications-service
     type: web
-    runtime: docker
-    image: "ghcr.io/sebas-tian34/legalthtech/notifications-service:latest"
+    runtime: node
+    buildCommand: npm install && npm start
+    repo: https://github.com/SEBAS-TIAN34/legaltech
+    branch: main
     plan: free
     envVars:
       - key: PORT
         value: "3007"
-      - key: DB_HOST
-        value: ${PGHOST}
-      - key: DB_PORT
-        value: "5432"
-      - key: DB_NAME
-        value: ${PGDATABASE}
-      - key: DB_USER
-        value: ${PGUSER}
-      - key: DB_PASSWORD
-        value: ${PGPASSWORD}
       - key: JWT_SECRET
         value: ${JWT_SECRET}
-      - key: AUTH_SERVICE_URL
-        value: http://auth-service:3001
 
   - name: dashboard-service
     type: web
-    runtime: docker
-    image: "ghcr.io/sebas-tian34/legalthtech/dashboard-service:latest"
+    runtime: node
+    buildCommand: npm install && npm start
+    repo: https://github.com/SEBAS-TIAN34/legaltech
+    branch: main
     plan: free
     envVars:
       - key: PORT
         value: "3008"
-      - key: DB_HOST
-        value: ${PGHOST}
-      - key: DB_PORT
-        value: "5432"
-      - key: DB_NAME
-        value: ${PGDATABASE}
-      - key: DB_USER
-        value: ${PGUSER}
-      - key: DB_PASSWORD
-        value: ${PGPASSWORD}
       - key: JWT_SECRET
         value: ${JWT_SECRET}
-      - key: AUTH_SERVICE_URL
-        value: http://auth-service:3001
-
-  - name: nginx
-    type: web
-    runtime: docker
-    image: "ghcr.io/sebas-tian34/legalthtech/nginx:latest"
-    plan: free
-    routes:
-      - path: /
-    envVars:
-      - key: PORT
-        value: "80"
 
 databases:
   - name: legaltech-db

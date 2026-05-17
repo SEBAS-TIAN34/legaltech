@@ -6,6 +6,9 @@ let sequelize;
 if (connectionString) {
   sequelize = new Sequelize(connectionString, {
     dialect: 'postgres',
+    dialectOptions: {
+      ssl: { require: true, rejectUnauthorized: false }
+    },
     logging: process.env.NODE_ENV === 'development' ? console.log : false,
     pool: { max: 10, min: 0, acquire: 30000, idle: 10000 }
   });
@@ -15,9 +18,12 @@ if (connectionString) {
     process.env.DB_USER || 'admin',
     process.env.DB_PASSWORD || 'admin123',
     {
-      host: process.env.DB_HOST || process.env.PGHOST || 'postgres',
+      host: process.env.DB_HOST || 'localhost',
       port: process.env.DB_PORT || 5432,
       dialect: 'postgres',
+      dialectOptions: {
+        ssl: { require: true, rejectUnauthorized: false }
+      },
       logging: process.env.NODE_ENV === 'development' ? console.log : false,
       pool: { max: 10, min: 0, acquire: 30000, idle: 10000 },
       define: { timestamps: true, underscored: true }

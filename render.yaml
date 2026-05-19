@@ -9,6 +9,8 @@ services:
     envVars:
       - key: PORT
         value: "3001"
+      - key: DATABASE_URL
+        value: postgresql://postgres:LEGALtech2026@db.zftczusnrhslgpgrpzrs.supabase.co:5432/postgres
       - key: JWT_SECRET
         value: ${JWT_SECRET}
       - key: NODE_ENV
@@ -24,6 +26,8 @@ services:
     envVars:
       - key: PORT
         value: "3002"
+      - key: DATABASE_URL
+        value: postgresql://postgres:LEGALtech2026@db.zftczusnrhslgpgrpzrs.supabase.co:5432/postgres
       - key: JWT_SECRET
         value: ${JWT_SECRET}
       - key: AUTH_SERVICE_URL
@@ -39,6 +43,8 @@ services:
     envVars:
       - key: PORT
         value: "3003"
+      - key: DATABASE_URL
+        value: postgresql://postgres:LEGALtech2026@db.zftczusnrhslgpgrpzrs.supabase.co:5432/postgres
       - key: JWT_SECRET
         value: ${JWT_SECRET}
 
@@ -52,6 +58,8 @@ services:
     envVars:
       - key: PORT
         value: "3004"
+      - key: DATABASE_URL
+        value: postgresql://postgres:LEGALtech2026@db.zftczusnrhslgpgrpzrs.supabase.co:5432/postgres
       - key: JWT_SECRET
         value: ${JWT_SECRET}
 
@@ -65,6 +73,8 @@ services:
     envVars:
       - key: PORT
         value: "3005"
+      - key: DATABASE_URL
+        value: postgresql://postgres:LEGALtech2026@db.zftczusnrhslgpgrpzrs.supabase.co:5432/postgres
       - key: JWT_SECRET
         value: ${JWT_SECRET}
 
@@ -78,6 +88,8 @@ services:
     envVars:
       - key: PORT
         value: "3006"
+      - key: DATABASE_URL
+        value: postgresql://postgres:LEGALtech2026@db.zftczusnrhslgpgrpzrs.supabase.co:5432/postgres
       - key: JWT_SECRET
         value: ${JWT_SECRET}
 
@@ -91,6 +103,8 @@ services:
     envVars:
       - key: PORT
         value: "3007"
+      - key: DATABASE_URL
+        value: postgresql://postgres:LEGALtech2026@db.zftczusnrhslgpgrpzrs.supabase.co:5432/postgres
       - key: JWT_SECRET
         value: ${JWT_SECRET}
 
@@ -104,11 +118,7 @@ services:
     envVars:
       - key: PORT
         value: "3008"
+      - key: DATABASE_URL
+        value: postgresql://postgres:LEGALtech2026@db.zftczusnrhslgpgrpzrs.supabase.co:5432/postgres
       - key: JWT_SECRET
         value: ${JWT_SECRET}
-
-databases:
-  - name: legaltech-db
-    type: pserv
-    plan: free
-    postgresMajorVersion: "15"

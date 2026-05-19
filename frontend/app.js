@@ -2,26 +2,41 @@
 // LEGALTECH - JAVASCRIPT SISTEMA JURIDICO
 // ========================================
 
-// Backend URL - Production (Render)
-const BASE_URL = 'https://juridico-z8ue.onrender.com';
+// Supabase Configuration
+const SUPABASE_URL = 'https://zftczusnrhslgpgrpzrs.supabase.co';
+const SUPABASE_KEY = 'sb_publishable_J2uBdxcUW1HjyEA8VjHlLA_5TSWWOJo';
 
+const BASE_URL = `${SUPABASE_URL}/rest/v1`;
 const API_URL = {
-  auth: `${BASE_URL}/api/auth`,
-  cases: `${BASE_URL}/api/cases`,
-  clients: `${BASE_URL}/api/clients`,
-  documents: `${BASE_URL}/api/documents`,
-  timetracking: `${BASE_URL}/api/time-entries`,
-  billing: `${BASE_URL}/api/invoices`,
-  dashboard: `${BASE_URL}/api/dashboard`
+  users: `${BASE_URL}/users`,
+  clients: `${BASE_URL}/clients`,
+  cases: `${BASE_URL}/cases`,
+  documents: `${BASE_URL}/documents`,
+  time_entries: `${BASE_URL}/time_entries`,
+  invoices: `${BASE_URL}/invoices`,
+  notifications: `${BASE_URL}/notifications`,
+  audit_logs: `${BASE_URL}/audit_logs`
 };
 
 let authToken = localStorage.getItem('token') || '';
 let currentUser = null;
 
-function getHeaders() {
-  return {
+function getHeaders(includeAuth = true) {
+  const headers = {
     'Content-Type': 'application/json',
-    'Authorization': `Bearer ${authToken}`
+    'apikey': SUPABASE_KEY,
+    'Prefer': 'return=minimal'
+  };
+  if (includeAuth && authToken) {
+    headers['Authorization'] = `Bearer ${authToken}`;
+  }
+  return headers;
+}
+
+function getSelectHeaders() {
+  return {
+    'apikey': SUPABASE_KEY,
+    'Authorization': `Bearer ${SUPABASE_KEY}`
   };
 }
 
@@ -47,27 +62,26 @@ async function handleLogin(e) {
   const password = document.getElementById('login-password').value;
   
   try {
-    const res = await fetch(`${API_URL.auth}/login`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email, password })
+    const res = await fetch(`${API_URL.users}?email=eq.${encodeURIComponent(email)}&password=eq.${encodeURIComponent(password)}`, {
+      headers: getSelectHeaders()
     });
-    const result = await res.json();
+    const users = await res.json();
     
-    if (result.success) {
-      authToken = result.data.token;
-      currentUser = result.data.user;
+    if (users && users.length > 0) {
+      const user = users[0];
+      authToken = user.id.toString();
+      currentUser = user;
       localStorage.setItem('token', authToken);
       
       document.getElementById('auth-container').classList.add('hidden');
       document.getElementById('app-container').classList.remove('hidden');
       
-      document.getElementById('user-name').textContent = `${currentUser.firstName} ${currentUser.lastName}`;
-      document.getElementById('user-role').textContent = currentUser.role === 'lawyer' ? 'Abogado' : 'Cliente';
+      document.getElementById('user-name').textContent = user.name || user.email;
+      document.getElementById('user-role').textContent = user.role === 'lawyer' ? 'Abogado' : 'Cliente';
       
       loadDashboard();
     } else {
-      alert(result.message || 'Credenciales incorrectas');
+      alert('Credenciales incorrectas');
     }
   } catch (err) {
     alert('Error de conexión');
@@ -77,27 +91,25 @@ async function handleLogin(e) {
 async function handleRegister(e) {
   e.preventDefault();
   
-  const firstName = document.getElementById('register-firstName').value;
-  const lastName = document.getElementById('register-lastName').value;
+  const name = document.getElementById('register-firstName').value + ' ' + document.getElementById('register-lastName').value;
   const email = document.getElementById('register-email').value;
   const password = document.getElementById('register-password').value;
   const role = document.getElementById('register-role').value;
   
   try {
-    const res = await fetch(`${API_URL.auth}/register`, {
+    const res = await fetch(API_URL.users, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ firstName, lastName, email, password, role })
+      headers: getHeaders(false),
+      body: JSON.stringify({ email, password, name, role })
     });
-    const result = await res.json();
     
-    if (result.success) {
+    if (res.ok) {
       alert('Cuenta creada. Iniciando sesión...');
       setTimeout(() => {
         handleLogin(new Event('submit'));
       }, 1000);
     } else {
-      alert(result.message || 'Error al crear cuenta');
+      alert('Error al crear cuenta');
     }
   } catch (err) {
     alert('Error de conexión');
@@ -130,30 +142,30 @@ function showView(viewId) {
 // ================= DASHBOARD =================
 async function loadDashboard() {
   try {
-    const res = await fetch(`${API_URL.dashboard}`, { headers: getHeaders() });
-    const result = await res.json();
+    const [casesRes, docsRes, timeRes, billingRes] = await Promise.all([
+      fetch(API_URL.cases, { headers: getSelectHeaders() }),
+      fetch(API_URL.documents, { headers: getSelectHeaders() }),
+      fetch(API_URL.time_entries, { headers: getSelectHeaders() }),
+      fetch(API_URL.invoices, { headers: getSelectHeaders() })
+    ]);
     
-    if (result.success) {
-      const data = result.data;
-      document.getElementById('stat-cases').textContent = data.totalCases || 0;
-      document.getElementById('stat-documents').textContent = data.totalDocuments || 0;
-      document.getElementById('stat-hours').textContent = `${data.billableHours || 0}h`;
-      document.getElementById('stat-billing').textContent = `$${data.totalRevenue || 0}`;
-      
-      const activity = data.recentActivity || [];
-      const container = document.getElementById('activity-list');
-      if (activity.length > 0) {
-        container.innerHTML = activity.map(a => `
-          <div class="activity-item">
-            <i class="fas fa-circle"></i>
-            <span>${a.description || 'Actividad'}</span>
-            <small>${a.time || ''}</small>
-          </div>
-        `).join('');
-      } else {
-        container.innerHTML = '<p class="no-data">No hay actividad reciente</p>';
-      }
-    }
+    const cases = await casesRes.json();
+    const docs = await docsRes.json();
+    const times = await timeRes.json();
+    const invoices = await billingRes.json();
+    
+    const totalCases = Array.isArray(cases) ? cases.length : 0;
+    const totalDocuments = Array.isArray(docs) ? docs.length : 0;
+    const billableHours = Array.isArray(times) ? times.reduce((sum, t) => sum + (parseFloat(t.hours) || 0), 0) : 0;
+    const totalRevenue = Array.isArray(invoices) ? invoices.reduce((sum, i) => sum + (parseFloat(i.amount) || 0), 0) : 0;
+    
+    document.getElementById('stat-cases').textContent = totalCases;
+    document.getElementById('stat-documents').textContent = totalDocuments;
+    document.getElementById('stat-hours').textContent = `${billableHours.toFixed(1)}h`;
+    document.getElementById('stat-billing').textContent = `$${totalRevenue.toFixed(0)}`;
+    
+    const container = document.getElementById('activity-list');
+    container.innerHTML = '<p class="no-data">Dashboard conectado a Supabase</p>';
   } catch (err) {
     console.error('Error loading dashboard:', err);
   }
@@ -162,17 +174,17 @@ async function loadDashboard() {
 // ================= CASES =================
 async function loadCases() {
   try {
-    const res = await fetch(`${API_URL.cases}`, { headers: getHeaders() });
-    const result = await res.json();
+    const res = await fetch(API_URL.cases, { headers: getSelectHeaders() });
+    const cases = await res.json();
     
     const container = document.getElementById('cases-container');
-    if (result.success && result.data.length > 0) {
-      container.innerHTML = result.data.map(c => `
+    if (Array.isArray(cases) && cases.length > 0) {
+      container.innerHTML = cases.map(c => `
         <div class="data-item">
           <div class="data-info">
             <h4>${c.title}</h4>
-            <p>${c.caseType || 'Civil'} - ${c.status || 'Activo'}</p>
-            <small>${c.caseNumber || ''}</small>
+            <p>${c.case_type || 'Civil'} - ${c.status || 'Activo'}</p>
+            <small>${c.case_number || ''}</small>
           </div>
           <div class="data-status status-${c.status}">${c.status}</div>
         </div>
@@ -193,27 +205,26 @@ async function createCase(e) {
   e.preventDefault();
   
   const caseData = {
-    caseNumber: 'CASE-' + Date.now(),
+    case_number: 'CASE-' + Date.now(),
     title: document.getElementById('case-title').value,
     description: document.getElementById('case-description').value,
-    caseType: document.getElementById('case-type').value,
+    case_type: document.getElementById('case-type').value,
     status: document.getElementById('case-status').value
   };
   
   try {
-    const res = await fetch(`${API_URL.cases}`, {
+    const res = await fetch(API_URL.cases, {
       method: 'POST',
-      headers: getHeaders(),
+      headers: getHeaders(false),
       body: JSON.stringify(caseData)
     });
-    const result = await res.json();
     
-    if (result.success) {
+    if (res.ok) {
       alert('Caso creado exitosamente');
       closeModal('modal-create-case');
       loadCases();
     } else {
-      alert(result.message || 'Error al crear caso');
+      alert('Error al crear caso');
     }
   } catch (err) {
     alert('Error de conexión');
@@ -223,16 +234,16 @@ async function createCase(e) {
 // ================= DOCUMENTS =================
 async function loadDocuments() {
   try {
-    const res = await fetch(`${API_URL.documents}`, { headers: getHeaders() });
-    const result = await res.json();
+    const res = await fetch(API_URL.documents, { headers: getSelectHeaders() });
+    const docs = await res.json();
     
     const container = document.getElementById('documents-container');
-    if (result.success && result.data.length > 0) {
-      container.innerHTML = result.data.map(d => `
+    if (Array.isArray(docs) && docs.length > 0) {
+      container.innerHTML = docs.map(d => `
         <div class="data-item">
           <div class="data-info">
-            <h4><i class="fas fa-file"></i> ${d.originalFileName || d.title}</h4>
-            <p>${d.documentType || 'Documento'}</p>
+            <h4><i class="fas fa-file"></i> ${d.file_name || d.title}</h4>
+            <p>${d.file_type || 'Documento'}</p>
           </div>
           <button class="btn-small">Ver</button>
         </div>
@@ -258,19 +269,19 @@ async function uploadDocument(e) {
 // ================= TIME TRACKING =================
 async function loadTimeEntries() {
   try {
-    const res = await fetch(`${API_URL.timetracking}`, { headers: getHeaders() });
-    const result = await res.json();
+    const res = await fetch(API_URL.time_entries, { headers: getSelectHeaders() });
+    const times = await res.json();
     
     const container = document.getElementById('time-container');
-    if (result.success && result.data.length > 0) {
-      container.innerHTML = result.data.map(t => `
+    if (Array.isArray(times) && times.length > 0) {
+      container.innerHTML = times.map(t => `
         <div class="data-item">
           <div class="data-info">
-            <h4>Caso: ${t.caseId || 'N/A'}</h4>
+            <h4>Caso: ${t.case_id || 'N/A'}</h4>
             <p>${t.description || 'Sin descripción'}</p>
-            <small>${t.duration || 0} min - $${t.rate || 0}/hr</small>
+            <small>${t.hours || 0} hrs - $${t.rate || 0}/hr</small>
           </div>
-          <div class="data-status">${t.status || 'Activo'}</div>
+          <div class="data-status">Activo</div>
         </div>
       `).join('');
     } else {
@@ -294,19 +305,19 @@ async function createTimeEntry(e) {
 // ================= BILLING =================
 async function loadInvoices() {
   try {
-    const res = await fetch(`${API_URL.billing}`, { headers: getHeaders() });
-    const result = await res.json();
+    const res = await fetch(API_URL.invoices, { headers: getSelectHeaders() });
+    const invoices = await res.json();
     
     const container = document.getElementById('billing-container');
-    if (result.success && result.data.length > 0) {
-      container.innerHTML = result.data.map(i => `
+    if (Array.isArray(invoices) && invoices.length > 0) {
+      container.innerHTML = invoices.map(i => `
         <div class="data-item">
           <div class="data-info">
-            <h4>${i.invoiceNumber}</h4>
-            <p>${i.description || 'Factura'}</p>
-            <small>Vence: ${i.dueDate ? new Date(i.dueDate).toLocaleDateString() : 'N/A'}</small>
+            <h4>${i.invoice_number}</h4>
+            <p>Factura</p>
+            <small>Vence: ${i.due_date ? new Date(i.due_date).toLocaleDateString() : 'N/A'}</small>
           </div>
-          <div class="data-amount">$${i.total || 0}</div>
+          <div class="data-amount">$${i.amount || 0}</div>
         </div>
       `).join('');
     } else {
@@ -335,14 +346,14 @@ function closeModal(modalId) {
 // ================= INIT =================
 window.onload = function() {
   if (authToken) {
-    fetch(`${API_URL.auth}/profile`, { headers: getHeaders() })
+    fetch(`${API_URL.users}?id=eq.${authToken}`, { headers: getSelectHeaders() })
       .then(res => res.json())
-      .then(result => {
-        if (result.success) {
-          currentUser = result.data;
+      .then(users => {
+        if (users && users.length > 0) {
+          currentUser = users[0];
           document.getElementById('auth-container').classList.add('hidden');
           document.getElementById('app-container').classList.remove('hidden');
-          document.getElementById('user-name').textContent = `${currentUser.firstName} ${currentUser.lastName}`;
+          document.getElementById('user-name').textContent = currentUser.name || currentUser.email;
           document.getElementById('user-role').textContent = currentUser.role === 'lawyer' ? 'Abogado' : 'Cliente';
           loadDashboard();
         }

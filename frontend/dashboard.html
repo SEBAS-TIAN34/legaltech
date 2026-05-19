@@ -656,32 +656,41 @@
   </div>
 
   <script>
-    // Backend URL - Production (Render)
-    const BASE_URL = 'https://juridico-z8ue.onrender.com';
+    // Supabase Configuration
+    const SUPABASE_URL = 'https://zftczusnrhslgpgrpzrs.supabase.co';
+    const SUPABASE_KEY = 'sb_publishable_J2uBdxcUW1HjyEA8VjHlLA_5TSWWOJo';
 
+    const BASE_URL = `${SUPABASE_URL}/rest/v1`;
     const API_URL = {
-      auth: `${BASE_URL}/api/auth`,
-      cases: `${BASE_URL}/api/cases`,
-      clients: `${BASE_URL}/api/clients`,
-      documents: `${BASE_URL}/api/documents`,
-      timetracking: `${BASE_URL}/api/time-entries`,
-      billing: `${BASE_URL}/api/invoices`,
-      dashboard: `${BASE_URL}/api/dashboard`
+      users: `${BASE_URL}/users`,
+      cases: `${BASE_URL}/cases`,
+      clients: `${BASE_URL}/clients`,
+      documents: `${BASE_URL}/documents`,
+      time_entries: `${BASE_URL}/time_entries`,
+      invoices: `${BASE_URL}/invoices`
     };
 
     const token = localStorage.getItem('token');
-    const user = JSON.parse(localStorage.getItem('user') || '{}');
+    const user = { id: parseInt(token) || 0 };
 
     if (!token) {
       window.location.href = 'index.html';
     }
 
-    // Redirect non-lawyers to client page
-    if (user.role !== 'lawyer') {
-      window.location.href = 'client.html';
+    function getSelectHeaders() {
+      return {
+        'apikey': SUPABASE_KEY,
+        'Authorization': `Bearer ${SUPABASE_KEY}`
+      };
     }
 
     function getHeaders() {
+      return {
+        'Content-Type': 'application/json',
+        'apikey': SUPABASE_KEY,
+        'Prefer': 'return=minimal'
+      };
+    }
       return {
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${token}`

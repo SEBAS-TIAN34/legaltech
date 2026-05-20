@@ -691,15 +691,12 @@
         'Prefer': 'return=minimal'
       };
     }
-      return {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${token}`
-      };
-    }
 
-    // User info
-    const isLawyer = user.role === 'lawyer';
-    document.getElementById('user-name').textContent = `${user.firstName || ''} ${user.lastName || ''}`;
+    // User info - use stored user data
+    const storedUser = JSON.parse(localStorage.getItem('user') || '{}');
+    const isLawyer = storedUser.role === 'lawyer' || storedUser.role === 'admin';
+    document.getElementById('user-name').textContent = storedUser.name || storedUser.email || 'Usuario';
+    document.getElementById('user-role').textContent = isLawyer ? 'Abogado' : 'Cliente';
     document.getElementById('user-role').textContent = isLawyer ? 'Abogado' : 'Cliente';
 
     // Adjust UI based on role
@@ -783,15 +780,14 @@
     async function loadClientDashboard() {
       // Load client's cases as complaints
       try {
-        const res = await fetch(API_URL.cases, { headers: getHeaders() });
-        const result = await res.json();
+        const res = await fetch(API_URL.cases, { headers: getSelectHeaders() });
+        const cases = await res.json();
         
         const activeContainer = document.getElementById('active-cases');
         const pendingContainer = document.getElementById('pending-cases');
         
-        if (result.success && result.data.length > 0) {
-          const cases = result.data;
-          const active = cases.filter(c => c.status === 'active');
+        if (Array.isArray(cases) && cases.length > 0) {
+          const active = cases.filter(c => c.status === 'active' || c.status === 'open');
           const pending = cases.filter(c => c.status === 'pending');
           
           document.getElementById('stat-cases').textContent = active.length;
@@ -841,15 +837,15 @@
       
       // Update billing for client (just show pending payments)
       try {
-        const res = await fetch(API_URL.billing, { headers: getHeaders() });
+        const res = await fetch(API_URL.billing, { headers: getSelectHeaders() });
         const result = await res.json();
         
-        if (result.success && result.data.length > 0) {
-          const pending = result.data.filter(i => i.status === 'pending');
+        if (Array.isArray(result) && result.length > 0) {
+          const pending = result.filter(i => i.status === 'pending');
           const pendingAmount = pending.reduce((sum, i) => sum + (parseFloat(i.total) || 0), 0);
           
           document.getElementById('stat-billing').textContent = `$${pendingAmount.toFixed(2)}`;
-          document.getElementById('stat-documents').textContent = result.data.length;
+          document.getElementById('stat-documents').textContent = result.length;
         } else {
           document.getElementById('stat-billing').textContent = '$0';
         }
@@ -861,10 +857,10 @@
     // Load cases for dashboard
     async function loadCasesData() {
       try {
-        const res = await fetch(API_URL.cases, { headers: getHeaders() });
+        const res = await fetch(API_URL.cases, { headers: getSelectHeaders() });
         const result = await res.json();
         
-        if (result.success && result.data.length > 0) {
+        if (Array.isArray(result) && result.length > 0) {
           const cases = result.data;
           const active = cases.filter(c => c.status === 'active').length;
           const pending = cases.filter(c => c.status === 'pending').length;
@@ -920,14 +916,14 @@
     // Load documents for dashboard
     async function loadDocumentsData() {
       try {
-        const res = await fetch(API_URL.documents, { headers: getHeaders() });
+        const res = await fetch(API_URL.documents, { headers: getSelectHeaders() });
         const result = await res.json();
         
-        document.getElementById('stat-documents').textContent = result.success ? result.data.length : 0;
+        document.getElementById('stat-documents').textContent = result ? result.length : 0;
         
         const container = document.getElementById('documents-list');
-        if (result.success && result.data.length > 0) {
-          container.innerHTML = result.data.slice(0, 5).map(d => `
+        if (Array.isArray(result) && result.length > 0) {
+          container.innerHTML = result.slice(0, 5).map(d => `
             <div class="doc-item">
               <i class="fas fa-file-alt"></i>
               <div class="doc-info">
@@ -947,10 +943,10 @@
     // Load billing data for dashboard
     async function loadBillingData() {
       try {
-        const res = await fetch(API_URL.billing, { headers: getHeaders() });
+        const res = await fetch(API_URL.billing, { headers: getSelectHeaders() });
         const result = await res.json();
         
-        if (result.success && result.data.length > 0) {
+        if (Array.isArray(result) && result.length > 0) {
           const invoices = result.data;
           
           // Stats
@@ -1047,7 +1043,7 @@
         });
         const result = await res.json();
         
-        if (result.success) {
+        if (res.ok) {
           alert('Factura creada exitosamente');
           document.getElementById('invoice-client-name').value = '';
           document.getElementById('invoice-concept').value = '';
@@ -1064,10 +1060,10 @@
     // Load Billing View
     async function loadBilling() {
       try {
-        const res = await fetch(API_URL.billing, { headers: getHeaders() });
+        const res = await fetch(API_URL.billing, { headers: getSelectHeaders() });
         const result = await res.json();
         
-        if (result.success && result.data.length > 0) {
+        if (Array.isArray(result) && result.length > 0) {
           const invoices = result.data;
           
           const total = invoices.reduce((sum, i) => sum + (parseFloat(i.total) || 0), 0);
@@ -1106,11 +1102,11 @@
     // Cases
     async function loadCases() {
       try {
-        const res = await fetch(API_URL.cases, { headers: getHeaders() });
+        const res = await fetch(API_URL.cases, { headers: getSelectHeaders() });
         const result = await res.json();
         const container = document.getElementById('cases-list');
         
-        if (result.success && result.data.length > 0) {
+        if (Array.isArray(result) && result.length > 0) {
           const cases = result.data;
           const active = cases.filter(c => c.status === 'active').length;
           const pending = cases.filter(c => c.status === 'pending').length;
@@ -1147,14 +1143,14 @@
     // Documents
     async function loadDocuments() {
       try {
-        const res = await fetch(API_URL.documents, { headers: getHeaders() });
+        const res = await fetch(API_URL.documents, { headers: getSelectHeaders() });
         const result = await res.json();
         
-        document.getElementById('docs-total').textContent = result.success ? result.data.length : 0;
+        document.getElementById('docs-total').textContent = result ? result.length : 0;
         
         const container = document.getElementById('docs-list');
-        if (result.success && result.data.length > 0) {
-          container.innerHTML = result.data.map(d => `
+        if (Array.isArray(result) && result.length > 0) {
+          container.innerHTML = result.map(d => `
             <div class="invoice-list-item">
               <div class="invoice-details">
                 <h4><i class="fas fa-file-alt"></i> ${d.originalFileName || d.title}</h4>
@@ -1177,10 +1173,10 @@
     // Client: My Cases
     async function loadClientCases() {
       try {
-        const res = await fetch(API_URL.cases, { headers: getHeaders() });
+        const res = await fetch(API_URL.cases, { headers: getSelectHeaders() });
         const result = await res.json();
         
-        if (result.success && result.data.length > 0) {
+        if (Array.isArray(result) && result.length > 0) {
           const cases = result.data;
           const active = cases.filter(c => c.status === 'active').length;
           const completed = cases.filter(c => c.status === 'closed' || c.status === 'completed').length;
@@ -1214,14 +1210,14 @@
     // Client: My Documents
     async function loadClientDocuments() {
       try {
-        const res = await fetch(API_URL.documents, { headers: getHeaders() });
+        const res = await fetch(API_URL.documents, { headers: getSelectHeaders() });
         const result = await res.json();
         
-        document.getElementById('client-docs-count').textContent = result.success ? result.data.length : 0;
+        document.getElementById('client-docs-count').textContent = result ? result.length : 0;
         
         const container = document.getElementById('client-docs-list');
-        if (result.success && result.data.length > 0) {
-          container.innerHTML = result.data.map(d => `
+        if (Array.isArray(result) && result.length > 0) {
+          container.innerHTML = result.map(d => `
             <div class="invoice-list-item">
               <div class="invoice-details">
                 <h4><i class="fas fa-file-alt"></i> ${d.originalFileName || d.title}</h4>
@@ -1244,12 +1240,12 @@
     // Client: Wait Time
     async function loadWaitTime() {
       try {
-        const res = await fetch(API_URL.cases, { headers: getHeaders() });
+        const res = await fetch(API_URL.cases, { headers: getSelectHeaders() });
         const result = await res.json();
         
         const container = document.getElementById('wait-time-list');
         
-        if (result.success && result.data.length > 0) {
+        if (Array.isArray(result) && result.length > 0) {
           const cases = result.data;
           
           // Calculate total wait days (simulation based on case age)
@@ -1308,7 +1304,7 @@
         });
         const result = await res.json();
         
-        if (result.success) {
+        if (res.ok) {
           alert('Tu denuncia ha sido enviada exitosamente. Un abogado la revisará pronto.');
           // Clear form
           document.getElementById('complaint-title').value = '';
@@ -1345,7 +1341,7 @@
         });
         const result = await res.json();
         
-        if (result.success) {
+        if (res.ok) {
           alert('Caso creado');
           closeModal('modal-case');
           loadCases();
@@ -1360,12 +1356,12 @@
     // Clients
     async function loadClients() {
       try {
-        const res = await fetch(API_URL.clients, { headers: getHeaders() });
+        const res = await fetch(API_URL.clients, { headers: getSelectHeaders() });
         const result = await res.json();
         const container = document.getElementById('clients-list');
         
-        if (result.success && result.data.length > 0) {
-          container.innerHTML = result.data.map(c => `
+        if (Array.isArray(result) && result.length > 0) {
+          container.innerHTML = result.map(c => `
             <div class="data-card">
               <div class="card-header">
                 <h4>${c.firstName} ${c.lastName}</h4>
@@ -1403,7 +1399,7 @@
         });
         const result = await res.json();
         
-        if (result.success) {
+        if (res.ok) {
           alert('Cliente creado');
           closeModal('modal-client');
           loadClients();
@@ -1418,12 +1414,12 @@
     // Documents
     async function loadDocuments() {
       try {
-        const res = await fetch(API_URL.documents, { headers: getHeaders() });
+        const res = await fetch(API_URL.documents, { headers: getSelectHeaders() });
         const result = await res.json();
         const container = document.getElementById('documents-list');
         
-        if (result.success && result.data.length > 0) {
-          container.innerHTML = result.data.map(d => `
+        if (Array.isArray(result) && result.length > 0) {
+          container.innerHTML = result.map(d => `
             <div class="data-card">
               <div class="card-header">
                 <h4><i class="fas fa-file"></i> ${d.originalFileName || d.title}</h4>
@@ -1451,12 +1447,12 @@
     // Time
     async function loadTime() {
       try {
-        const res = await fetch(API_URL.timetracking, { headers: getHeaders() });
+        const res = await fetch(API_URL.timetracking, { headers: getSelectHeaders() });
         const result = await res.json();
         const container = document.getElementById('time-list');
         
-        if (result.success && result.data.length > 0) {
-          container.innerHTML = result.data.map(t => `
+        if (Array.isArray(result) && result.length > 0) {
+          container.innerHTML = result.map(t => `
             <div class="data-card">
               <div class="card-header">
                 <h4>Caso: ${t.caseId || 'N/A'}</h4>
@@ -1485,12 +1481,12 @@
     // Billing
     async function loadBilling() {
       try {
-        const res = await fetch(API_URL.billing, { headers: getHeaders() });
+        const res = await fetch(API_URL.billing, { headers: getSelectHeaders() });
         const result = await res.json();
         const container = document.getElementById('billing-list');
         
-        if (result.success && result.data.length > 0) {
-          container.innerHTML = result.data.map(i => `
+        if (Array.isArray(result) && result.length > 0) {
+          container.innerHTML = result.map(i => `
             <div class="data-card">
               <div class="card-header">
                 <h4>${i.invoiceNumber}</h4>
@@ -1529,7 +1525,7 @@
         });
         const result = await res.json();
         
-        if (result.success) {
+        if (res.ok) {
           alert('Factura creada');
           closeModal('modal-invoice');
           loadBilling();

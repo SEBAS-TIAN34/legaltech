@@ -1,4 +1,4 @@
-const { Sequelize } = require('sequelize');
+﻿const { Sequelize } = require('sequelize');
 
 const connectionString = process.env.DATABASE_URL;
 
@@ -28,10 +28,10 @@ if (connectionString) {
 const connectDB = async () => {
   try {
     await sequelize.authenticate();
-    console.log('✅ PostgreSQL connected');
-    await sequelize.sync({ alter: process.env.NODE_ENV === 'development' });
+    console.log('âœ… PostgreSQL connected');
+    await sequelize.sync({ force: false, alter: false });
   } catch (error) {
-    console.error('❌ DB Error:', error.message);
+    console.error('âŒ DB Error:', error.message);
     process.exit(1);
   }
 };

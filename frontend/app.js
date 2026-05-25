@@ -68,7 +68,7 @@ async function handleLogin(e) {
     const users = await res.json();
     
     if (users && users.length > 0) {
-      const user = users[0];
+      const user = normalizeUser(users[0]);
       authToken = user.id.toString();
       currentUser = user;
       localStorage.setItem('token', authToken);
@@ -88,19 +88,41 @@ async function handleLogin(e) {
   }
 }
 
+function normalizeUser(user) {
+  const firstName = user.firstName || user.first_name || '';
+  const lastName = user.lastName || user.last_name || '';
+  return {
+    ...user,
+    firstName,
+    lastName,
+    name: user.name || `${firstName} ${lastName}`.trim()
+  };
+}
+
 async function handleRegister(e) {
   e.preventDefault();
   
-  const name = document.getElementById('register-firstName').value + ' ' + document.getElementById('register-lastName').value;
+  const firstName = document.getElementById('register-firstName').value;
+  const lastName = document.getElementById('register-lastName').value;
   const email = document.getElementById('register-email').value;
   const password = document.getElementById('register-password').value;
   const role = document.getElementById('register-role').value;
+  const now = new Date().toISOString();
   
   try {
     const res = await fetch(API_URL.users, {
       method: 'POST',
       headers: getHeaders(false),
-      body: JSON.stringify({ email, password, name, role })
+      body: JSON.stringify({
+        id: crypto.randomUUID(),
+        email,
+        password,
+        first_name: firstName,
+        last_name: lastName,
+        role,
+        createdAt: now,
+        updatedAt: now
+      })
     });
     
     if (res.ok) {

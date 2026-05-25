@@ -457,15 +457,20 @@
       submitBtn.disabled = true;
       submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Enviando...';
       
+      const amount = document.getElementById('complaint-amount').value;
+      const opposingParty = document.getElementById('complaint-party').value;
+      const description = [
+        document.getElementById('complaint-description').value,
+        amount ? `Monto involucrado: $${amount}` : '',
+        opposingParty ? `Parte contraria: ${opposingParty}` : ''
+      ].filter(Boolean).join('\n\n');
+
       const data = {
-        caseNumber: 'DEN-' + Date.now(),
+        case_number: 'DEN-' + Date.now(),
         title: document.getElementById('complaint-title').value,
-        description: document.getElementById('complaint-description').value,
-        caseType: document.getElementById('complaint-type').value,
-        clientId: user.id,
-        incidentDate: document.getElementById('complaint-date').value,
-        amount: document.getElementById('complaint-amount').value,
-        opposingParty: document.getElementById('complaint-party').value,
+        description,
+        case_type: document.getElementById('complaint-type').value,
+        filing_date: document.getElementById('complaint-date').value || null,
         status: 'pending'
       };
       
@@ -479,18 +484,19 @@
         });
         
         console.log('Response status:', res.status);
-        const result = await res.json();
-        console.log('Response:', result);
-        
-        if (result.success) {
+        if (res.ok) {
           alert('Denuncia enviada exitosamente!');
           document.getElementById('complaint-title').value = '';
           document.getElementById('complaint-description').value = '';
           document.getElementById('complaint-type').value = '';
+          document.getElementById('complaint-date').value = '';
+          document.getElementById('complaint-amount').value = '';
+          document.getElementById('complaint-party').value = '';
           showSection('my-cases');
           loadClientCases();
         } else {
-          alert(result.message || 'Error al enviar');
+          const error = await res.json().catch(() => null);
+          alert(error?.message || 'Error al enviar');
         }
       } catch (err) {
         console.error('Error:', err);

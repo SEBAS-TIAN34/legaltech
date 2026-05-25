@@ -1284,16 +1284,21 @@
     async function submitComplaint(e) {
       e.preventDefault();
       
+      const amount = document.getElementById('complaint-amount').value;
+      const opposingParty = document.getElementById('complaint-party').value;
+      const description = [
+        document.getElementById('complaint-description').value,
+        amount ? `Monto involucrado: $${amount}` : '',
+        opposingParty ? `Parte contraria: ${opposingParty}` : ''
+      ].filter(Boolean).join('\n\n');
+
       const complaintData = {
-        caseNumber: 'DEN-' + Date.now(),
+        case_number: 'DEN-' + Date.now(),
         title: document.getElementById('complaint-title').value,
-        description: document.getElementById('complaint-description').value,
-        caseType: document.getElementById('complaint-type').value,
-        incidentDate: document.getElementById('complaint-date').value,
-        amount: document.getElementById('complaint-amount').value,
-        opposingParty: document.getElementById('complaint-party').value,
-        status: 'pending',
-        submittedBy: user.id
+        description,
+        case_type: document.getElementById('complaint-type').value,
+        filing_date: document.getElementById('complaint-date').value || null,
+        status: 'pending'
       };
       
       try {

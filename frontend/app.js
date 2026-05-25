@@ -99,6 +99,18 @@ function normalizeUser(user) {
   };
 }
 
+function getRegistrationErrorMessage(error) {
+  const message = error?.message || '';
+  const details = error?.details || '';
+  const text = `${message} ${details}`.toLowerCase();
+
+  if (text.includes('duplicate key') || text.includes('users_email')) {
+    return 'Ese correo ya está registrado. Inicia sesión o usa otro correo.';
+  }
+
+  return message || error?.hint || 'Error al crear cuenta';
+}
+
 async function handleRegister(e) {
   e.preventDefault();
   
@@ -132,7 +144,7 @@ async function handleRegister(e) {
       }, 1000);
     } else {
       const error = await res.json().catch(() => null);
-      alert(error?.message || error?.hint || 'Error al crear cuenta');
+      alert(getRegistrationErrorMessage(error));
     }
   } catch (err) {
     alert(err.message || 'Error de conexión');

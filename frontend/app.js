@@ -131,10 +131,11 @@ async function handleRegister(e) {
         handleLogin(new Event('submit'));
       }, 1000);
     } else {
-      alert('Error al crear cuenta');
+      const error = await res.json().catch(() => null);
+      alert(error?.message || error?.hint || 'Error al crear cuenta');
     }
   } catch (err) {
-    alert('Error de conexión');
+    alert(err.message || 'Error de conexión');
   }
 }
 

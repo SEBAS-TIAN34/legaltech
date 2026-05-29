@@ -24,6 +24,7 @@
   "homepage": "https://github.com/SEBAS-TIAN34/LEGALTECH#readme",
   "dependencies": {
     "cors": "^2.8.6",
-    "express": "^5.2.1"
+    "express": "^5.2.1",
+    "pg": "^8.21.0"
   }
 }

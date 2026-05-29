@@ -40,6 +40,39 @@ function showAuthTab(tab) {
 }
 
 // ================= AUTH FUNCTIONS =================
+async function safeJson(res) {
+  try {
+    return await res.json();
+  } catch (error) {
+    return null;
+  }
+}
+
+function parseErrorMessage(result, fallback) {
+  if (!result) return fallback;
+  if (typeof result.message === 'string' && result.message.trim()) return result.message;
+  if (Array.isArray(result.errors) && result.errors.length > 0) {
+    const firstError = result.errors[0];
+    if (typeof firstError === 'string' && firstError.trim()) return firstError;
+    if (firstError && typeof firstError.msg === 'string' && firstError.msg.trim()) return firstError.msg;
+  }
+  if (typeof result.error === 'string' && result.error.trim()) return result.error;
+  return fallback;
+}
+
+function buildModernRegisterPayload({ firstName, lastName, email, password, role }) {
+  return { firstName, lastName, email, password, role };
+}
+
+function buildLegacyRegisterPayload({ firstName, lastName, email, password, role }) {
+  return {
+    name: `${firstName} ${lastName}`.trim(),
+    email,
+    password,
+    role: role === 'client' ? 'user' : role
+  };
+}
+
 async function handleLogin(e) {
   e.preventDefault();
   
@@ -52,25 +85,34 @@ async function handleLogin(e) {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ email, password })
     });
-    const result = await res.json();
+    const result = await safeJson(res);
     
-    if (result.success) {
-      authToken = result.data.token;
-      currentUser = result.data.user;
+    if (result && result.success) {
+      authToken = result?.data?.token || result?.token;
+      currentUser = result?.data?.user || result?.data || result?.user;
+
+      if (!authToken || !currentUser) {
+        alert('Respuesta de login incompleta desde el servidor');
+        return;
+      }
+
       localStorage.setItem('token', authToken);
       
       document.getElementById('auth-container').classList.add('hidden');
       document.getElementById('app-container').classList.remove('hidden');
       
-      document.getElementById('user-name').textContent = `${currentUser.firstName} ${currentUser.lastName}`;
+      const displayName = currentUser.firstName && currentUser.lastName
+        ? `${currentUser.firstName} ${currentUser.lastName}`
+        : (currentUser.name || currentUser.email || 'Usuario');
+      document.getElementById('user-name').textContent = displayName;
       document.getElementById('user-role').textContent = currentUser.role === 'lawyer' ? 'Abogado' : 'Cliente';
       
       loadDashboard();
     } else {
-      alert(result.message || 'Credenciales incorrectas');
+      alert(parseErrorMessage(result, 'Credenciales incorrectas'));
     }
   } catch (err) {
-    alert('Error de conexión');
+    alert('Error de conexion');
   }
 }
 
@@ -82,28 +124,50 @@ async function handleRegister(e) {
   const email = document.getElementById('register-email').value;
   const password = document.getElementById('register-password').value;
   const role = document.getElementById('register-role').value;
+  const registerData = { firstName, lastName, email, password, role };
   
   try {
     const res = await fetch(`${API_URL.auth}/register`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ firstName, lastName, email, password, role })
+      body: JSON.stringify(buildModernRegisterPayload(registerData))
     });
-    const result = await res.json();
+    let result = await safeJson(res);
+    let success = Boolean(result && result.success);
+
+    if (!success) {
+      const message = (result?.message || '').toLowerCase();
+      const shouldRetryLegacy =
+        !result ||
+        (!result.message && !Array.isArray(result.errors)) ||
+        message.includes('name') ||
+        message.includes('enum') ||
+        message.includes('validation');
+
+      if (shouldRetryLegacy) {
+        const legacyRes = await fetch(`${API_URL.auth}/register`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(buildLegacyRegisterPayload(registerData))
+        });
+        const legacyResult = await safeJson(legacyRes);
+        if (legacyResult) result = legacyResult;
+        success = Boolean(legacyResult && legacyResult.success);
+      }
+    }
     
-    if (result.success) {
-      alert('Cuenta creada. Iniciando sesión...');
+    if (success) {
+      alert('Cuenta creada. Iniciando sesion...');
       setTimeout(() => {
         handleLogin(new Event('submit'));
       }, 1000);
     } else {
-      alert(result.message || 'Error al crear cuenta');
+      alert(parseErrorMessage(result, 'Error al crear cuenta'));
     }
   } catch (err) {
-    alert('Error de conexión');
+    alert('Error de conexion');
   }
 }
-
 function logout() {
   authToken = '';
   currentUser = null;

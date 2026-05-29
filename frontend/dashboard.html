@@ -693,6 +693,32 @@
     document.getElementById('user-name').textContent = `${user.firstName || ''} ${user.lastName || ''}`;
     document.getElementById('user-role').textContent = isLawyer ? 'Abogado' : 'Cliente';
 
+    function isPendingCase(caseItem) {
+      return ['draft', 'pending'].includes(caseItem.status);
+    }
+
+    function isActiveCase(caseItem) {
+      return ['open', 'in_progress', 'active'].includes(caseItem.status);
+    }
+
+    function isClosedCase(caseItem) {
+      return ['closed', 'completed'].includes(caseItem.status);
+    }
+
+    function caseStatusLabel(status) {
+      const labels = {
+        draft: 'Pendiente',
+        pending: 'Pendiente',
+        open: 'Activo',
+        active: 'Activo',
+        in_progress: 'En proceso',
+        closed: 'Cerrado',
+        completed: 'Completado',
+        suspended: 'Suspendido'
+      };
+      return labels[status] || status || 'Pendiente';
+    }
+
     // Adjust UI based on role
     if (!isLawyer) {
       setupClientDashboard();
@@ -781,9 +807,9 @@
         const pendingContainer = document.getElementById('pending-cases');
         
         if (result.success && result.data.length > 0) {
-          const cases = result.data;
-          const active = cases.filter(c => c.status === 'active');
-          const pending = cases.filter(c => c.status === 'pending');
+          const cases = result.data.filter(c => !c.clientId || c.clientId === user.id);
+          const active = cases.filter(isActiveCase);
+          const pending = cases.filter(isPendingCase);
           
           document.getElementById('stat-cases').textContent = active.length;
           document.getElementById('stat-pending-cases').textContent = pending.length;
@@ -857,16 +883,16 @@
         
         if (result.success && result.data.length > 0) {
           const cases = result.data;
-          const active = cases.filter(c => c.status === 'active').length;
-          const pending = cases.filter(c => c.status === 'pending').length;
-          const completed = cases.filter(c => c.status === 'closed' || c.status === 'completed').length;
+          const active = cases.filter(isActiveCase).length;
+          const pending = cases.filter(isPendingCase).length;
+          const completed = cases.filter(isClosedCase).length;
           
           document.getElementById('stat-cases').textContent = active;
           document.getElementById('stat-pending-cases').textContent = pending;
           
           // Active cases list
           const activeContainer = document.getElementById('active-cases');
-          const activeCases = cases.filter(c => c.status === 'active');
+          const activeCases = cases.filter(isActiveCase);
           if (activeCases.length > 0) {
             activeContainer.innerHTML = activeCases.slice(0, 4).map(c => `
               <div class="case-item">
@@ -883,15 +909,17 @@
           
           // Pending cases list
           const pendingContainer = document.getElementById('pending-cases');
-          const pendingCases = cases.filter(c => c.status === 'pending');
+          const pendingCases = cases.filter(isPendingCase);
           if (pendingCases.length > 0) {
             pendingContainer.innerHTML = pendingCases.slice(0, 4).map(c => `
-              <div class="case-item">
+              <div class="case-item pending-alert">
                 <div class="case-info">
-                  <h4>${c.title}</h4>
-                  <p>${c.caseType || 'Civil'} - ${c.caseNumber || ''}</p>
+                  <h4><i class="fas fa-triangle-exclamation"></i> ${c.title}</h4>
+                  <p>Nueva denuncia pendiente - ${c.caseType || 'Civil'} - ${c.caseNumber || ''}</p>
                 </div>
-                <span class="status-dot pending"></span>
+                <button class="btn-take-case" onclick="takeCase('${c.id}')">
+                  <i class="fas fa-hand"></i> Tomar
+                </button>
               </div>
             `).join('');
           } else {
@@ -1103,9 +1131,9 @@
         
         if (result.success && result.data.length > 0) {
           const cases = result.data;
-          const active = cases.filter(c => c.status === 'active').length;
-          const pending = cases.filter(c => c.status === 'pending').length;
-          const completed = cases.filter(c => c.status === 'closed' || c.status === 'completed').length;
+          const active = cases.filter(isActiveCase).length;
+          const pending = cases.filter(isPendingCase).length;
+          const completed = cases.filter(isClosedCase).length;
           
           document.getElementById('cases-active-count').textContent = active;
           document.getElementById('cases-pending-count').textContent = pending;
@@ -1119,8 +1147,9 @@
                 <small>${c.description || ''}</small>
               </div>
               <div class="invoice-actions">
-                <span class="invoice-amount">${c.status}</span>
-                <span class="status-badge status-${c.status}">${c.status === 'active' ? 'Activo' : c.status === 'pending' ? 'Pendiente' : c.status === 'closed' ? 'Cerrado' : c.status}</span>
+                <span class="invoice-amount">${caseStatusLabel(c.status)}</span>
+                <span class="status-badge status-${isPendingCase(c) ? 'pending' : c.status}">${caseStatusLabel(c.status)}</span>
+                ${isPendingCase(c) ? `<button class="btn-small" onclick="takeCase('${c.id}')">Tomar caso</button>` : ''}
               </div>
             </div>
           `).join('');
@@ -1172,9 +1201,9 @@
         const result = await res.json();
         
         if (result.success && result.data.length > 0) {
-          const cases = result.data;
-          const active = cases.filter(c => c.status === 'active').length;
-          const completed = cases.filter(c => c.status === 'closed' || c.status === 'completed').length;
+          const cases = result.data.filter(c => !c.clientId || c.clientId === user.id);
+          const active = cases.filter(isActiveCase).length;
+          const completed = cases.filter(isClosedCase).length;
           
           document.getElementById('client-cases-active').textContent = active;
           document.getElementById('client-cases-completed').textContent = completed;
@@ -1188,7 +1217,7 @@
                 <small>${c.description || 'Sin descripción'}</small>
               </div>
               <div class="invoice-actions">
-                <span class="status-badge status-${c.status}">${c.status === 'active' ? 'En Proceso' : c.status === 'pending' ? 'Pendiente' : 'Completado'}</span>
+                <span class="status-badge status-${isPendingCase(c) ? 'pending' : c.status}">${caseStatusLabel(c.status)}</span>
               </div>
             </div>
           `).join('');
@@ -1258,7 +1287,7 @@
             <div class="wait-item">
               <div class="wait-case-info">
                 <h4>${c.title}</h4>
-                <p>${c.status === 'active' ? 'En proceso' : c.status === 'pending' ? 'Pendiente' : 'Completado'}</p>
+                <p>${caseStatusLabel(c.status)}</p>
               </div>
               <div class="wait-days">
                 <span class="days-number">${c.days}</span>
@@ -1345,6 +1374,26 @@
         }
       } catch (err) {
         alert('Error de conexión');
+      }
+    }
+
+    async function takeCase(caseId) {
+      try {
+        const res = await fetch(`${API_URL.cases}/${caseId}/take`, {
+          method: 'PUT',
+          headers: getHeaders()
+        });
+        const result = await res.json();
+
+        if (result.success) {
+          alert('Caso tomado. Ahora aparece como En proceso.');
+          loadDashboard();
+          loadCases();
+        } else {
+          alert(result.message || 'No se pudo tomar el caso');
+        }
+      } catch (err) {
+        alert('Error de conexión al tomar el caso');
       }
     }
 

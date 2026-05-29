@@ -9,34 +9,75 @@ const generateInvoiceNumber = async () => {
 
 exports.createInvoice = async (req, res) => {
   try {
-    const { clientId, caseId, items, taxRate, dueDate, notes } = req.body;
+    const {
+      clientId,
+      caseId,
+      items,
+      taxRate,
+      dueDate,
+      notes,
+      description,
+      total,
+      subtotal,
+      tax,
+      status,
+      paidAmount
+    } = req.body;
+    let invoiceItems = items;
 
-    if (!clientId || !items || !dueDate) {
+    if (typeof invoiceItems === 'string') {
+      try {
+        invoiceItems = JSON.parse(invoiceItems);
+      } catch (error) {
+        invoiceItems = null;
+      }
+    }
+
+    if (!Array.isArray(invoiceItems) && total !== undefined) {
+      invoiceItems = [{
+        description: description || notes || 'Servicios legales',
+        quantity: 1,
+        unitPrice: parseFloat(total) || 0
+      }];
+    }
+
+    if (!clientId || !Array.isArray(invoiceItems) || invoiceItems.length === 0 || !dueDate) {
       return res.status(400).json({ success: false, message: 'Please provide clientId, items, and dueDate' });
     }
 
     const invoiceNumber = await generateInvoiceNumber();
-    const itemsWithTotal = items.map(item => ({
+    const itemsWithTotal = invoiceItems.map(item => ({
       ...item,
-      total: (item.quantity || 1) * (item.unitPrice || 0)
+      quantity: parseFloat(item.quantity) || 1,
+      unitPrice: parseFloat(item.unitPrice) || 0,
+      total: (parseFloat(item.quantity) || 1) * (parseFloat(item.unitPrice) || 0)
     }));
 
-    const subtotal = itemsWithTotal.reduce((sum, item) => sum + item.total, 0);
-    const tax = (subtotal * (taxRate || 0)) / 100;
-    const total = subtotal + tax;
+    const calculatedSubtotal = subtotal !== undefined
+      ? parseFloat(subtotal) || 0
+      : itemsWithTotal.reduce((sum, item) => sum + item.total, 0);
+    const calculatedTax = tax !== undefined
+      ? parseFloat(tax) || 0
+      : (calculatedSubtotal * (parseFloat(taxRate) || 0)) / 100;
+    const calculatedTotal = total !== undefined
+      ? parseFloat(total) || 0
+      : calculatedSubtotal + calculatedTax;
+    const normalizedStatus = ['draft', 'pending', 'paid', 'overdue', 'cancelled'].includes(status)
+      ? status
+      : 'draft';
 
     const invoice = await Invoice.create({
       invoiceNumber,
       clientId,
       caseId,
-      status: 'draft',
+      status: normalizedStatus,
       issueDate: new Date(),
       dueDate,
-      subtotal,
-      tax,
-      total,
-      paidAmount: 0,
-      notes,
+      subtotal: calculatedSubtotal,
+      tax: calculatedTax,
+      total: calculatedTotal,
+      paidAmount: paidAmount !== undefined ? parseFloat(paidAmount) || 0 : 0,
+      notes: notes || description,
       items: itemsWithTotal
     });
 

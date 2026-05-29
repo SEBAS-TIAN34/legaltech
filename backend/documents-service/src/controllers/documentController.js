@@ -4,9 +4,21 @@ const fs = require('fs');
 
 exports.uploadDocument = async (req, res) => {
   try {
-    const { title, description, caseId, clientId, documentType, fileName, filePath, fileSize, mimeType } = req.body;
+    const {
+      title,
+      description,
+      caseId,
+      clientId,
+      documentType,
+      fileName,
+      originalFileName,
+      filePath,
+      fileSize,
+      mimeType
+    } = req.body;
+    const storedFileName = fileName || originalFileName;
 
-    if (!title || !fileName) {
+    if (!title || !storedFileName) {
       return res.status(400).json({ success: false, message: 'Please provide title and fileName' });
     }
 
@@ -16,7 +28,7 @@ exports.uploadDocument = async (req, res) => {
       caseId,
       clientId,
       documentType: documentType || 'other',
-      fileName,
+      fileName: storedFileName,
       filePath,
       fileSize: parseInt(fileSize) || 0,
       mimeType,

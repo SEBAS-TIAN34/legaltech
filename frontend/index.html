@@ -94,6 +94,39 @@
       }
     }
 
+    async function safeJson(res) {
+      try {
+        return await res.json();
+      } catch (error) {
+        return null;
+      }
+    }
+
+    function parseErrorMessage(result, fallback) {
+      if (!result) return fallback;
+      if (typeof result.message === 'string' && result.message.trim()) return result.message;
+      if (Array.isArray(result.errors) && result.errors.length > 0) {
+        const firstError = result.errors[0];
+        if (typeof firstError === 'string' && firstError.trim()) return firstError;
+        if (firstError && typeof firstError.msg === 'string' && firstError.msg.trim()) return firstError.msg;
+      }
+      if (typeof result.error === 'string' && result.error.trim()) return result.error;
+      return fallback;
+    }
+
+    function buildModernRegisterPayload({ firstName, lastName, email, password, role }) {
+      return { firstName, lastName, email, password, role };
+    }
+
+    function buildLegacyRegisterPayload({ firstName, lastName, email, password, role }) {
+      return {
+        name: `${firstName} ${lastName}`.trim(),
+        email,
+        password,
+        role: role === 'client' ? 'user' : role
+      };
+    }
+
     async function handleLogin(e) {
       e.preventDefault();
       const email = document.getElementById('login-email').value;
@@ -105,19 +138,27 @@
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ email, password })
         });
-        const result = await res.json();
+        const result = await safeJson(res);
         
-        if (result.success) {
-          localStorage.setItem('token', result.data.token);
-          localStorage.setItem('user', JSON.stringify(result.data.user));
+        if (result && result.success) {
+          const token = result?.data?.token || result?.token;
+          const user = result?.data?.user || result?.data || result?.user;
+
+          if (!token || !user) {
+            alert('Respuesta de login incompleta desde el servidor');
+            return;
+          }
+
+          localStorage.setItem('token', token);
+          localStorage.setItem('user', JSON.stringify(user));
           
           // Single entry point - redirects based on role
           window.location.href = 'app.html';
         } else {
-          alert(result.message || 'Credenciales incorrectas');
+          alert(parseErrorMessage(result, 'Credenciales incorrectas'));
         }
       } catch (err) {
-        alert('Error de conexión');
+        alert('Error de conexion');
       }
     }
 
@@ -128,30 +169,57 @@
       const email = document.getElementById('register-email').value;
       const password = document.getElementById('register-password').value;
       const role = document.getElementById('register-role').value;
+      const registerData = { firstName, lastName, email, password, role };
+      let result = null;
+      let registerSuccess = false;
       
       try {
-        const res = await fetch(`${API_URL.auth}/register`, {
+        const primaryRes = await fetch(`${API_URL.auth}/register`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ firstName, lastName, email, password, role })
+          body: JSON.stringify(buildModernRegisterPayload(registerData))
         });
-        const result = await res.json();
+        result = await safeJson(primaryRes);
+
+        if (result && result.success) {
+          registerSuccess = true;
+        } else {
+          const message = (result?.message || '').toLowerCase();
+          const shouldRetryLegacy =
+            !result ||
+            (!result.message && !Array.isArray(result.errors)) ||
+            message.includes('name') ||
+            message.includes('enum') ||
+            message.includes('validation');
+
+          if (shouldRetryLegacy) {
+            const legacyRes = await fetch(`${API_URL.auth}/register`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify(buildLegacyRegisterPayload(registerData))
+            });
+            const legacyResult = await safeJson(legacyRes);
+            if (legacyResult) result = legacyResult;
+            if (legacyResult && legacyResult.success) {
+              registerSuccess = true;
+            }
+          }
+        }
         
-        if (result.success) {
-          alert('Cuenta creada. Iniciando sesión...');
+        if (registerSuccess) {
+          alert('Cuenta creada. Iniciando sesion...');
           setTimeout(() => {
             document.getElementById('login-email').value = email;
             document.getElementById('login-password').value = password;
             handleLogin(new Event('submit'));
           }, 1000);
         } else {
-          alert(result.message || 'Error al crear cuenta');
+          alert(parseErrorMessage(result, 'Error al crear cuenta'));
         }
       } catch (err) {
-        alert('Error de conexión');
+        alert('Error de conexion');
       }
     }
-
     // If already logged in, redirect to dashboard
     if (localStorage.getItem('token')) {
       window.location.href = 'dashboard.html';

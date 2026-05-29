@@ -1964,6 +1964,45 @@ body.login-page {
   background: #f8f9fa;
 }
 
+.case-item.pending-alert {
+  background: #fff7ed;
+  border: 1px solid #fed7aa;
+  border-left: 4px solid #f59e0b;
+}
+
+.case-item.pending-alert:hover {
+  background: #ffedd5;
+}
+
+.case-item.pending-alert i {
+  color: #d97706;
+  margin-right: 0.35rem;
+}
+
+.btn-take-case {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.45rem 0.75rem;
+  background: #1a1a2e;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 0.82rem;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.btn-take-case:hover {
+  background: #0f3460;
+}
+
+.btn-take-case i {
+  color: white;
+  margin-right: 0;
+}
+
 .case-item .case-info h4 {
   color: #1a1a2e;
   font-size: 0.95rem;
@@ -2897,6 +2936,11 @@ body.login-page {
   border-radius: 12px;
   padding: 1.5rem;
   border-left: 4px solid #3b82f6;
+}
+
+.case-card-pending {
+  background: #fff7ed;
+  border-left-color: #f59e0b;
 }
 
 .case-card-header {

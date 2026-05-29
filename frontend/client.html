@@ -369,6 +369,32 @@
 
     document.getElementById('user-name').textContent = `${user.firstName || ''} ${user.lastName || ''}`;
 
+    function isPendingCase(caseItem) {
+      return ['draft', 'pending'].includes(caseItem.status);
+    }
+
+    function isActiveCase(caseItem) {
+      return ['open', 'in_progress', 'active'].includes(caseItem.status);
+    }
+
+    function isClosedCase(caseItem) {
+      return ['closed', 'completed'].includes(caseItem.status);
+    }
+
+    function caseStatusLabel(status) {
+      const labels = {
+        draft: 'Pendiente',
+        pending: 'Pendiente',
+        open: 'Activo',
+        active: 'Activo',
+        in_progress: 'En proceso',
+        closed: 'Resuelto',
+        completed: 'Resuelto',
+        suspended: 'Suspendido'
+      };
+      return labels[status] || status || 'Pendiente';
+    }
+
     function logout() {
       localStorage.removeItem('token');
       localStorage.removeItem('user');
@@ -474,6 +500,9 @@
           document.getElementById('complaint-title').value = '';
           document.getElementById('complaint-description').value = '';
           document.getElementById('complaint-type').value = '';
+          document.getElementById('complaint-date').value = '';
+          document.getElementById('complaint-amount').value = '';
+          document.getElementById('complaint-party').value = '';
           showSection('my-cases');
           loadClientCases();
         } else {
@@ -497,16 +526,16 @@
         const container = document.getElementById('cases-list');
         
         if (result.success && result.data.length > 0) {
-          const cases = result.data;
-          document.getElementById('cases-active').textContent = cases.filter(c => c.status === 'active').length;
-          document.getElementById('cases-pending').textContent = cases.filter(c => c.status === 'pending').length;
-          document.getElementById('cases-completed').textContent = cases.filter(c => c.status === 'closed' || c.status === 'completed').length;
+          const cases = result.data.filter(c => !c.clientId || c.clientId === user.id);
+          document.getElementById('cases-active').textContent = cases.filter(isActiveCase).length;
+          document.getElementById('cases-pending').textContent = cases.filter(isPendingCase).length;
+          document.getElementById('cases-completed').textContent = cases.filter(isClosedCase).length;
           
           container.innerHTML = cases.map(c => `
-            <div class="case-card">
+            <div class="case-card ${isPendingCase(c) ? 'case-card-pending' : ''}">
               <div class="case-card-header">
                 <h4>${c.title}</h4>
-                <span class="status-${c.status}">${c.status === 'active' ? 'En Proceso' : c.status === 'pending' ? 'Pendiente' : 'Resuelto'}</span>
+                <span class="status-${isPendingCase(c) ? 'pending' : c.status}">${caseStatusLabel(c.status)}</span>
               </div>
               <div class="case-card-body">
                 <p><strong>Tipo:</strong> ${c.caseType || 'Denuncia'}</p>
@@ -575,7 +604,7 @@
             <div class="wait-item">
               <div>
                 <h4>${c.title}</h4>
-                <p>${c.status === 'active' ? 'En proceso' : c.status === 'pending' ? 'Pendiente' : 'Resuelto'}</p>
+                <p>${caseStatusLabel(c.status)}</p>
               </div>
               <span class="days">${c.days} días</span>
             </div>

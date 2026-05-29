@@ -1,13 +1,45 @@
 const Case = require('../models/Case');
 // const auditLogger = require('../middleware/auditLogger');
 
+const normalizeStatus = (status) => {
+  const statusMap = {
+    active: 'open',
+    pending: 'draft',
+    completed: 'closed',
+    resolved: 'closed'
+  };
+  return statusMap[status] || status;
+};
+
 exports.createCase = async (req, res) => {
   try {
-    const { caseNumber, title, description, clientId, caseType, priority, assignedTo, startDate, budget, notes } = req.body;
+    const {
+      caseNumber,
+      title,
+      description,
+      clientId,
+      caseType,
+      priority,
+      assignedTo,
+      startDate,
+      budget,
+      notes,
+      status,
+      incidentDate,
+      amount,
+      opposingParty
+    } = req.body;
 
     if (!caseNumber || !title || !clientId || !caseType) {
       return res.status(400).json({ success: false, message: 'Please provide all required fields: caseNumber, title, clientId, caseType' });
     }
+
+    const extraNotes = [
+      notes,
+      incidentDate ? `Fecha del incidente: ${incidentDate}` : null,
+      amount ? `Monto reportado: ${amount}` : null,
+      opposingParty ? `Parte contraria: ${opposingParty}` : null
+    ].filter(Boolean).join('\n');
 
     const caseData = await Case.create({
       caseNumber,
@@ -19,8 +51,8 @@ exports.createCase = async (req, res) => {
       assignedTo,
       startDate,
       budget,
-      notes,
-      status: 'draft',
+      notes: extraNotes || null,
+      status: normalizeStatus(status) || 'draft',
       createdBy: req.user?.userId
     });
 
@@ -91,7 +123,7 @@ exports.updateCase = async (req, res) => {
       clientId: clientId || caseData.clientId,
       caseType: caseType || caseData.caseType,
       priority: priority || caseData.priority,
-      status: status || caseData.status,
+      status: status ? normalizeStatus(status) : caseData.status,
       assignedTo: assignedTo !== undefined ? assignedTo : caseData.assignedTo,
       startDate: startDate || caseData.startDate,
       endDate: endDate !== undefined ? endDate : caseData.endDate,
@@ -110,6 +142,29 @@ exports.updateCase = async (req, res) => {
     // });
 
     res.json({ success: true, message: 'Case updated successfully', data: caseData });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+exports.takeCase = async (req, res) => {
+  try {
+    const caseData = await Case.findByPk(req.params.id);
+    if (!caseData) {
+      return res.status(404).json({ success: false, message: 'Case not found' });
+    }
+
+    if (!['draft', 'pending'].includes(caseData.status)) {
+      return res.status(400).json({ success: false, message: 'Only pending cases can be taken' });
+    }
+
+    await caseData.update({
+      status: 'in_progress',
+      assignedTo: req.user?.userId || null,
+      startDate: caseData.startDate || new Date()
+    });
+
+    res.json({ success: true, message: 'Case assigned successfully', data: caseData });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
   }

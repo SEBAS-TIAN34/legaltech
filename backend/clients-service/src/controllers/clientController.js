@@ -4,16 +4,18 @@ const Client = require('../models/Client');
 exports.createClient = async (req, res) => {
   try {
     const { firstName, lastName, documentType, documentNumber, email, phone, address, clientType, companyName, taxId, notes } = req.body;
+    const storedDocumentType = documentType || 'CC';
+    const storedDocumentNumber = documentNumber || `CLIENT-${Date.now()}`;
 
-    if (!firstName || !lastName || !documentType || !documentNumber) {
-      return res.status(400).json({ success: false, message: 'Please provide all required fields: firstName, lastName, documentType, documentNumber' });
+    if (!firstName || !lastName) {
+      return res.status(400).json({ success: false, message: 'Please provide all required fields: firstName, lastName' });
     }
 
     const client = await Client.create({
       firstName,
       lastName,
-      documentType,
-      documentNumber,
+      documentType: storedDocumentType,
+      documentNumber: storedDocumentNumber,
       email,
       phone,
       address,

@@ -338,11 +338,13 @@
       users: `${BASE_URL}/users`,
       cases: `${BASE_URL}/cases`,
       documents: `${BASE_URL}/documents`,
-      invoices: `${BASE_URL}/invoices`
+      invoices: `${BASE_URL}/invoices`,
+      billing: `${BASE_URL}/invoices`
     };
 
     const token = localStorage.getItem('token');
-    const user = { id: parseInt(token) || 0 };
+    const storedUser = JSON.parse(localStorage.getItem('user') || '{}');
+    const user = { ...storedUser, id: storedUser.id || token };
 
     if (!token) {
       window.location.href = 'index.html';
@@ -357,7 +359,7 @@
       const headers = {
         'Content-Type': 'application/json',
         'apikey': SUPABASE_KEY,
-        'Prefer': 'return=minimal'
+        'Prefer': 'return=representation'
       };
       if (includeAuth && token) {
         headers['Authorization'] = `Bearer ${token}`;
@@ -372,6 +374,44 @@
       };
     }
 
+    function rowsFrom(result) {
+      if (Array.isArray(result)) return result;
+      if (Array.isArray(result?.data)) return result.data;
+      return [];
+    }
+
+    function caseNumber(c) {
+      return c.case_number || c.caseNumber || 'N/A';
+    }
+
+    function caseType(c, fallback = 'Denuncia') {
+      return c.case_type || c.caseType || fallback;
+    }
+
+    function documentName(d) {
+      return d.file_name || d.originalFileName || d.title || 'Documento';
+    }
+
+    function documentType(d) {
+      return d.file_type || d.documentType || 'Documento';
+    }
+
+    function createdAt(row) {
+      return row.created_at || row.createdAt;
+    }
+
+    function invoiceNumber(i) {
+      return i.invoice_number || i.invoiceNumber || 'Factura';
+    }
+
+    function invoiceTotal(i) {
+      return parseFloat(i.total ?? i.amount ?? 0) || 0;
+    }
+
+    function invoiceDueDate(i) {
+      return i.due_date || i.dueDate;
+    }
+
     // Force refresh data
     function forceRefresh() {
       loadClientCases();
@@ -380,7 +420,7 @@
       loadClientBilling();
     }
 
-    document.getElementById('user-name').textContent = `${user.firstName || ''} ${user.lastName || ''}`;
+    document.getElementById('user-name').textContent = user.name || `${user.firstName || user.first_name || ''} ${user.lastName || user.last_name || ''}`.trim() || user.email || 'Usuario';
 
     function logout() {
       localStorage.removeItem('token');
@@ -410,11 +450,10 @@
       
       const data = {
         title: document.getElementById('doc-name').value,
-        documentType: document.getElementById('doc-type').value,
-        description: document.getElementById('doc-description').value,
-        caseId: null,
-        originalFileName: document.getElementById('doc-file').value || 'documento_subido.pdf',
-        fileSize: Math.floor(Math.random() * 1000000)
+        file_type: document.getElementById('doc-type').value,
+        file_name: document.getElementById('doc-file').files[0]?.name || document.getElementById('doc-name').value,
+        file_size: document.getElementById('doc-file').files[0]?.size || Math.floor(Math.random() * 1000000),
+        uploaded_by: user.id || null
       };
       
       console.log('Uploading document:', data);
@@ -426,10 +465,10 @@
           body: JSON.stringify(data)
         });
         
-        const result = await res.json();
+        const result = await res.json().catch(() => null);
         console.log('Response:', result);
         
-        if (result.success) {
+        if (res.ok) {
           alert('Documento subido exitosamente!');
           document.getElementById('doc-name').value = '';
           document.getElementById('doc-type').value = '';
@@ -438,7 +477,7 @@
           showSection('documents');
           loadClientDocs();
         } else {
-          alert(result.message || 'Error al subir documento');
+          alert(result?.message || result?.hint || 'Error al subir documento');
         }
       } catch (err) {
         console.error('Error:', err);
@@ -510,13 +549,13 @@
     // Load Client Cases
     async function loadClientCases() {
       try {
-        const res = await fetch(API_URL.cases + '?t=' + Date.now(), { headers: getHeaders() });
+        const res = await fetch(API_URL.cases + '?t=' + Date.now(), { headers: getSelectHeaders() });
         const result = await res.json();
+        const cases = rowsFrom(result);
         
         const container = document.getElementById('cases-list');
         
-        if (result.success && result.data.length > 0) {
-          const cases = result.data;
+        if (cases.length > 0) {
           document.getElementById('cases-active').textContent = cases.filter(c => c.status === 'active').length;
           document.getElementById('cases-pending').textContent = cases.filter(c => c.status === 'pending').length;
           document.getElementById('cases-completed').textContent = cases.filter(c => c.status === 'closed' || c.status === 'completed').length;
@@ -528,8 +567,8 @@
                 <span class="status-${c.status}">${c.status === 'active' ? 'En Proceso' : c.status === 'pending' ? 'Pendiente' : 'Resuelto'}</span>
               </div>
               <div class="case-card-body">
-                <p><strong>Tipo:</strong> ${c.caseType || 'Denuncia'}</p>
-                <p><strong>Número:</strong> ${c.caseNumber || 'N/A'}</p>
+                <p><strong>Tipo:</strong> ${caseType(c)}</p>
+                <p><strong>Número:</strong> ${caseNumber(c)}</p>
                 <p><small>${c.description || ''}</small></p>
               </div>
             </div>
@@ -548,18 +587,19 @@
     // Load Client Documents
     async function loadClientDocs() {
       try {
-        const res = await fetch(API_URL.documents + '?t=' + Date.now(), { headers: getHeaders() });
+        const res = await fetch(API_URL.documents + '?t=' + Date.now(), { headers: getSelectHeaders() });
         const result = await res.json();
+        const documents = rowsFrom(result);
         
         const container = document.getElementById('docs-list');
         
-        if (result.success && result.data.length > 0) {
-          container.innerHTML = result.data.map(d => `
+        if (documents.length > 0) {
+          container.innerHTML = documents.map(d => `
             <div class="doc-card">
               <i class="fas fa-file-alt"></i>
               <div>
-                <h4>${d.originalFileName || d.title}</h4>
-                <p>${d.documentType || 'Documento'}</p>
+                <h4>${documentName(d)}</h4>
+                <p>${documentType(d)}</p>
               </div>
             </div>
           `).join('');
@@ -574,15 +614,16 @@
     // Load Wait Time
     async function loadWaitTime() {
       try {
-        const res = await fetch(API_URL.cases + '?t=' + Date.now(), { headers: getHeaders() });
+        const res = await fetch(API_URL.cases + '?t=' + Date.now(), { headers: getSelectHeaders() });
         const result = await res.json();
+        const caseRows = rowsFrom(result);
         
         const container = document.getElementById('wait-list');
         
-        if (result.success && result.data.length > 0) {
+        if (caseRows.length > 0) {
           let totalDays = 0;
-          const cases = result.data.map(c => {
-            const created = c.createdAt ? new Date(c.createdAt) : new Date();
+          const cases = caseRows.map(c => {
+            const created = createdAt(c) ? new Date(createdAt(c)) : new Date();
             const days = Math.floor((new Date() - created) / (1000 * 60 * 60 * 24));
             totalDays += days;
             return { ...c, days };
@@ -611,15 +652,15 @@
     // Load Client Billing
     async function loadClientBilling() {
       try {
-        const res = await fetch(API_URL.billing + '?t=' + Date.now(), { headers: getHeaders() });
+        const res = await fetch(API_URL.billing + '?t=' + Date.now(), { headers: getSelectHeaders() });
         const result = await res.json();
+        const invoices = rowsFrom(result);
         
         const container = document.getElementById('invoices-list');
         
-        if (result.success && result.data.length > 0) {
-          const invoices = result.data;
-          const total = invoices.reduce((sum, i) => sum + (parseFloat(i.total) || 0), 0);
-          const pending = invoices.filter(i => i.status === 'pending').reduce((sum, i) => sum + (parseFloat(i.total) || 0), 0);
+        if (invoices.length > 0) {
+          const total = invoices.reduce((sum, i) => sum + invoiceTotal(i), 0);
+          const pending = invoices.filter(i => i.status === 'pending').reduce((sum, i) => sum + invoiceTotal(i), 0);
           
           document.getElementById('billing-total').textContent = `$${total.toFixed(2)}`;
           document.getElementById('billing-pending').textContent = `$${pending.toFixed(2)}`;
@@ -627,12 +668,12 @@
           container.innerHTML = invoices.map(i => `
             <div class="invoice-item">
               <div>
-                <h4>${i.invoiceNumber}</h4>
+                <h4>${invoiceNumber(i)}</h4>
                 <p>${i.description || 'Factura'}</p>
-                <small>Vence: ${i.dueDate ? new Date(i.dueDate).toLocaleDateString() : 'N/A'}</small>
+                <small>Vence: ${invoiceDueDate(i) ? new Date(invoiceDueDate(i)).toLocaleDateString() : 'N/A'}</small>
               </div>
               <div class="invoice-right">
-                <span class="amount">$${i.total}</span>
+                <span class="amount">$${invoiceTotal(i)}</span>
                 <span class="status-${i.status}">${i.status === 'paid' ? 'Pagada' : 'Pendiente'}</span>
                 ${i.status === 'paid' ? `<button class="btn-view-invoice" onclick="showInvoice('${i.id}')"><i class="fas fa-eye"></i> Ver</button>` : ''}
               </div>
@@ -698,11 +739,12 @@
     // Show Invoice Modal
     async function showInvoice(invoiceId) {
       try {
-        const res = await fetch(API_URL.billing + '?t=' + Date.now(), { headers: getHeaders() });
+        const res = await fetch(API_URL.billing + '?t=' + Date.now(), { headers: getSelectHeaders() });
         const result = await res.json();
+        const invoices = rowsFrom(result);
         
-        if (result.success && result.data.length > 0) {
-          const invoice = result.data.find(i => i.id === invoiceId);
+        if (invoices.length > 0) {
+          const invoice = invoices.find(i => String(i.id) === String(invoiceId));
           if (invoice) {
             renderInvoice(invoice);
             document.getElementById('invoice-modal').classList.remove('hidden');

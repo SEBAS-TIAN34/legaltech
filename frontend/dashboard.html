@@ -688,8 +688,50 @@
       return {
         'Content-Type': 'application/json',
         'apikey': SUPABASE_KEY,
-        'Prefer': 'return=minimal'
+        'Prefer': 'return=representation'
       };
+    }
+
+    function rowsFrom(result) {
+      if (Array.isArray(result)) return result;
+      if (Array.isArray(result?.data)) return result.data;
+      return [];
+    }
+
+    function caseNumber(c) {
+      return c.case_number || c.caseNumber || '';
+    }
+
+    function caseType(c, fallback = 'Civil') {
+      return c.case_type || c.caseType || fallback;
+    }
+
+    function documentName(d) {
+      return d.file_name || d.originalFileName || d.title || 'Documento';
+    }
+
+    function documentType(d) {
+      return d.file_type || d.documentType || 'Documento';
+    }
+
+    function documentSize(d) {
+      return d.file_size || d.fileSize || 0;
+    }
+
+    function createdAt(row) {
+      return row.created_at || row.createdAt;
+    }
+
+    function invoiceNumber(i) {
+      return i.invoice_number || i.invoiceNumber || 'Factura';
+    }
+
+    function invoiceTotal(i) {
+      return parseFloat(i.total ?? i.amount ?? 0) || 0;
+    }
+
+    function invoiceDueDate(i) {
+      return i.due_date || i.dueDate;
     }
 
     // User info - use stored user data
@@ -799,7 +841,7 @@
               <div class="case-item">
                 <div class="case-info">
                   <h4>${c.title}</h4>
-                  <p>${c.caseType || 'Denuncia'} - ${c.caseNumber || ''}</p>
+                  <p>${caseType(c, 'Denuncia')} - ${caseNumber(c)}</p>
                 </div>
                 <span class="status-dot active"></span>
               </div>
@@ -814,7 +856,7 @@
               <div class="case-item">
                 <div class="case-info">
                   <h4>${c.title}</h4>
-                  <p>${c.caseType || 'Denuncia'} - ${c.caseNumber || ''}</p>
+                  <p>${caseType(c, 'Denuncia')} - ${caseNumber(c)}</p>
                 </div>
                 <span class="status-dot pending"></span>
               </div>
@@ -842,7 +884,7 @@
         
         if (Array.isArray(result) && result.length > 0) {
           const pending = result.filter(i => i.status === 'pending');
-          const pendingAmount = pending.reduce((sum, i) => sum + (parseFloat(i.total) || 0), 0);
+          const pendingAmount = pending.reduce((sum, i) => sum + invoiceTotal(i), 0);
           
           document.getElementById('stat-billing').textContent = `$${pendingAmount.toFixed(2)}`;
           document.getElementById('stat-documents').textContent = result.length;
@@ -859,9 +901,9 @@
       try {
         const res = await fetch(API_URL.cases, { headers: getSelectHeaders() });
         const result = await res.json();
+        const cases = rowsFrom(result);
         
-        if (Array.isArray(result) && result.length > 0) {
-          const cases = result.data;
+        if (cases.length > 0) {
           const active = cases.filter(c => c.status === 'active').length;
           const pending = cases.filter(c => c.status === 'pending').length;
           const completed = cases.filter(c => c.status === 'closed' || c.status === 'completed').length;
@@ -877,7 +919,7 @@
               <div class="case-item">
                 <div class="case-info">
                   <h4>${c.title}</h4>
-                  <p>${c.caseType || 'Civil'} - ${c.caseNumber || ''}</p>
+                  <p>${caseType(c)} - ${caseNumber(c)}</p>
                 </div>
                 <span class="status-dot active"></span>
               </div>
@@ -894,7 +936,7 @@
               <div class="case-item">
                 <div class="case-info">
                   <h4>${c.title}</h4>
-                  <p>${c.caseType || 'Civil'} - ${c.caseNumber || ''}</p>
+                  <p>${caseType(c)} - ${caseNumber(c)}</p>
                 </div>
                 <span class="status-dot pending"></span>
               </div>
@@ -918,17 +960,18 @@
       try {
         const res = await fetch(API_URL.documents, { headers: getSelectHeaders() });
         const result = await res.json();
+        const documents = rowsFrom(result);
         
-        document.getElementById('stat-documents').textContent = result ? result.length : 0;
+        document.getElementById('stat-documents').textContent = documents.length;
         
         const container = document.getElementById('documents-list');
-        if (Array.isArray(result) && result.length > 0) {
-          container.innerHTML = result.slice(0, 5).map(d => `
+        if (documents.length > 0) {
+          container.innerHTML = documents.slice(0, 5).map(d => `
             <div class="doc-item">
               <i class="fas fa-file-alt"></i>
               <div class="doc-info">
-                <h4>${d.originalFileName || d.title}</h4>
-                <p>${d.documentType || 'Documento'}</p>
+                <h4>${documentName(d)}</h4>
+                <p>${documentType(d)}</p>
               </div>
             </div>
           `).join('');
@@ -945,13 +988,12 @@
       try {
         const res = await fetch(API_URL.billing, { headers: getSelectHeaders() });
         const result = await res.json();
+        const invoices = rowsFrom(result);
         
-        if (Array.isArray(result) && result.length > 0) {
-          const invoices = result.data;
-          
+        if (invoices.length > 0) {
           // Stats
-          const total = invoices.reduce((sum, i) => sum + (parseFloat(i.total) || 0), 0);
-          const pending = invoices.filter(i => i.status === 'pending').reduce((sum, i) => sum + (parseFloat(i.total) || 0), 0);
+          const total = invoices.reduce((sum, i) => sum + invoiceTotal(i), 0);
+          const pending = invoices.filter(i => i.status === 'pending').reduce((sum, i) => sum + invoiceTotal(i), 0);
           const paid = invoices.filter(i => i.status === 'paid').length;
           
           document.getElementById('stat-total').textContent = `$${total.toFixed(2)}`;
@@ -966,10 +1008,10 @@
             historyContainer.innerHTML = paidInvoices.slice(0, 5).map(i => `
               <div class="payment-item">
                 <div class="payment-info">
-                  <h4>${i.invoiceNumber}</h4>
+                  <h4>${invoiceNumber(i)}</h4>
                   <p>${i.description || 'Factura'}</p>
                 </div>
-                <span class="amount-paid">$${i.total}</span>
+                <span class="amount-paid">$${invoiceTotal(i)}</span>
               </div>
             `).join('');
           } else {
@@ -983,11 +1025,11 @@
             pendingContainer.innerHTML = pendingInvoices.slice(0, 5).map(i => `
               <div class="invoice-item">
                 <div class="invoice-info">
-                  <h4>${i.invoiceNumber}</h4>
+                  <h4>${invoiceNumber(i)}</h4>
                   <p>${i.description || 'Factura'}</p>
-                  <small>Vence: ${i.dueDate ? new Date(i.dueDate).toLocaleDateString() : 'N/A'}</small>
+                  <small>Vence: ${invoiceDueDate(i) ? new Date(invoiceDueDate(i)).toLocaleDateString() : 'N/A'}</small>
                 </div>
-                <span class="amount-pending">$${i.total}</span>
+                <span class="amount-pending">$${invoiceTotal(i)}</span>
               </div>
             `).join('');
           } else {
@@ -1063,11 +1105,12 @@
         const res = await fetch(API_URL.billing, { headers: getSelectHeaders() });
         const result = await res.json();
         
-        if (Array.isArray(result) && result.length > 0) {
-          const invoices = result.data;
+        const invoices = rowsFrom(result);
+
+        if (invoices.length > 0) {
           
-          const total = invoices.reduce((sum, i) => sum + (parseFloat(i.total) || 0), 0);
-          const pending = invoices.filter(i => i.status === 'pending').reduce((sum, i) => sum + (parseFloat(i.total) || 0), 0);
+          const total = invoices.reduce((sum, i) => sum + invoiceTotal(i), 0);
+          const pending = invoices.filter(i => i.status === 'pending').reduce((sum, i) => sum + invoiceTotal(i), 0);
           const paid = invoices.filter(i => i.status === 'paid').length;
           
           document.getElementById('billing-total').textContent = `$${total.toFixed(2)}`;
@@ -1078,12 +1121,12 @@
           container.innerHTML = invoices.map(i => `
             <div class="invoice-list-item">
               <div class="invoice-details">
-                <h4>${i.invoiceNumber}</h4>
+                <h4>${invoiceNumber(i)}</h4>
                 <p>${i.description || 'Sin descripción'}</p>
-                <small>Vence: ${i.dueDate ? new Date(i.dueDate).toLocaleDateString() : 'N/A'}</small>
+                <small>Vence: ${invoiceDueDate(i) ? new Date(invoiceDueDate(i)).toLocaleDateString() : 'N/A'}</small>
               </div>
               <div class="invoice-actions">
-                <span class="invoice-amount">$${i.total}</span>
+                <span class="invoice-amount">$${invoiceTotal(i)}</span>
                 <span class="status-badge status-${i.status}">${i.status === 'paid' ? 'Pagada' : i.status === 'pending' ? 'Pendiente' : i.status}</span>
               </div>
             </div>
@@ -1106,8 +1149,9 @@
         const result = await res.json();
         const container = document.getElementById('cases-list');
         
-        if (Array.isArray(result) && result.length > 0) {
-          const cases = result.data;
+        const cases = rowsFrom(result);
+
+        if (cases.length > 0) {
           const active = cases.filter(c => c.status === 'active').length;
           const pending = cases.filter(c => c.status === 'pending').length;
           const completed = cases.filter(c => c.status === 'closed' || c.status === 'completed').length;
@@ -1120,7 +1164,7 @@
             <div class="invoice-list-item">
               <div class="invoice-details">
                 <h4>${c.title}</h4>
-                <p>${c.caseType || 'Civil'} - ${c.caseNumber || ''}</p>
+                <p>${caseType(c)} - ${caseNumber(c)}</p>
                 <small>${c.description || ''}</small>
               </div>
               <div class="invoice-actions">
@@ -1145,17 +1189,18 @@
       try {
         const res = await fetch(API_URL.documents, { headers: getSelectHeaders() });
         const result = await res.json();
+        const documents = rowsFrom(result);
         
-        document.getElementById('docs-total').textContent = result ? result.length : 0;
+        document.getElementById('docs-total').textContent = documents.length;
         
         const container = document.getElementById('docs-list');
-        if (Array.isArray(result) && result.length > 0) {
-          container.innerHTML = result.map(d => `
+        if (documents.length > 0) {
+          container.innerHTML = documents.map(d => `
             <div class="invoice-list-item">
               <div class="invoice-details">
-                <h4><i class="fas fa-file-alt"></i> ${d.originalFileName || d.title}</h4>
-                <p>${d.documentType || 'Documento'}</p>
-                <small>Tamaño: ${d.fileSize ? (d.fileSize/1024).toFixed(1) + ' KB' : 'N/A'}</small>
+                <h4><i class="fas fa-file-alt"></i> ${documentName(d)}</h4>
+                <p>${documentType(d)}</p>
+                <small>Tamaño: ${documentSize(d) ? (documentSize(d)/1024).toFixed(1) + ' KB' : 'N/A'}</small>
               </div>
               <div class="invoice-actions">
                 <span class="status-badge">Recibido</span>
@@ -1176,8 +1221,9 @@
         const res = await fetch(API_URL.cases, { headers: getSelectHeaders() });
         const result = await res.json();
         
-        if (Array.isArray(result) && result.length > 0) {
-          const cases = result.data;
+        const cases = rowsFrom(result);
+
+        if (cases.length > 0) {
           const active = cases.filter(c => c.status === 'active').length;
           const completed = cases.filter(c => c.status === 'closed' || c.status === 'completed').length;
           
@@ -1189,7 +1235,7 @@
             <div class="invoice-list-item">
               <div class="invoice-details">
                 <h4>${c.title}</h4>
-                <p>${c.caseType || 'Caso legal'} - ${c.caseNumber || ''}</p>
+                <p>${caseType(c, 'Caso legal')} - ${caseNumber(c)}</p>
                 <small>${c.description || 'Sin descripción'}</small>
               </div>
               <div class="invoice-actions">
@@ -1213,16 +1259,17 @@
         const res = await fetch(API_URL.documents, { headers: getSelectHeaders() });
         const result = await res.json();
         
-        document.getElementById('client-docs-count').textContent = result ? result.length : 0;
+        const documents = rowsFrom(result);
+        document.getElementById('client-docs-count').textContent = documents.length;
         
         const container = document.getElementById('client-docs-list');
-        if (Array.isArray(result) && result.length > 0) {
-          container.innerHTML = result.map(d => `
+        if (documents.length > 0) {
+          container.innerHTML = documents.map(d => `
             <div class="invoice-list-item">
               <div class="invoice-details">
-                <h4><i class="fas fa-file-alt"></i> ${d.originalFileName || d.title}</h4>
-                <p>${d.documentType || 'Documento'}</p>
-                <small>Subido: ${d.createdAt ? new Date(d.createdAt).toLocaleDateString() : 'N/A'}</small>
+                <h4><i class="fas fa-file-alt"></i> ${documentName(d)}</h4>
+                <p>${documentType(d)}</p>
+                <small>Subido: ${createdAt(d) ? new Date(createdAt(d)).toLocaleDateString() : 'N/A'}</small>
               </div>
               <div class="invoice-actions">
                 <button class="btn-small" style="width:auto; padding: 0.4rem 0.8rem;">Ver</button>
@@ -1245,13 +1292,14 @@
         
         const container = document.getElementById('wait-time-list');
         
-        if (Array.isArray(result) && result.length > 0) {
-          const cases = result.data;
+        const cases = rowsFrom(result);
+
+        if (cases.length > 0) {
           
           // Calculate total wait days (simulation based on case age)
           let totalDays = 0;
           const caseDays = cases.map(c => {
-            const created = c.createdAt ? new Date(c.createdAt) : new Date();
+            const created = createdAt(c) ? new Date(createdAt(c)) : new Date();
             const days = Math.floor((new Date() - created) / (1000 * 60 * 60 * 24));
             return { title: c.title, days: days, status: c.status };
           });
@@ -1421,17 +1469,18 @@
       try {
         const res = await fetch(API_URL.documents, { headers: getSelectHeaders() });
         const result = await res.json();
+        const documents = rowsFrom(result);
         const container = document.getElementById('documents-list');
         
-        if (Array.isArray(result) && result.length > 0) {
-          container.innerHTML = result.map(d => `
+        if (documents.length > 0) {
+          container.innerHTML = documents.map(d => `
             <div class="data-card">
               <div class="card-header">
-                <h4><i class="fas fa-file"></i> ${d.originalFileName || d.title}</h4>
-                <span class="status-badge">${d.documentType}</span>
+                <h4><i class="fas fa-file"></i> ${documentName(d)}</h4>
+                <span class="status-badge">${documentType(d)}</span>
               </div>
               <div class="card-body">
-                <p><strong>Tamaño:</strong> ${d.fileSize ? (d.fileSize/1024).toFixed(1) + ' KB' : 'N/A'}</p>
+                <p><strong>Tamaño:</strong> ${documentSize(d) ? (documentSize(d)/1024).toFixed(1) + ' KB' : 'N/A'}</p>
               </div>
             </div>
           `).join('');
@@ -1488,26 +1537,38 @@
       try {
         const res = await fetch(API_URL.billing, { headers: getSelectHeaders() });
         const result = await res.json();
-        const container = document.getElementById('billing-list');
+        const invoices = rowsFrom(result);
+        const container = document.getElementById('billing-invoices-list');
         
-        if (Array.isArray(result) && result.length > 0) {
-          container.innerHTML = result.map(i => `
+        if (invoices.length > 0) {
+          const total = invoices.reduce((sum, i) => sum + invoiceTotal(i), 0);
+          const pending = invoices.filter(i => i.status === 'pending').reduce((sum, i) => sum + invoiceTotal(i), 0);
+          const paid = invoices.filter(i => i.status === 'paid').length;
+
+          document.getElementById('billing-total').textContent = `$${total.toFixed(2)}`;
+          document.getElementById('billing-pending').textContent = `$${pending.toFixed(2)}`;
+          document.getElementById('billing-paid').textContent = paid;
+
+          container.innerHTML = invoices.map(i => `
             <div class="data-card">
               <div class="card-header">
-                <h4>${i.invoiceNumber}</h4>
+                <h4>${invoiceNumber(i)}</h4>
                 <span class="status-badge status-${i.status}">${i.status}</span>
               </div>
               <div class="card-body">
-                <p><strong>Total:</strong> $${i.total || 0}</p>
-                <p><strong>Vence:</strong> ${i.dueDate ? new Date(i.dueDate).toLocaleDateString() : 'N/A'}</p>
+                <p><strong>Total:</strong> $${invoiceTotal(i)}</p>
+                <p><strong>Vence:</strong> ${invoiceDueDate(i) ? new Date(invoiceDueDate(i)).toLocaleDateString() : 'N/A'}</p>
               </div>
             </div>
           `).join('');
         } else {
+          document.getElementById('billing-total').textContent = '$0';
+          document.getElementById('billing-pending').textContent = '$0';
+          document.getElementById('billing-paid').textContent = '0';
           container.innerHTML = '<p class="no-data">No hay facturas</p>';
         }
       } catch (err) {
-        document.getElementById('billing-list').innerHTML = '<p class="no-data">Error</p>';
+        document.getElementById('billing-invoices-list').innerHTML = '<p class="no-data">Error</p>';
       }
     }
 

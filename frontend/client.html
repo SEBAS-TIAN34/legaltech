@@ -452,8 +452,7 @@
         title: document.getElementById('doc-name').value,
         file_type: document.getElementById('doc-type').value,
         file_name: document.getElementById('doc-file').files[0]?.name || document.getElementById('doc-name').value,
-        file_size: document.getElementById('doc-file').files[0]?.size || Math.floor(Math.random() * 1000000),
-        uploaded_by: user.id || null
+        file_size: document.getElementById('doc-file').files[0]?.size || Math.floor(Math.random() * 1000000)
       };
       
       console.log('Uploading document:', data);

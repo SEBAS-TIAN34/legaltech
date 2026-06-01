@@ -295,7 +295,9 @@
           <h3>Realizar Pago</h3>
           <form onsubmit="processPayment(event)" class="payment-form">
             <div class="payment-grid">
-              <input type="number" id="pay-amount" placeholder="Monto" required>
+              <select id="pay-invoice" required>
+                <option value="">Selecciona una factura pendiente</option>
+              </select>
               <select id="pay-method">
                 <option value="card">Tarjeta</option>
                 <option value="transfer">Transferencia</option>
@@ -410,6 +412,22 @@
 
     function invoiceDueDate(i) {
       return i.due_date || i.dueDate;
+    }
+
+    function clientInvoicesUrl() {
+      if (!user.email) return `${API_URL.billing}?client_email=is.null`;
+      return `${API_URL.billing}?client_email=eq.${encodeURIComponent(user.email)}&order=created_at.desc`;
+    }
+
+    function updatePendingInvoiceOptions(invoices) {
+      const select = document.getElementById('pay-invoice');
+      const pending = invoices.filter(i => i.status === 'pending');
+
+      select.innerHTML = pending.length > 0
+        ? '<option value="">Selecciona una factura pendiente</option>' + pending.map(i =>
+            `<option value="${i.id}">${invoiceNumber(i)} - $${invoiceTotal(i).toFixed(2)}</option>`
+          ).join('')
+        : '<option value="">No tienes facturas pendientes</option>';
     }
 
     // Force refresh data
@@ -651,7 +669,7 @@
     // Load Client Billing
     async function loadClientBilling() {
       try {
-        const res = await fetch(API_URL.billing + '?t=' + Date.now(), { headers: getSelectHeaders() });
+        const res = await fetch(clientInvoicesUrl(), { headers: getSelectHeaders() });
         const result = await res.json();
         const invoices = rowsFrom(result);
         
@@ -663,6 +681,7 @@
           
           document.getElementById('billing-total').textContent = `$${total.toFixed(2)}`;
           document.getElementById('billing-pending').textContent = `$${pending.toFixed(2)}`;
+          updatePendingInvoiceOptions(invoices);
           
           container.innerHTML = invoices.map(i => `
             <div class="invoice-item">
@@ -681,6 +700,7 @@
         } else {
           document.getElementById('billing-total').textContent = '$0';
           document.getElementById('billing-pending').textContent = '$0';
+          updatePendingInvoiceOptions([]);
           container.innerHTML = '<p class="no-data">No hay facturas</p>';
         }
       } catch (err) {
@@ -688,57 +708,47 @@
       }
     }
 
-    // Process Payment - Create invoice with paid status
+    // Process Payment - Mark the lawyer-created invoice as paid
     async function processPayment(e) {
       e.preventDefault();
-      const amount = document.getElementById('pay-amount').value;
+      const invoiceId = document.getElementById('pay-invoice').value;
       const method = document.getElementById('pay-method').value;
-      
-      const today = new Date();
-      const dueDate = new Date(today);
-      dueDate.setDate(dueDate.getDate() + 30);
-      
-      const invoiceData = {
-        invoiceNumber: 'INV-' + Date.now(),
-        clientId: user.id,
-        caseId: null,
-        status: 'paid',
-        issueDate: today.toISOString(),
-        dueDate: dueDate.toISOString(),
-        subtotal: amount,
-        tax: (amount * 0.19).toFixed(2),
-        total: (amount * 1.19).toFixed(2),
-        paidAmount: amount,
-        notes: 'Pago por servicios legales - ' + (method === 'card' ? 'Tarjeta' : method === 'transfer' ? 'Transferencia' : 'Efectivo'),
-        items: JSON.stringify([{ description: 'Servicios LegalTech', quantity: 1, unitPrice: amount, total: amount }])
-      };
-      
-      try {
-        const res = await fetch(API_URL.billing, {
-          method: 'POST',
-          headers: getHeaders(),
-          body: JSON.stringify(invoiceData)
-        });
-        
-        const result = await res.json();
-        
-        if (result.success) {
-          alert(`Pago de $${amount} procesado exitosamente!`);
-        } else {
-          alert('Pago procesado (simulado)');
-        }
-      } catch (err) {
-        alert('Pago procesado (simulado)');
+
+      if (!invoiceId) {
+        alert('Selecciona una factura pendiente');
+        return;
       }
       
-      document.getElementById('pay-amount').value = '';
+      try {
+        const res = await fetch(`${API_URL.billing}?id=eq.${encodeURIComponent(invoiceId)}&client_email=eq.${encodeURIComponent(user.email)}`, {
+          method: 'PATCH',
+          headers: getHeaders(),
+          body: JSON.stringify({
+            status: 'paid',
+            paid_date: new Date().toISOString().slice(0, 10),
+            payment_method: method
+          })
+        });
+        
+        const result = await res.json().catch(() => null);
+        
+        if (res.ok) {
+          alert('Pago procesado exitosamente');
+        } else {
+          alert(result?.message || 'No se pudo procesar el pago');
+        }
+      } catch (err) {
+        alert('Error de conexión: ' + err.message);
+      }
+      
+      document.getElementById('pay-invoice').value = '';
       loadClientBilling();
     }
 
     // Show Invoice Modal
     async function showInvoice(invoiceId) {
       try {
-        const res = await fetch(API_URL.billing + '?t=' + Date.now(), { headers: getSelectHeaders() });
+        const res = await fetch(clientInvoicesUrl(), { headers: getSelectHeaders() });
         const result = await res.json();
         const invoices = rowsFrom(result);
         
@@ -756,7 +766,9 @@
 
     // Render Invoice
     function renderInvoice(invoice) {
-      const qrCode = `LEGALTECH-${invoice.invoiceNumber}-${invoice.total}-${new Date().toISOString().split('T')[0]}`;
+      const total = invoiceTotal(invoice);
+      const number = invoiceNumber(invoice);
+      const qrCode = `LEGALTECH-${number}-${total}-${new Date().toISOString().split('T')[0]}`;
       const container = document.getElementById('invoice-display');
       container.innerHTML = `
         <div class="invoice-paper">
@@ -776,21 +788,21 @@
           
           <div class="invoice-title">
             <h2>FACTURA ELECTRÓNICA DE VENTA</h2>
-            <p>No. ${invoice.invoiceNumber}</p>
+            <p>No. ${number}</p>
           </div>
           
           <div class="invoice-details-grid">
             <div class="detail-box">
               <label>Fecha de Emisión:</label>
-              <span>${invoice.issueDate ? new Date(invoice.issueDate).toLocaleDateString() : new Date().toLocaleDateString()}</span>
+              <span>${createdAt(invoice) ? new Date(createdAt(invoice)).toLocaleDateString() : new Date().toLocaleDateString()}</span>
             </div>
             <div class="detail-box">
               <label>Fecha de Vencimiento:</label>
-              <span>${invoice.dueDate ? new Date(invoice.dueDate).toLocaleDateString() : 'N/A'}</span>
+              <span>${invoiceDueDate(invoice) ? new Date(invoiceDueDate(invoice)).toLocaleDateString() : 'N/A'}</span>
             </div>
             <div class="detail-box">
               <label>Cliente:</label>
-              <span>${user.firstName} ${user.lastName}</span>
+              <span>${user.name || `${user.firstName || user.first_name || ''} ${user.lastName || user.last_name || ''}`.trim() || user.email}</span>
             </div>
             <div class="detail-box">
               <label>Método de Pago:</label>
@@ -811,29 +823,29 @@
               <tr>
                 <td>${invoice.description || 'Servicios LegalTech'}</td>
                 <td>1</td>
-                <td>$${parseFloat(invoice.total).toLocaleString()}</td>
-                <td>$${parseFloat(invoice.total).toLocaleString()}</td>
+                <td>$${total.toLocaleString()}</td>
+                <td>$${total.toLocaleString()}</td>
               </tr>
             </tbody>
             <tfoot>
               <tr>
                 <td colspan="3"><strong>SUBTOTAL:</strong></td>
-                <td>$${parseFloat(invoice.total).toLocaleString()}</td>
+                <td>$${total.toLocaleString()}</td>
               </tr>
               <tr>
                 <td colspan="3"><strong>IVA (19%):</strong></td>
-                <td>$${((invoice.total || 0) * 0.19).toLocaleString()}</td>
+                <td>$${(total * 0.19).toLocaleString()}</td>
               </tr>
               <tr class="total-row">
                 <td colspan="3"><strong>TOTAL A PAGAR:</strong></td>
-                <td>$${((invoice.total || 0) * 1.19).toLocaleString()}</td>
+                <td>$${(total * 1.19).toLocaleString()}</td>
               </tr>
             </tfoot>
           </table>
           
           <div class="invoice-status-paid">
             <span class="paid-badge">PAGADA</span>
-            <p>Fecha de pago: ${invoice.issueDate ? new Date(invoice.issueDate).toLocaleDateString() : new Date().toLocaleDateString()}</p>
+            <p>Fecha de pago: ${invoice.paid_date ? new Date(invoice.paid_date).toLocaleDateString() : new Date().toLocaleDateString()}</p>
           </div>
           
           <div class="invoice-qr">

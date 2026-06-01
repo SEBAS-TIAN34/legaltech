@@ -441,24 +441,30 @@
             
             <div class="payment-form-card">
               <div class="card-header">
-                <h3><i class="fas fa-credit-card"></i> Procesar Pago</h3>
+                <h3><i class="fas fa-file-circle-plus"></i> Agendar Factura</h3>
               </div>
               <div class="card-content">
-                <form onsubmit="processPayment(event)">
+                <form onsubmit="createInvoice(event)">
                   <div class="form-group">
-                    <label>Monto</label>
-                    <input type="number" id="pay-amount" placeholder="0.00" step="0.01" required>
-                  </div>
-                  <div class="form-group">
-                    <label>Método</label>
-                    <select id="pay-method">
-                      <option value="card">Tarjeta</option>
-                      <option value="transfer">Transferencia</option>
-                      <option value="cash">Efectivo</option>
+                    <label>Cliente</label>
+                    <select id="lawyer-invoice-client" required>
+                      <option value="">Cargando clientes...</option>
                     </select>
                   </div>
+                  <div class="form-group">
+                    <label>Concepto</label>
+                    <input type="text" id="lawyer-invoice-description" placeholder="Servicios legales" required>
+                  </div>
+                  <div class="form-group">
+                    <label>Monto</label>
+                    <input type="number" id="lawyer-invoice-amount" placeholder="0.00" min="0" step="0.01" required>
+                  </div>
+                  <div class="form-group">
+                    <label>Fecha de vencimiento</label>
+                    <input type="date" id="lawyer-invoice-due-date" required>
+                  </div>
                   <button type="submit" class="btn-primary">
-                    <i class="fas fa-check"></i> Pagar
+                    <i class="fas fa-calendar-plus"></i> Agendar Factura
                   </button>
                 </form>
               </div>
@@ -667,7 +673,8 @@
       clients: `${BASE_URL}/clients`,
       documents: `${BASE_URL}/documents`,
       time_entries: `${BASE_URL}/time_entries`,
-      invoices: `${BASE_URL}/invoices`
+      invoices: `${BASE_URL}/invoices`,
+      billing: `${BASE_URL}/invoices`
     };
 
     const token = localStorage.getItem('token');
@@ -732,6 +739,10 @@
 
     function invoiceDueDate(i) {
       return i.due_date || i.dueDate;
+    }
+
+    function invoiceClientEmail(i) {
+      return i.client_email || i.clientEmail || 'Cliente sin asignar';
     }
 
     // User info - use stored user data
@@ -1533,8 +1544,30 @@
     }
 
     // Billing
+    async function loadInvoiceClients() {
+      const select = document.getElementById('lawyer-invoice-client');
+      if (!select) return;
+
+      try {
+        const res = await fetch(`${API_URL.users}?role=eq.client&select=email,first_name,last_name&order=first_name.asc`, {
+          headers: getSelectHeaders()
+        });
+        const clients = rowsFrom(await res.json());
+
+        select.innerHTML = clients.length > 0
+          ? '<option value="">Selecciona un cliente</option>' + clients.map(client => {
+              const name = `${client.first_name || ''} ${client.last_name || ''}`.trim() || client.email;
+              return `<option value="${client.email}">${name} - ${client.email}</option>`;
+            }).join('')
+          : '<option value="">No hay clientes registrados</option>';
+      } catch (err) {
+        select.innerHTML = '<option value="">Error al cargar clientes</option>';
+      }
+    }
+
     async function loadBilling() {
       try {
+        loadInvoiceClients();
         const res = await fetch(API_URL.billing, { headers: getSelectHeaders() });
         const result = await res.json();
         const invoices = rowsFrom(result);
@@ -1556,6 +1589,8 @@
                 <span class="status-badge status-${i.status}">${i.status}</span>
               </div>
               <div class="card-body">
+                <p><strong>Cliente:</strong> ${invoiceClientEmail(i)}</p>
+                <p><strong>Concepto:</strong> ${i.description || 'Servicios legales'}</p>
                 <p><strong>Total:</strong> $${invoiceTotal(i)}</p>
                 <p><strong>Vence:</strong> ${invoiceDueDate(i) ? new Date(invoiceDueDate(i)).toLocaleDateString() : 'N/A'}</p>
               </div>
@@ -1575,11 +1610,11 @@
     async function createInvoice(e) {
       e.preventDefault();
       const data = {
-        invoiceNumber: 'INV-' + Date.now(),
-        clientId: document.getElementById('invoice-client').value,
-        description: document.getElementById('invoice-description').value,
-        total: document.getElementById('invoice-amount').value,
-        dueDate: document.getElementById('invoice-dueDate').value,
+        invoice_number: 'INV-' + Date.now(),
+        client_email: document.getElementById('lawyer-invoice-client').value,
+        description: document.getElementById('lawyer-invoice-description').value,
+        amount: document.getElementById('lawyer-invoice-amount').value,
+        due_date: document.getElementById('lawyer-invoice-due-date').value,
         status: 'pending'
       };
       
@@ -1589,14 +1624,15 @@
           headers: getHeaders(),
           body: JSON.stringify(data)
         });
-        const result = await res.json();
+        const result = await res.json().catch(() => null);
         
         if (res.ok) {
-          alert('Factura creada');
-          closeModal('modal-invoice');
+          alert('Factura pendiente agendada para el cliente');
+          e.target.reset();
+          loadInvoiceClients();
           loadBilling();
         } else {
-          alert(result.message || 'Error');
+          alert(result?.message || 'Error al agendar factura');
         }
       } catch (err) {
         alert('Error de conexión');

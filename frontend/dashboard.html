@@ -656,68 +656,90 @@
   </div>
 
   <script>
-    // Backend URL - Production (Render)
-    const BASE_URL = 'https://juridico-z8ue.onrender.com';
+    // Supabase Configuration
+    const SUPABASE_URL = 'https://zftczusnrhslgpgrpzrs.supabase.co';
+    const SUPABASE_KEY = 'sb_publishable_J2uBdxcUW1HjyEA8VjHlLA_5TSWWOJo';
 
+    const BASE_URL = `${SUPABASE_URL}/rest/v1`;
     const API_URL = {
-      auth: `${BASE_URL}/api/auth`,
-      cases: `${BASE_URL}/api/cases`,
-      clients: `${BASE_URL}/api/clients`,
-      documents: `${BASE_URL}/api/documents`,
-      timetracking: `${BASE_URL}/api/time-entries`,
-      billing: `${BASE_URL}/api/invoices`,
-      dashboard: `${BASE_URL}/api/dashboard`
+      users: `${BASE_URL}/users`,
+      cases: `${BASE_URL}/cases`,
+      clients: `${BASE_URL}/clients`,
+      documents: `${BASE_URL}/documents`,
+      time_entries: `${BASE_URL}/time_entries`,
+      invoices: `${BASE_URL}/invoices`
     };
 
     const token = localStorage.getItem('token');
-    const user = JSON.parse(localStorage.getItem('user') || '{}');
+    const user = { id: parseInt(token) || 0 };
 
     if (!token) {
       window.location.href = 'index.html';
     }
 
-    // Redirect non-lawyers to client page
-    if (user.role !== 'lawyer') {
-      window.location.href = 'client.html';
+    function getSelectHeaders() {
+      return {
+        'apikey': SUPABASE_KEY,
+        'Authorization': `Bearer ${SUPABASE_KEY}`
+      };
     }
 
     function getHeaders() {
       return {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${token}`
+        'apikey': SUPABASE_KEY,
+        'Prefer': 'return=representation'
       };
     }
 
-    // User info
-    const isLawyer = user.role === 'lawyer';
-    document.getElementById('user-name').textContent = `${user.firstName || ''} ${user.lastName || ''}`;
+    function rowsFrom(result) {
+      if (Array.isArray(result)) return result;
+      if (Array.isArray(result?.data)) return result.data;
+      return [];
+    }
+
+    function caseNumber(c) {
+      return c.case_number || c.caseNumber || '';
+    }
+
+    function caseType(c, fallback = 'Civil') {
+      return c.case_type || c.caseType || fallback;
+    }
+
+    function documentName(d) {
+      return d.file_name || d.originalFileName || d.title || 'Documento';
+    }
+
+    function documentType(d) {
+      return d.file_type || d.documentType || 'Documento';
+    }
+
+    function documentSize(d) {
+      return d.file_size || d.fileSize || 0;
+    }
+
+    function createdAt(row) {
+      return row.created_at || row.createdAt;
+    }
+
+    function invoiceNumber(i) {
+      return i.invoice_number || i.invoiceNumber || 'Factura';
+    }
+
+    function invoiceTotal(i) {
+      return parseFloat(i.total ?? i.amount ?? 0) || 0;
+    }
+
+    function invoiceDueDate(i) {
+      return i.due_date || i.dueDate;
+    }
+
+    // User info - use stored user data
+    const storedUser = JSON.parse(localStorage.getItem('user') || '{}');
+    const isLawyer = storedUser.role === 'lawyer' || storedUser.role === 'admin';
+    document.getElementById('user-name').textContent = storedUser.name || storedUser.email || 'Usuario';
     document.getElementById('user-role').textContent = isLawyer ? 'Abogado' : 'Cliente';
-
-    function isPendingCase(caseItem) {
-      return ['draft', 'pending'].includes(caseItem.status);
-    }
-
-    function isActiveCase(caseItem) {
-      return ['open', 'in_progress', 'active'].includes(caseItem.status);
-    }
-
-    function isClosedCase(caseItem) {
-      return ['closed', 'completed'].includes(caseItem.status);
-    }
-
-    function caseStatusLabel(status) {
-      const labels = {
-        draft: 'Pendiente',
-        pending: 'Pendiente',
-        open: 'Activo',
-        active: 'Activo',
-        in_progress: 'En proceso',
-        closed: 'Cerrado',
-        completed: 'Completado',
-        suspended: 'Suspendido'
-      };
-      return labels[status] || status || 'Pendiente';
-    }
+    document.getElementById('user-role').textContent = isLawyer ? 'Abogado' : 'Cliente';
 
     // Adjust UI based on role
     if (!isLawyer) {
@@ -800,16 +822,15 @@
     async function loadClientDashboard() {
       // Load client's cases as complaints
       try {
-        const res = await fetch(API_URL.cases, { headers: getHeaders() });
-        const result = await res.json();
+        const res = await fetch(API_URL.cases, { headers: getSelectHeaders() });
+        const cases = await res.json();
         
         const activeContainer = document.getElementById('active-cases');
         const pendingContainer = document.getElementById('pending-cases');
         
-        if (result.success && result.data.length > 0) {
-          const cases = result.data.filter(c => !c.clientId || c.clientId === user.id);
-          const active = cases.filter(isActiveCase);
-          const pending = cases.filter(isPendingCase);
+        if (Array.isArray(cases) && cases.length > 0) {
+          const active = cases.filter(c => c.status === 'active' || c.status === 'open');
+          const pending = cases.filter(c => c.status === 'pending');
           
           document.getElementById('stat-cases').textContent = active.length;
           document.getElementById('stat-pending-cases').textContent = pending.length;
@@ -820,7 +841,7 @@
               <div class="case-item">
                 <div class="case-info">
                   <h4>${c.title}</h4>
-                  <p>${c.caseType || 'Denuncia'} - ${c.caseNumber || ''}</p>
+                  <p>${caseType(c, 'Denuncia')} - ${caseNumber(c)}</p>
                 </div>
                 <span class="status-dot active"></span>
               </div>
@@ -835,7 +856,7 @@
               <div class="case-item">
                 <div class="case-info">
                   <h4>${c.title}</h4>
-                  <p>${c.caseType || 'Denuncia'} - ${c.caseNumber || ''}</p>
+                  <p>${caseType(c, 'Denuncia')} - ${caseNumber(c)}</p>
                 </div>
                 <span class="status-dot pending"></span>
               </div>
@@ -858,15 +879,15 @@
       
       // Update billing for client (just show pending payments)
       try {
-        const res = await fetch(API_URL.billing, { headers: getHeaders() });
+        const res = await fetch(API_URL.billing, { headers: getSelectHeaders() });
         const result = await res.json();
         
-        if (result.success && result.data.length > 0) {
-          const pending = result.data.filter(i => i.status === 'pending');
-          const pendingAmount = pending.reduce((sum, i) => sum + (parseFloat(i.total) || 0), 0);
+        if (Array.isArray(result) && result.length > 0) {
+          const pending = result.filter(i => i.status === 'pending');
+          const pendingAmount = pending.reduce((sum, i) => sum + invoiceTotal(i), 0);
           
           document.getElementById('stat-billing').textContent = `$${pendingAmount.toFixed(2)}`;
-          document.getElementById('stat-documents').textContent = result.data.length;
+          document.getElementById('stat-documents').textContent = result.length;
         } else {
           document.getElementById('stat-billing').textContent = '$0';
         }
@@ -878,27 +899,27 @@
     // Load cases for dashboard
     async function loadCasesData() {
       try {
-        const res = await fetch(API_URL.cases, { headers: getHeaders() });
+        const res = await fetch(API_URL.cases, { headers: getSelectHeaders() });
         const result = await res.json();
+        const cases = rowsFrom(result);
         
-        if (result.success && result.data.length > 0) {
-          const cases = result.data;
-          const active = cases.filter(isActiveCase).length;
-          const pending = cases.filter(isPendingCase).length;
-          const completed = cases.filter(isClosedCase).length;
+        if (cases.length > 0) {
+          const active = cases.filter(c => c.status === 'active').length;
+          const pending = cases.filter(c => c.status === 'pending').length;
+          const completed = cases.filter(c => c.status === 'closed' || c.status === 'completed').length;
           
           document.getElementById('stat-cases').textContent = active;
           document.getElementById('stat-pending-cases').textContent = pending;
           
           // Active cases list
           const activeContainer = document.getElementById('active-cases');
-          const activeCases = cases.filter(isActiveCase);
+          const activeCases = cases.filter(c => c.status === 'active');
           if (activeCases.length > 0) {
             activeContainer.innerHTML = activeCases.slice(0, 4).map(c => `
               <div class="case-item">
                 <div class="case-info">
                   <h4>${c.title}</h4>
-                  <p>${c.caseType || 'Civil'} - ${c.caseNumber || ''}</p>
+                  <p>${caseType(c)} - ${caseNumber(c)}</p>
                 </div>
                 <span class="status-dot active"></span>
               </div>
@@ -909,17 +930,15 @@
           
           // Pending cases list
           const pendingContainer = document.getElementById('pending-cases');
-          const pendingCases = cases.filter(isPendingCase);
+          const pendingCases = cases.filter(c => c.status === 'pending');
           if (pendingCases.length > 0) {
             pendingContainer.innerHTML = pendingCases.slice(0, 4).map(c => `
-              <div class="case-item pending-alert">
+              <div class="case-item">
                 <div class="case-info">
-                  <h4><i class="fas fa-triangle-exclamation"></i> ${c.title}</h4>
-                  <p>Nueva denuncia pendiente - ${c.caseType || 'Civil'} - ${c.caseNumber || ''}</p>
+                  <h4>${c.title}</h4>
+                  <p>${caseType(c)} - ${caseNumber(c)}</p>
                 </div>
-                <button class="btn-take-case" onclick="takeCase('${c.id}')">
-                  <i class="fas fa-hand"></i> Tomar
-                </button>
+                <span class="status-dot pending"></span>
               </div>
             `).join('');
           } else {
@@ -939,19 +958,20 @@
     // Load documents for dashboard
     async function loadDocumentsData() {
       try {
-        const res = await fetch(API_URL.documents, { headers: getHeaders() });
+        const res = await fetch(API_URL.documents, { headers: getSelectHeaders() });
         const result = await res.json();
+        const documents = rowsFrom(result);
         
-        document.getElementById('stat-documents').textContent = result.success ? result.data.length : 0;
+        document.getElementById('stat-documents').textContent = documents.length;
         
         const container = document.getElementById('documents-list');
-        if (result.success && result.data.length > 0) {
-          container.innerHTML = result.data.slice(0, 5).map(d => `
+        if (documents.length > 0) {
+          container.innerHTML = documents.slice(0, 5).map(d => `
             <div class="doc-item">
               <i class="fas fa-file-alt"></i>
               <div class="doc-info">
-                <h4>${d.originalFileName || d.title}</h4>
-                <p>${d.documentType || 'Documento'}</p>
+                <h4>${documentName(d)}</h4>
+                <p>${documentType(d)}</p>
               </div>
             </div>
           `).join('');
@@ -966,15 +986,14 @@
     // Load billing data for dashboard
     async function loadBillingData() {
       try {
-        const res = await fetch(API_URL.billing, { headers: getHeaders() });
+        const res = await fetch(API_URL.billing, { headers: getSelectHeaders() });
         const result = await res.json();
+        const invoices = rowsFrom(result);
         
-        if (result.success && result.data.length > 0) {
-          const invoices = result.data;
-          
+        if (invoices.length > 0) {
           // Stats
-          const total = invoices.reduce((sum, i) => sum + (parseFloat(i.total) || 0), 0);
-          const pending = invoices.filter(i => i.status === 'pending').reduce((sum, i) => sum + (parseFloat(i.total) || 0), 0);
+          const total = invoices.reduce((sum, i) => sum + invoiceTotal(i), 0);
+          const pending = invoices.filter(i => i.status === 'pending').reduce((sum, i) => sum + invoiceTotal(i), 0);
           const paid = invoices.filter(i => i.status === 'paid').length;
           
           document.getElementById('stat-total').textContent = `$${total.toFixed(2)}`;
@@ -989,10 +1008,10 @@
             historyContainer.innerHTML = paidInvoices.slice(0, 5).map(i => `
               <div class="payment-item">
                 <div class="payment-info">
-                  <h4>${i.invoiceNumber}</h4>
+                  <h4>${invoiceNumber(i)}</h4>
                   <p>${i.description || 'Factura'}</p>
                 </div>
-                <span class="amount-paid">$${i.total}</span>
+                <span class="amount-paid">$${invoiceTotal(i)}</span>
               </div>
             `).join('');
           } else {
@@ -1006,11 +1025,11 @@
             pendingContainer.innerHTML = pendingInvoices.slice(0, 5).map(i => `
               <div class="invoice-item">
                 <div class="invoice-info">
-                  <h4>${i.invoiceNumber}</h4>
+                  <h4>${invoiceNumber(i)}</h4>
                   <p>${i.description || 'Factura'}</p>
-                  <small>Vence: ${i.dueDate ? new Date(i.dueDate).toLocaleDateString() : 'N/A'}</small>
+                  <small>Vence: ${invoiceDueDate(i) ? new Date(invoiceDueDate(i)).toLocaleDateString() : 'N/A'}</small>
                 </div>
-                <span class="amount-pending">$${i.total}</span>
+                <span class="amount-pending">$${invoiceTotal(i)}</span>
               </div>
             `).join('');
           } else {
@@ -1066,7 +1085,7 @@
         });
         const result = await res.json();
         
-        if (result.success) {
+        if (res.ok) {
           alert('Factura creada exitosamente');
           document.getElementById('invoice-client-name').value = '';
           document.getElementById('invoice-concept').value = '';
@@ -1083,14 +1102,15 @@
     // Load Billing View
     async function loadBilling() {
       try {
-        const res = await fetch(API_URL.billing, { headers: getHeaders() });
+        const res = await fetch(API_URL.billing, { headers: getSelectHeaders() });
         const result = await res.json();
         
-        if (result.success && result.data.length > 0) {
-          const invoices = result.data;
+        const invoices = rowsFrom(result);
+
+        if (invoices.length > 0) {
           
-          const total = invoices.reduce((sum, i) => sum + (parseFloat(i.total) || 0), 0);
-          const pending = invoices.filter(i => i.status === 'pending').reduce((sum, i) => sum + (parseFloat(i.total) || 0), 0);
+          const total = invoices.reduce((sum, i) => sum + invoiceTotal(i), 0);
+          const pending = invoices.filter(i => i.status === 'pending').reduce((sum, i) => sum + invoiceTotal(i), 0);
           const paid = invoices.filter(i => i.status === 'paid').length;
           
           document.getElementById('billing-total').textContent = `$${total.toFixed(2)}`;
@@ -1101,12 +1121,12 @@
           container.innerHTML = invoices.map(i => `
             <div class="invoice-list-item">
               <div class="invoice-details">
-                <h4>${i.invoiceNumber}</h4>
+                <h4>${invoiceNumber(i)}</h4>
                 <p>${i.description || 'Sin descripción'}</p>
-                <small>Vence: ${i.dueDate ? new Date(i.dueDate).toLocaleDateString() : 'N/A'}</small>
+                <small>Vence: ${invoiceDueDate(i) ? new Date(invoiceDueDate(i)).toLocaleDateString() : 'N/A'}</small>
               </div>
               <div class="invoice-actions">
-                <span class="invoice-amount">$${i.total}</span>
+                <span class="invoice-amount">$${invoiceTotal(i)}</span>
                 <span class="status-badge status-${i.status}">${i.status === 'paid' ? 'Pagada' : i.status === 'pending' ? 'Pendiente' : i.status}</span>
               </div>
             </div>
@@ -1125,15 +1145,16 @@
     // Cases
     async function loadCases() {
       try {
-        const res = await fetch(API_URL.cases, { headers: getHeaders() });
+        const res = await fetch(API_URL.cases, { headers: getSelectHeaders() });
         const result = await res.json();
         const container = document.getElementById('cases-list');
         
-        if (result.success && result.data.length > 0) {
-          const cases = result.data;
-          const active = cases.filter(isActiveCase).length;
-          const pending = cases.filter(isPendingCase).length;
-          const completed = cases.filter(isClosedCase).length;
+        const cases = rowsFrom(result);
+
+        if (cases.length > 0) {
+          const active = cases.filter(c => c.status === 'active').length;
+          const pending = cases.filter(c => c.status === 'pending').length;
+          const completed = cases.filter(c => c.status === 'closed' || c.status === 'completed').length;
           
           document.getElementById('cases-active-count').textContent = active;
           document.getElementById('cases-pending-count').textContent = pending;
@@ -1143,13 +1164,12 @@
             <div class="invoice-list-item">
               <div class="invoice-details">
                 <h4>${c.title}</h4>
-                <p>${c.caseType || 'Civil'} - ${c.caseNumber || ''}</p>
+                <p>${caseType(c)} - ${caseNumber(c)}</p>
                 <small>${c.description || ''}</small>
               </div>
               <div class="invoice-actions">
-                <span class="invoice-amount">${caseStatusLabel(c.status)}</span>
-                <span class="status-badge status-${isPendingCase(c) ? 'pending' : c.status}">${caseStatusLabel(c.status)}</span>
-                ${isPendingCase(c) ? `<button class="btn-small" onclick="takeCase('${c.id}')">Tomar caso</button>` : ''}
+                <span class="invoice-amount">${c.status}</span>
+                <span class="status-badge status-${c.status}">${c.status === 'active' ? 'Activo' : c.status === 'pending' ? 'Pendiente' : c.status === 'closed' ? 'Cerrado' : c.status}</span>
               </div>
             </div>
           `).join('');
@@ -1167,19 +1187,20 @@
     // Documents
     async function loadDocuments() {
       try {
-        const res = await fetch(API_URL.documents, { headers: getHeaders() });
+        const res = await fetch(API_URL.documents, { headers: getSelectHeaders() });
         const result = await res.json();
+        const documents = rowsFrom(result);
         
-        document.getElementById('docs-total').textContent = result.success ? result.data.length : 0;
+        document.getElementById('docs-total').textContent = documents.length;
         
         const container = document.getElementById('docs-list');
-        if (result.success && result.data.length > 0) {
-          container.innerHTML = result.data.map(d => `
+        if (documents.length > 0) {
+          container.innerHTML = documents.map(d => `
             <div class="invoice-list-item">
               <div class="invoice-details">
-                <h4><i class="fas fa-file-alt"></i> ${d.originalFileName || d.title}</h4>
-                <p>${d.documentType || 'Documento'}</p>
-                <small>Tamaño: ${d.fileSize ? (d.fileSize/1024).toFixed(1) + ' KB' : 'N/A'}</small>
+                <h4><i class="fas fa-file-alt"></i> ${documentName(d)}</h4>
+                <p>${documentType(d)}</p>
+                <small>Tamaño: ${documentSize(d) ? (documentSize(d)/1024).toFixed(1) + ' KB' : 'N/A'}</small>
               </div>
               <div class="invoice-actions">
                 <span class="status-badge">Recibido</span>
@@ -1197,13 +1218,14 @@
     // Client: My Cases
     async function loadClientCases() {
       try {
-        const res = await fetch(API_URL.cases, { headers: getHeaders() });
+        const res = await fetch(API_URL.cases, { headers: getSelectHeaders() });
         const result = await res.json();
         
-        if (result.success && result.data.length > 0) {
-          const cases = result.data.filter(c => !c.clientId || c.clientId === user.id);
-          const active = cases.filter(isActiveCase).length;
-          const completed = cases.filter(isClosedCase).length;
+        const cases = rowsFrom(result);
+
+        if (cases.length > 0) {
+          const active = cases.filter(c => c.status === 'active').length;
+          const completed = cases.filter(c => c.status === 'closed' || c.status === 'completed').length;
           
           document.getElementById('client-cases-active').textContent = active;
           document.getElementById('client-cases-completed').textContent = completed;
@@ -1213,11 +1235,11 @@
             <div class="invoice-list-item">
               <div class="invoice-details">
                 <h4>${c.title}</h4>
-                <p>${c.caseType || 'Caso legal'} - ${c.caseNumber || ''}</p>
+                <p>${caseType(c, 'Caso legal')} - ${caseNumber(c)}</p>
                 <small>${c.description || 'Sin descripción'}</small>
               </div>
               <div class="invoice-actions">
-                <span class="status-badge status-${isPendingCase(c) ? 'pending' : c.status}">${caseStatusLabel(c.status)}</span>
+                <span class="status-badge status-${c.status}">${c.status === 'active' ? 'En Proceso' : c.status === 'pending' ? 'Pendiente' : 'Completado'}</span>
               </div>
             </div>
           `).join('');
@@ -1234,19 +1256,20 @@
     // Client: My Documents
     async function loadClientDocuments() {
       try {
-        const res = await fetch(API_URL.documents, { headers: getHeaders() });
+        const res = await fetch(API_URL.documents, { headers: getSelectHeaders() });
         const result = await res.json();
         
-        document.getElementById('client-docs-count').textContent = result.success ? result.data.length : 0;
+        const documents = rowsFrom(result);
+        document.getElementById('client-docs-count').textContent = documents.length;
         
         const container = document.getElementById('client-docs-list');
-        if (result.success && result.data.length > 0) {
-          container.innerHTML = result.data.map(d => `
+        if (documents.length > 0) {
+          container.innerHTML = documents.map(d => `
             <div class="invoice-list-item">
               <div class="invoice-details">
-                <h4><i class="fas fa-file-alt"></i> ${d.originalFileName || d.title}</h4>
-                <p>${d.documentType || 'Documento'}</p>
-                <small>Subido: ${d.createdAt ? new Date(d.createdAt).toLocaleDateString() : 'N/A'}</small>
+                <h4><i class="fas fa-file-alt"></i> ${documentName(d)}</h4>
+                <p>${documentType(d)}</p>
+                <small>Subido: ${createdAt(d) ? new Date(createdAt(d)).toLocaleDateString() : 'N/A'}</small>
               </div>
               <div class="invoice-actions">
                 <button class="btn-small" style="width:auto; padding: 0.4rem 0.8rem;">Ver</button>
@@ -1264,18 +1287,19 @@
     // Client: Wait Time
     async function loadWaitTime() {
       try {
-        const res = await fetch(API_URL.cases, { headers: getHeaders() });
+        const res = await fetch(API_URL.cases, { headers: getSelectHeaders() });
         const result = await res.json();
         
         const container = document.getElementById('wait-time-list');
         
-        if (result.success && result.data.length > 0) {
-          const cases = result.data;
+        const cases = rowsFrom(result);
+
+        if (cases.length > 0) {
           
           // Calculate total wait days (simulation based on case age)
           let totalDays = 0;
           const caseDays = cases.map(c => {
-            const created = c.createdAt ? new Date(c.createdAt) : new Date();
+            const created = createdAt(c) ? new Date(createdAt(c)) : new Date();
             const days = Math.floor((new Date() - created) / (1000 * 60 * 60 * 24));
             return { title: c.title, days: days, status: c.status };
           });
@@ -1287,7 +1311,7 @@
             <div class="wait-item">
               <div class="wait-case-info">
                 <h4>${c.title}</h4>
-                <p>${caseStatusLabel(c.status)}</p>
+                <p>${c.status === 'active' ? 'En proceso' : c.status === 'pending' ? 'Pendiente' : 'Completado'}</p>
               </div>
               <div class="wait-days">
                 <span class="days-number">${c.days}</span>
@@ -1308,16 +1332,21 @@
     async function submitComplaint(e) {
       e.preventDefault();
       
+      const amount = document.getElementById('complaint-amount').value;
+      const opposingParty = document.getElementById('complaint-party').value;
+      const description = [
+        document.getElementById('complaint-description').value,
+        amount ? `Monto involucrado: $${amount}` : '',
+        opposingParty ? `Parte contraria: ${opposingParty}` : ''
+      ].filter(Boolean).join('\n\n');
+
       const complaintData = {
-        caseNumber: 'DEN-' + Date.now(),
+        case_number: 'DEN-' + Date.now(),
         title: document.getElementById('complaint-title').value,
-        description: document.getElementById('complaint-description').value,
-        caseType: document.getElementById('complaint-type').value,
-        incidentDate: document.getElementById('complaint-date').value,
-        amount: document.getElementById('complaint-amount').value,
-        opposingParty: document.getElementById('complaint-party').value,
-        status: 'pending',
-        submittedBy: user.id
+        description,
+        case_type: document.getElementById('complaint-type').value,
+        filing_date: document.getElementById('complaint-date').value || null,
+        status: 'pending'
       };
       
       try {
@@ -1328,7 +1357,7 @@
         });
         const result = await res.json();
         
-        if (result.success) {
+        if (res.ok) {
           alert('Tu denuncia ha sido enviada exitosamente. Un abogado la revisará pronto.');
           // Clear form
           document.getElementById('complaint-title').value = '';
@@ -1365,7 +1394,7 @@
         });
         const result = await res.json();
         
-        if (result.success) {
+        if (res.ok) {
           alert('Caso creado');
           closeModal('modal-case');
           loadCases();
@@ -1377,35 +1406,15 @@
       }
     }
 
-    async function takeCase(caseId) {
-      try {
-        const res = await fetch(`${API_URL.cases}/${caseId}/take`, {
-          method: 'PUT',
-          headers: getHeaders()
-        });
-        const result = await res.json();
-
-        if (result.success) {
-          alert('Caso tomado. Ahora aparece como En proceso.');
-          loadDashboard();
-          loadCases();
-        } else {
-          alert(result.message || 'No se pudo tomar el caso');
-        }
-      } catch (err) {
-        alert('Error de conexión al tomar el caso');
-      }
-    }
-
     // Clients
     async function loadClients() {
       try {
-        const res = await fetch(API_URL.clients, { headers: getHeaders() });
+        const res = await fetch(API_URL.clients, { headers: getSelectHeaders() });
         const result = await res.json();
         const container = document.getElementById('clients-list');
         
-        if (result.success && result.data.length > 0) {
-          container.innerHTML = result.data.map(c => `
+        if (Array.isArray(result) && result.length > 0) {
+          container.innerHTML = result.map(c => `
             <div class="data-card">
               <div class="card-header">
                 <h4>${c.firstName} ${c.lastName}</h4>
@@ -1443,7 +1452,7 @@
         });
         const result = await res.json();
         
-        if (result.success) {
+        if (res.ok) {
           alert('Cliente creado');
           closeModal('modal-client');
           loadClients();
@@ -1458,19 +1467,20 @@
     // Documents
     async function loadDocuments() {
       try {
-        const res = await fetch(API_URL.documents, { headers: getHeaders() });
+        const res = await fetch(API_URL.documents, { headers: getSelectHeaders() });
         const result = await res.json();
+        const documents = rowsFrom(result);
         const container = document.getElementById('documents-list');
         
-        if (result.success && result.data.length > 0) {
-          container.innerHTML = result.data.map(d => `
+        if (documents.length > 0) {
+          container.innerHTML = documents.map(d => `
             <div class="data-card">
               <div class="card-header">
-                <h4><i class="fas fa-file"></i> ${d.originalFileName || d.title}</h4>
-                <span class="status-badge">${d.documentType}</span>
+                <h4><i class="fas fa-file"></i> ${documentName(d)}</h4>
+                <span class="status-badge">${documentType(d)}</span>
               </div>
               <div class="card-body">
-                <p><strong>Tamaño:</strong> ${d.fileSize ? (d.fileSize/1024).toFixed(1) + ' KB' : 'N/A'}</p>
+                <p><strong>Tamaño:</strong> ${documentSize(d) ? (documentSize(d)/1024).toFixed(1) + ' KB' : 'N/A'}</p>
               </div>
             </div>
           `).join('');
@@ -1491,12 +1501,12 @@
     // Time
     async function loadTime() {
       try {
-        const res = await fetch(API_URL.timetracking, { headers: getHeaders() });
+        const res = await fetch(API_URL.timetracking, { headers: getSelectHeaders() });
         const result = await res.json();
         const container = document.getElementById('time-list');
         
-        if (result.success && result.data.length > 0) {
-          container.innerHTML = result.data.map(t => `
+        if (Array.isArray(result) && result.length > 0) {
+          container.innerHTML = result.map(t => `
             <div class="data-card">
               <div class="card-header">
                 <h4>Caso: ${t.caseId || 'N/A'}</h4>
@@ -1525,28 +1535,40 @@
     // Billing
     async function loadBilling() {
       try {
-        const res = await fetch(API_URL.billing, { headers: getHeaders() });
+        const res = await fetch(API_URL.billing, { headers: getSelectHeaders() });
         const result = await res.json();
-        const container = document.getElementById('billing-list');
+        const invoices = rowsFrom(result);
+        const container = document.getElementById('billing-invoices-list');
         
-        if (result.success && result.data.length > 0) {
-          container.innerHTML = result.data.map(i => `
+        if (invoices.length > 0) {
+          const total = invoices.reduce((sum, i) => sum + invoiceTotal(i), 0);
+          const pending = invoices.filter(i => i.status === 'pending').reduce((sum, i) => sum + invoiceTotal(i), 0);
+          const paid = invoices.filter(i => i.status === 'paid').length;
+
+          document.getElementById('billing-total').textContent = `$${total.toFixed(2)}`;
+          document.getElementById('billing-pending').textContent = `$${pending.toFixed(2)}`;
+          document.getElementById('billing-paid').textContent = paid;
+
+          container.innerHTML = invoices.map(i => `
             <div class="data-card">
               <div class="card-header">
-                <h4>${i.invoiceNumber}</h4>
+                <h4>${invoiceNumber(i)}</h4>
                 <span class="status-badge status-${i.status}">${i.status}</span>
               </div>
               <div class="card-body">
-                <p><strong>Total:</strong> $${i.total || 0}</p>
-                <p><strong>Vence:</strong> ${i.dueDate ? new Date(i.dueDate).toLocaleDateString() : 'N/A'}</p>
+                <p><strong>Total:</strong> $${invoiceTotal(i)}</p>
+                <p><strong>Vence:</strong> ${invoiceDueDate(i) ? new Date(invoiceDueDate(i)).toLocaleDateString() : 'N/A'}</p>
               </div>
             </div>
           `).join('');
         } else {
+          document.getElementById('billing-total').textContent = '$0';
+          document.getElementById('billing-pending').textContent = '$0';
+          document.getElementById('billing-paid').textContent = '0';
           container.innerHTML = '<p class="no-data">No hay facturas</p>';
         }
       } catch (err) {
-        document.getElementById('billing-list').innerHTML = '<p class="no-data">Error</p>';
+        document.getElementById('billing-invoices-list').innerHTML = '<p class="no-data">Error</p>';
       }
     }
 
@@ -1569,7 +1591,7 @@
         });
         const result = await res.json();
         
-        if (result.success) {
+        if (res.ok) {
           alert('Factura creada');
           closeModal('modal-invoice');
           loadBilling();

@@ -116,7 +116,7 @@
           <div class="dashboard-card cases-column">
             <div class="card-header">
               <h3><i class="fas fa-briefcase"></i> Casos Activos</h3>
-              <span class="card-badge">En curso</span>
+              <span class="card-badge">Activos</span>
             </div>
             <div id="active-cases" class="card-content">
               <p class="loading-text">Cargando...</p>
@@ -713,6 +713,12 @@
       return c.case_type || c.caseType || fallback;
     }
 
+    function caseStatusLabel(status) {
+      if (status === 'active') return 'Activo';
+      if (status === 'completed' || status === 'closed') return 'Completado';
+      return 'Pendiente';
+    }
+
     function documentName(d) {
       return d.file_name || d.originalFileName || d.title || 'Documento';
     }
@@ -1179,8 +1185,12 @@
                 <small>${c.description || ''}</small>
               </div>
               <div class="invoice-actions">
-                <span class="invoice-amount">${c.status}</span>
-                <span class="status-badge status-${c.status}">${c.status === 'active' ? 'Activo' : c.status === 'pending' ? 'Pendiente' : c.status === 'closed' ? 'Cerrado' : c.status}</span>
+                <span class="status-badge status-${c.status}">${caseStatusLabel(c.status)}</span>
+                <select class="case-status-select" data-previous-status="${c.status}" onchange="updateCaseStatus('${c.id}', this.value, this)">
+                  <option value="pending" ${c.status === 'pending' ? 'selected' : ''}>Pendiente</option>
+                  <option value="active" ${c.status === 'active' ? 'selected' : ''}>Activo</option>
+                  <option value="completed" ${c.status === 'completed' || c.status === 'closed' ? 'selected' : ''}>Completado</option>
+                </select>
               </div>
             </div>
           `).join('');
@@ -1250,7 +1260,7 @@
                 <small>${c.description || 'Sin descripción'}</small>
               </div>
               <div class="invoice-actions">
-                <span class="status-badge status-${c.status}">${c.status === 'active' ? 'En Proceso' : c.status === 'pending' ? 'Pendiente' : 'Completado'}</span>
+                <span class="status-badge status-${c.status}">${c.status === 'active' ? 'Activo' : c.status === 'pending' ? 'Pendiente' : 'Completado'}</span>
               </div>
             </div>
           `).join('');
@@ -1562,6 +1572,35 @@
           : '<option value="">No hay clientes registrados</option>';
       } catch (err) {
         select.innerHTML = '<option value="">Error al cargar clientes</option>';
+      }
+    }
+
+    async function updateCaseStatus(caseId, status, select) {
+      const previousStatus = select.dataset.previousStatus || '';
+      select.disabled = true;
+
+      try {
+        const res = await fetch(`${API_URL.cases}?id=eq.${encodeURIComponent(caseId)}`, {
+          method: 'PATCH',
+          headers: getHeaders(),
+          body: JSON.stringify({ status })
+        });
+
+        const result = await res.json().catch(() => null);
+        const updatedCases = rowsFrom(result);
+
+        if (!res.ok || updatedCases.length === 0) {
+          throw new Error(result?.message || 'No se pudo actualizar el caso. Ejecuta nuevamente la migración SQL en Supabase.');
+        }
+
+        select.dataset.previousStatus = status;
+        loadCases();
+        loadCasesData();
+      } catch (err) {
+        if (previousStatus) select.value = previousStatus;
+        alert(err.message);
+      } finally {
+        select.disabled = false;
       }
     }
 

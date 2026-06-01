@@ -581,7 +581,7 @@
             <div class="case-card">
               <div class="case-card-header">
                 <h4>${c.title}</h4>
-                <span class="status-${c.status}">${c.status === 'active' ? 'En Proceso' : c.status === 'pending' ? 'Pendiente' : 'Resuelto'}</span>
+                <span class="status-${c.status}">${c.status === 'active' ? 'Activo' : c.status === 'pending' ? 'Pendiente' : 'Completado'}</span>
               </div>
               <div class="case-card-body">
                 <p><strong>Tipo:</strong> ${caseType(c)}</p>
@@ -652,7 +652,7 @@
             <div class="wait-item">
               <div>
                 <h4>${c.title}</h4>
-                <p>${c.status === 'active' ? 'En proceso' : c.status === 'pending' ? 'Pendiente' : 'Resuelto'}</p>
+                <p>${c.status === 'active' ? 'Activo' : c.status === 'pending' ? 'Pendiente' : 'Completado'}</p>
               </div>
               <span class="days">${c.days} días</span>
             </div>

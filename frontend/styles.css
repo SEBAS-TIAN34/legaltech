@@ -2371,6 +2371,22 @@ body.login-page {
   gap: 0.5rem;
 }
 
+.case-status-select {
+  min-width: 132px;
+  padding: 0.45rem 0.65rem;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  background: #fff;
+  color: #171a2f;
+  font: inherit;
+  cursor: pointer;
+}
+
+.case-status-select:disabled {
+  cursor: wait;
+  opacity: 0.65;
+}
+
 .invoice-list-item .invoice-amount {
   font-size: 1.2rem;
   font-weight: 700;
